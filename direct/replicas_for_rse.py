@@ -1,3 +1,7 @@
+from rucio.client.rseclient import RSEClient
+import json, re, getopt, os
+import sys, uuid
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
@@ -11,15 +15,10 @@ from sqlalchemy.types import TypeDecorator, CHAR, String
 
 #from sqlalchemy import schema
 
-from dburl import dburl, schema as oracle_schema
+Usage = """
+python replicas_for_rse.py -c <config.json> [-o <output file>] <rse_name>
+"""
 
-import sys, uuid
-
-Base = declarative_base()
-Base.metadata.schema = oracle_schema
-
-rse_name = sys.argv[1]
-out = open(sys.argv[2], "w")
 
 class GUID(TypeDecorator):
     """
@@ -71,6 +70,55 @@ class GUID(TypeDecorator):
 
 
 
+class DBConfig:
+
+	def __init__(self, cfg):
+		self.Host = cfg["host"]
+		self.Port = cfg["port"]
+		self.Schema = cfg["schema"]
+		self.User = cfg["user"]
+		self.Password = cfg["password"]
+		self.Service = cfg["service"]
+
+	def dburl(self):
+		return "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
+			self.User, self.Password, self.Host, self.Port, self.Service)
+class Config:
+	def __init__(self, cfg_file_path):
+		cfg = json.load(open(cfg_file_path, "r"))
+		self.DBConfig = DBConfig(cfg["database"])
+		self.DBSchema = self.DBConfig.Schema
+		self.DBURL = self.DBConfig.dburl()
+		self.RSEs = cfg["rses"]
+		my_name = os.environ.get("USER")
+		rucio_cfg = cfg.get("rucio", {})
+		self.RucioAccount = rucio_cfg.get("account",my_name)
+			
+
+	def lfn_to_pfn(self, rse_name):
+		rules = self.RSEs.get(rse_name, self.RSEs.get("*", {}))["lfn_to_pfn"]
+		return [ {
+			"path":re.compile(r["path"]),
+			"out":r["out"].replace("$", "\\")
+			} for r in rules
+		]
+
+Base = declarative_base()
+opts, args = getopt.getopt(sys.argv[1:], "o:c:")
+opts = dict(opts)
+
+if not args or not "-c" in opts:
+	print Usage
+	sys.exit(2)
+
+
+out = sys.stdout
+if "-o" in opts:
+	out = open(opts["-o"], "w")
+config = Config(opts["-c"])
+Base.metadata.schema = config.DBSchema
+
+
 class Replica(Base):
 	__tablename__ = "replicas"
 	path = Column(String)
@@ -79,27 +127,47 @@ class Replica(Base):
 	scope = Column(String, primary_key=True)
 	name = Column(String, primary_key=True)
 
-
 class RSE(Base):
-	__tablename__ = "rses"
-	id = Column(GUID(), primary_key=True)
-	rse = Column(String)
+        __tablename__ = "rses"
+        id = Column(GUID(), primary_key=True)
+        rse = Column(String)
 
+rse_name = args[0]
 
-engine = create_engine(dburl,  echo=True)
+engine = create_engine(config.DBURL,  echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 rse = session.query(RSE).filter(RSE.rse == rse_name).first()
-rse_id = rse.id
-print "RSE:", type(rse_id), len(rse_id), repr(rse_id)
+if rse is None:
+	print "RSE %s not found" % (rse_name,)
+	sys.exit(1)
 
-replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(10000)
+rse_id = rse.id
+
+print "rse_id:", type(rse_id), rse_id
+
+#
+# lfn-to-pfn
+#
+rules = config.lfn_to_pfn(rse_name)
+
+batch = 100000
+
+replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(batch)
 n = 0
 for r in replicas:
-		out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, r.path or "null", r.state))
+		path = r.path
+		if not path:
+			for rule in rules:
+				match = rule["path"]
+				rewrite = rule["out"]
+				if match.match(r.name):
+					path = match.sub(rewrite, r.name)
+					break
+		out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
 		n += 1
-		if n % 1000 == 0:
+		if n % batch == 0:
 			print(n)
 print(n)
 out.close()
