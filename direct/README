@@ -1,0 +1,20 @@
+1. Install cx_Oracle:
+
+	pip install cx-Oracle
+
+2. If necessary, install Oracle Instant Client: https://www.oracle.com/database/technologies/instant-client/downloads.html
+	add the directory with Oracle Instant Client to LD_LIBRARY_PATH
+
+3. Install SQL Alchemy:
+	pip install SQLAlchemy
+
+4. Install Rucio client environment
+
+5. copy config.json-sample to config.json and edit the file - add passwords, accounts, LFN-to-PFN rules
+
+6. run the script:
+
+	python replicas_for_rse.py -c config.json -o output_file.csv RSE_NAME
+
+
+
