@@ -6,6 +6,7 @@
 	add the directory with Oracle Instant Client to LD_LIBRARY_PATH
 
 3. Install SQL Alchemy:
+
 	pip install SQLAlchemy
 
 4. Install Rucio client environment
@@ -14,7 +15,7 @@
 
 6. run the script:
 
-	python replicas_for_rse.py -c config.json -o output_file.csv RSE_NAME
+	python replicas_for_rse.py -c config.json -o output_file.csv <RSE_NAME>
 
 
 
