@@ -17,5 +17,11 @@
 
 	python replicas_for_rse.py -c config.json -o output_file.csv <RSE_NAME>
 
+Script options:
+	-o <output file> - if unspecified, the output will be sent to stdout
+	-l - include more columns, otherwise path only
+	-a - include all replicas, otherwise Active only
+	     if -a is specified, -l is turned on too
+
 
 

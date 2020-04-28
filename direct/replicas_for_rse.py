@@ -16,7 +16,9 @@ from sqlalchemy.types import TypeDecorator, CHAR, String
 #from sqlalchemy import schema
 
 Usage = """
-python replicas_for_rse.py -c <config.json> [-o <output file>] <rse_name>
+python replicas_for_rse.py [-a] [-l] -c <config.json> [-o <output file>] <rse_name>
+    -a -- include all replicas, otherwise active only (state='A')
+    -l -- include more columns, otherwise physical path only, automatically on if -a is used
 """
 
 
@@ -104,8 +106,11 @@ class Config:
 		]
 
 Base = declarative_base()
-opts, args = getopt.getopt(sys.argv[1:], "o:c:")
+opts, args = getopt.getopt(sys.argv[1:], "o:c:la")
 opts = dict(opts)
+
+all_replicas = "-a" in opts
+long_output = "-l" in opts or all_replicas
 
 if not args or not "-c" in opts:
 	print Usage
@@ -154,7 +159,13 @@ rules = config.lfn_to_pfn(rse_name)
 
 batch = 100000
 
-replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(batch)
+if all_replicas:
+	replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(batch)
+else:
+	replicas = session.query(Replica)	\
+		.filter(Replica.rse_id==rse_id)	\
+		.filter(Replica.state=='A')	\
+		.yield_per(batch)
 n = 0
 for r in replicas:
 		path = r.path
@@ -165,7 +176,10 @@ for r in replicas:
 				if match.match(r.name):
 					path = match.sub(rewrite, r.name)
 					break
-		out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
+		if long_output:
+			out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
+		else:
+			out.write("%s\n" % (path or "null", ))
 		n += 1
 		if n % batch == 0:
 			print(n)
