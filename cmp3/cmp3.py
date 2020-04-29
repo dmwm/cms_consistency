@@ -28,8 +28,8 @@ def cmp3(a, r, b):
 	# 	D = R-A-B = (R-A)-B
 	# 	M = A*B-R = (A-R)*B
 	#
-	a_r = set(a)
-	r_a = set()
+	a_r = set(a) 	# this will be A-R
+	r_a = set()	# this will be R-A
 	for x in r:
 		if x in a_r:
 			a_r.remove(x)
