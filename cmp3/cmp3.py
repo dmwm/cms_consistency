@@ -25,8 +25,8 @@ def cmp3(a, r, b):
 	#
 	# produces 2 lists:
 	#
-	# 	D = R-A-B
-	# 	M = A*B-R
+	# 	D = R-A-B = (R-A)-B
+	# 	M = A*B-R = (A-R)*B
 	#
 	a_r = set(a)
 	r_a = set()
