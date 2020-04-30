@@ -19,6 +19,13 @@ Scrpits
 
 * cmp3_parts.py - compares lists of files split into parts found in given directory and produces m.list and d.list files with "missing" and "dark" files respectively.
 
+Timing
+------
+
+splitting one 100M entries file into 10 10M files takes about 4 minutes
+comparing 3 100M entry lists split into 10 parts each takes about 7.5 minutes
+
+
 
 
 
