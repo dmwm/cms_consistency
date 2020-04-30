@@ -22,7 +22,7 @@ Scrpits
 Timing
 ------
 
-Splitting one 100M entries file into 10 10M files takes about 4 minutes
+Splitting one 100M entries file into 10 10M files takes about 4 minutes. Obviously this step is not needed because the file lists can be split at the time of generation.
 
 Comparing 3 100M entry lists split into 10 parts each takes about 7.5 minutes
 
