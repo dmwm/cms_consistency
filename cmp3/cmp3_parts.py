@@ -1,8 +1,13 @@
-import random, string, sys
+import random, string, sys, glob
 
 import os
 
-tmpdir = "/data/ivm3/cmp3"
+Usage = """
+python cmp3_parts.py <parts directory> [<output dir>]
+
+	will look for files a.list.*, r.list.*, b.list.* in parts directory
+"""
+
 
 def getMemory():
         # returns memory utilization in MB
@@ -41,34 +46,24 @@ def cmp3(a, r, b):
 	print("memory utilization at the end of cmp3, MB:", getMemory())
 	return list(d), list(m)
 
-def partition(lst, part_names):
-	files = [open(pn, "w") for pn in part_names]
-	n = len(part_names)
-	for l in lst:
-		i = hash(l) % n
-		files[i].write(l)
-	[f.close() for f in files]
-
 def lines(f):
 	l = f.readline()
 	while l:
 		yield l
 		l = f.readline()
 
-def cmp3_partition(a, r, b, prefix, nparts):
-	a_part_names = ["%s.a.%d.list" % (prefix, i) for i in range(nparts)]
-	r_part_names = ["%s.r.%d.list" % (prefix, i) for i in range(nparts)]
-	b_part_names = ["%s.b.%d.list" % (prefix, i) for i in range(nparts)]
+def cmp3_parts(parts_dir):
+	a_part_names = sorted(glob.glob("%s/a.list.[0-9][0-9][0-9]" % (parts_dir,)))
+	r_part_names = sorted(glob.glob("%s/r.list.[0-9][0-9][0-9]" % (parts_dir,)))
+	b_part_names = sorted(glob.glob("%s/b.list.[0-9][0-9][0-9]" % (parts_dir,)))
 
-	partition(a, a_part_names)
-	print("A partitioned")
-	partition(r, r_part_names)
-	print("R partitioned")
-	partition(b, b_part_names)
-	print("B partitioned")
+	assert len(a_part_names) == len(r_part_names) and len(a_part_names) == len(b_part_names)
+
+	print ("%d parts found for each list" % (len(a_part_names),))
 
 	d_list, m_list = [], []
 	for i, (an, rn, bn) in enumerate(zip(a_part_names, r_part_names, b_part_names)):
+		print("Comparing %s %s %s..." % (an, rn, bn))
 		d, m = cmp3(
 			lines(open(an, "r")),
 			lines(open(rn, "r")),
@@ -80,19 +75,24 @@ def cmp3_partition(a, r, b, prefix, nparts):
 	return d_list, m_list
 
 def main():
-		fa = open(f"{tmpdir}/a.list", "r")
-		fr = open(f"{tmpdir}/r.list", "r")
-		fb = open(f"{tmpdir}/b.list", "r")
 
-		d, m = cmp3_partition(lines(fa), lines(fr), lines(fb), f"{tmpdir}/tmp", 10)
-		fd = open(f"{tmpdir}/d.list","w")
-		fm = open(f"{tmpdir}/m.list","w")
-		for x in d:
-			fd.write(x)			# training newlines are there already
-		for x in m:
-			fm.write(x)
-		fd.close()
-		fm.close()
+	if len(sys.argv[1:]) < 1:
+		print (Usage)
+		sys.exit(2)
+
+	parts_dir = sys.argv[1]
+	output_dir = sys.argv[2] if sys.argv[2:] else parts_dir
+
+	d, m = cmp3_parts(parts_dir)
+
+	fd = open(f"{output_dir}/d.list","w")
+	fm = open(f"{output_dir}/m.list","w")
+	for x in d:
+		fd.write(x)			# training newlines are there already
+	for x in m:
+		fm.write(x)
+	fd.close()
+	fm.close()
 
 		
 
