@@ -13,11 +13,11 @@ In order to do this in a lineary scalable way, the input files A,B and R need to
 Scrpits
 -------
 
- * gen.py - generates 3 lists of replicas with given rate of "errors". All 3 lists are almost the same, except each file can be randomly removed from each list with given probability. The script produces files a.list, b.list and r.list in given directory.
+* gen.py - generates 3 lists of replicas with given rate of "errors". All 3 lists are almost the same, except each file can be randomly removed from each list with given probability. The script produces files a.list, b.list and r.list in given directory.
 
- * split.py - splits a file produced by gen.py into parts according to hash function. For speed, adler32 hashing is used.
+* split.py - splits a file produced by gen.py into parts according to hash function. For speed, adler32 hashing is used.
 
- * cmp3_parts.py - compares lists of files split into parts found in given directory and produces m.list and d.list files with "missing" and "dark" files respectively.
+* cmp3_parts.py - compares lists of files split into parts found in given directory and produces m.list and d.list files with "missing" and "dark" files respectively.
 
 
 
