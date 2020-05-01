@@ -112,7 +112,7 @@ all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 
 if not args or not "-c" in opts:
-	print Usage
+	print (Usage)
 	sys.exit(2)
 
 
