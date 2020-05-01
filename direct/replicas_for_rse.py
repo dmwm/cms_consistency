@@ -1,3 +1,4 @@
+from __future__ import print_function
 import json, re, getopt, os
 import sys, uuid
 
@@ -112,7 +113,7 @@ all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 
 if not args or not "-c" in opts:
-	print Usage
+	print (Usage)
 	sys.exit(2)
 
 
@@ -144,12 +145,12 @@ session = Session()
 
 rse = session.query(RSE).filter(RSE.rse == rse_name).first()
 if rse is None:
-	print "RSE %s not found" % (rse_name,)
+	print ("RSE %s not found" % (rse_name,))
 	sys.exit(1)
 
 rse_id = rse.id
 
-print "rse_id:", type(rse_id), rse_id
+print ("rse_id:", type(rse_id), rse_id)
 
 #
 # lfn-to-pfn
