@@ -1,4 +1,3 @@
-from rucio.client.rseclient import RSEClient
 import json, re, getopt, os
 import sys, uuid
 

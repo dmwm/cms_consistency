@@ -9,7 +9,7 @@
 
 	pip install SQLAlchemy
 
-4. Install Rucio client environment
+4. Install Rucio client environment - this step is no longer needed to run the script
 
 5. copy config.json-sample to config.json and edit the file - add passwords, accounts, LFN-to-PFN rules
 
