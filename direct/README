@@ -4,6 +4,9 @@
 
 2. If necessary, install Oracle Instant Client: https://www.oracle.com/database/technologies/instant-client/downloads.html
 	add the directory with Oracle Instant Client to LD_LIBRARY_PATH
+    If missing, install libaio using
+    
+    yum install libaio
 
 3. Install SQL Alchemy:
 
