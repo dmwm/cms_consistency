@@ -1,8 +1,16 @@
-import random, string, sys
+import random, string, sys, getopt
 
 import os
 
-tmpdir = "/data/ivm3/cmp3"
+Usage = """
+python gen.py [-r <error rate>] <n> <outpit dir>
+	Will generate 3 files under <outpit dir>: a.list, b.list, c.list
+	each file will be almost the same, containing almost <n> entries each.
+	Each entry will be removed from each file with probability given by -r.
+	Default error rate is 0.01
+"""
+	
+	
 
 alphabet = string.ascii_letters + string.digits + "/"
 
@@ -27,15 +35,27 @@ def gen3(n, r):
 		[x for x in paths if random.random() > r]
 	)
 
+opts, args = getopt.getopt(sys.argv[1:], "r:")
+
+if len(args) < 2:
+	print (Usage)
+	sys.exit(2)
+
+
+opts = dict(opts)
+error_rate = float(opts.get("-r", 0.01))
+
 n = int(sys.argv[1])
+out_dir = sys.argv[2]
+
 k = 1000
 assert n % k == 0
-fa = open(f"{tmpdir}/a.list", "w")
-fr = open(f"{tmpdir}/r.list", "w")
-fb = open(f"{tmpdir}/b.list", "w")
+fa = open(f"{out_dir}/a.list", "w")
+fr = open(f"{out_dir}/r.list", "w")
+fb = open(f"{out_dir}/b.list", "w")
 done = 0
 while done < n:
-	a, r, b = gen3(k, 0.1)
+	a, r, b = gen3(k, error_rate)
 	fa.write(''.join(a))
 	fr.write(''.join(r))
 	fb.write(''.join(b))
