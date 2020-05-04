@@ -15,9 +15,13 @@ Building Docker image
     
 5. docker build -t cms-replicas-direct
 
-6. docker run --rm -ti cms-replicas-direct /bin/bash
 
-7. Inside the docker container:
+Running the database dump script
+--------------------------------
+
+1. docker run --rm -ti cms-replicas-direct /bin/bash
+
+2. Inside the docker container:
     $ cd cms_consistency/direct
     $ python replicas_for_rse.py -c /tmp/config.json <RSE name>
     
