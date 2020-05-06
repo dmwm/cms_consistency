@@ -6,8 +6,8 @@ import os
 py3 = sys.version_info >= (3,)
 
 
-#PART_SIZE = 1024*1024*1024	# GB
-PART_SIZE = 1024*1024		# MB
+PART_SIZE = 1024*1024*1024	# GB
+#PART_SIZE = 1024*1024		# MB
 Verbose = False
 
 def cmp3(a, r, b):
