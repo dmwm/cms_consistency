@@ -129,8 +129,8 @@ if not args or not "-c" in opts:
 
 
 outputs = [sys.stdout]
-if out_file in opts:
-	outputs = [open("out_file.%05d" % (i,), "w") for i in range(nparts)]
+if out_file is not None:
+	outputs = [open("%s.%05d" % (out_file, i), "w") for i in range(nparts)]
 
 config = Config(opts["-c"])
 Base.metadata.schema = config.DBSchema
