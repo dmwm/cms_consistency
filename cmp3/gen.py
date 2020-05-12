@@ -31,7 +31,7 @@ def gen3(n, r):
 	paths = [random_name(100)+'\n' for _ in range(n)]
 	return (
 		[x for x in paths if random.random() > r],
-		[x for x in paths if random.random() > r],
+		[x for x in paths if random.random() > r],		# to generate more dark files
 		[x for x in paths if random.random() > r]
 	)
 
@@ -48,20 +48,36 @@ error_rate = float(opts.get("-r", 0.01))
 n = int(sys.argv[1])
 out_dir = sys.argv[2]
 
-k = 1000
-assert n % k == 0
+k = 10000
 fa = open(f"{out_dir}/a.list", "w")
 fr = open(f"{out_dir}/r.list", "w")
 fb = open(f"{out_dir}/b.list", "w")
 done = 0
-while done < n:
-	a, r, b = gen3(k, error_rate)
+
+nd = nm = 0
+
+while n > 0:
+	nn = min(n, k)
+	a, r, b = gen3(nn, error_rate)
+
+
 	fa.write(''.join(a))
 	fr.write(''.join(r))
 	fb.write(''.join(b))
-	done += k
+
+	sa = set(a)
+	sb = set(b)
+	sr = set(r)
+
+	nd += len(sr - sa - sb)
+	nm += len((sa&sb) - sr)
+
+	n -= nn
+	done += nn
 	if done % 100000 == 0:
 		print(done)
 fa.close()
 fb.close()
 fr.close()
+
+print("Generated: %d, dark: %d, missing: %d" % (done, nd, nm))
