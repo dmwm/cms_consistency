@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # 
-# Usage: dump_db.sh <config file> <RSE> <output file>
+# Usage: dump_db.sh <config file> <RSE> <nparts> <output file prefix>
 #
 
+config=$1
 rse=$2
-out_dir=$3
-outfile=
+nparts=$3
+out_prefix=$4
 
-python replicas_for_rse.py -c $1 -o $3 $2
+python replicas_for_rse.py -c $config -o $out_prefix -n $nparts $rse
