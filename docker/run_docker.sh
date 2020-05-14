@@ -9,4 +9,20 @@ config_file=$1
 RSE=$2
 output=$3
 
-docker run --rm -v ${config_file}:/config.json -v ${output}:/out cms-recon /home/rucio/dump_site.sh ${RSE} ${output}
+mkdir -p ${output}
+
+if [ ! -d ${output} ]; then
+	echo Output must be a directory
+	exit 1
+fi
+
+cfg_dir=/tmp/${USER}/recon_dbdump
+
+mkdir -p $cfg_dir
+chmod go-rwx $cfg_dir
+cp $config_file ${cfg_dir}/config.json
+chmod go-rwx ${cfg_dir}/config.json
+
+docker run --rm -v ${cfg_dir}:/config -v ${output}:/out cms-recon \
+	ls -l / /config .
+	#python replicas_for_rse.py -o /out/${RSE}.dbdump -n 10 -c /config/config.json ${RSE} 
