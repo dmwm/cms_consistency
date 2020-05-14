@@ -1,0 +1,13 @@
+1. Build Docker image:
+
+	$ ./build_image.sh
+
+2. Create config.json file - see the sample config.json-sample
+
+3. Create output directory (e.g.: /tmp/out)
+
+4. Dump the database:
+
+	$ ./run_docker config.json T2_US_Purdue /tmp/out
+
+5. The results will be in the output directory, named <RSE name>.dbdump.00001 ...

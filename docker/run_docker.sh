@@ -24,5 +24,4 @@ cp $config_file ${cfg_dir}/config.json
 chmod go-rwx ${cfg_dir}/config.json
 
 docker run --rm -v ${cfg_dir}:/config -v ${output}:/out cms-recon \
-	ls -l / /config .
-	#python replicas_for_rse.py -o /out/${RSE}.dbdump -n 10 -c /config/config.json ${RSE} 
+	python replicas_for_rse.py -o /out/${RSE}.dbdump -n 10 -c /config/config.json ${RSE} 
