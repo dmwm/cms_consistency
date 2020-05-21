@@ -14,7 +14,7 @@ WORKDIR /home/rucio
 
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
 
-COPY config.json /tmp
+WORKDIR /home/rucio/cms_consistency/dbdump
 
 CMD /bin/bash
 

@@ -2,6 +2,8 @@ from __future__ import print_function
 import json, re, getopt, os
 import sys, uuid
 
+from partition import part
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
@@ -16,9 +18,11 @@ from sqlalchemy.types import TypeDecorator, CHAR, String
 #from sqlalchemy import schema
 
 Usage = """
-python replicas_for_rse.py [-a] [-l] -c <config.json> [-o <output file>] <rse_name>
+python replicas_for_rse.py [-a] [-l] [-o<output file> [-n <nparts>]] -c <config.json> <rse_name>
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
+    -n -- split output into <nparts> files named <output file>.00001, <output file>.00002, ...
+          <output file> is required
 """
 
 
@@ -106,23 +110,30 @@ class Config:
 		]
 
 Base = declarative_base()
-opts, args = getopt.getopt(sys.argv[1:], "o:c:la")
+opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:")
 opts = dict(opts)
 
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
+nparts = int(opts.get("-n", 1))
+out_file = opts.get("-o")
+
+if nparts > 1:
+	if out_file is None:
+		print("Output file path must be specified if partitioning is requested")
+		sys.exit(1)
 
 if not args or not "-c" in opts:
 	print (Usage)
 	sys.exit(2)
 
 
-out = sys.stdout
-if "-o" in opts:
-	out = open(opts["-o"], "w")
+outputs = [sys.stdout]
+if out_file is not None:
+	outputs = [open("%s.%05d" % (out_file, i), "w") for i in range(nparts)]
+
 config = Config(opts["-c"])
 Base.metadata.schema = config.DBSchema
-
 
 class Replica(Base):
 	__tablename__ = "replicas"
@@ -176,6 +187,10 @@ for r in replicas:
 				if match.match(r.name):
 					path = match.sub(rewrite, r.name)
 					break
+
+		ipart = part(nparts, path)
+		out = outputs[ipart]
+
 		if long_output:
 			out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
 		else:
@@ -184,5 +199,5 @@ for r in replicas:
 		if n % batch == 0:
 			print(n)
 print(n)
-out.close()
+[out.close() for out in outputs]
 
