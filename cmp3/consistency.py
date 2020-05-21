@@ -56,10 +56,10 @@ def lines(f):
 		yield l
 		l = f.readline()
 
-def cmp3_parts(a_dir, r_dir, b_dir):
-	a_part_names = sorted(glob.glob("%s/a.[0-9][0-9][0-9][0-9][0-9]" % (a_dir,)))
-	r_part_names = sorted(glob.glob("%s/r.[0-9][0-9][0-9][0-9][0-9]" % (r_dir, )))
-	b_part_names = sorted(glob.glob("%s/b.[0-9][0-9][0-9][0-9][0-9]" % (b_dir, )))
+def cmp3_parts(n, a_dir, r_dir, b_dir):
+	a_part_names = sorted(glob.glob("%s/a.[0-9][0-9][0-9][0-9][0-9]" % (a_dir,)))[:n]
+	r_part_names = sorted(glob.glob("%s/r.[0-9][0-9][0-9][0-9][0-9]" % (r_dir, )))[:n]
+	b_part_names = sorted(glob.glob("%s/b.[0-9][0-9][0-9][0-9][0-9]" % (b_dir, )))[:n]
 
 	assert len(a_part_names) == len(r_part_names) and len(a_part_names) == len(b_part_names)
 
@@ -99,7 +99,6 @@ def consistency(before, storage, after, out, tempdir=None):
     
     if os.path.isfile(before):
         assert os.path.isfile(storage) and os.path.isfile(after)
-        assert os.path.isdir(tempdir), "To compare individual files, a temp directory needs to be provided"
         
         # split files into ~1GB parts
         max_size = max(os.path.getsize(f) for f in (before, storage, after))
@@ -116,6 +115,7 @@ def consistency(before, storage, after, out, tempdir=None):
         else:
             if tempdir is None:
                 tempdir = os.path.dirname(out)      # assume its ok to write temp files into the output directory
+            assert os.path.isdir(tempdir), "To compare individual files, a temp directory needs to be provided"
             tmp_names = split_file(after, n_parts, "a", tempdir) \
                 + split_file(before, n_parts, "b", tempdir) \
                 + split_file(storage, n_parts, "r", tempdir)
@@ -126,7 +126,7 @@ def consistency(before, storage, after, out, tempdir=None):
         assert os.path.isdir(storage) and os.path.isdir(after)
         n = len(glob.glob("%s/a.*" % (after,)))
         assert n == len(glob.glob("%s/b.*" % (before,))) and n == len(glob.glob("%s/r.*" % (storage,)))
-        d, m = cmp3_parts(before, storage, after)
+        d, m = cmp3_parts(n, before, storage, after)
     
     with open(out, "w") as out_f:
         for p in m: out_f.write("LOST,%p\n" % (p,))
