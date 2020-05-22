@@ -48,16 +48,11 @@ class Scanner(Task):
 		self.Subprocess.terminate()
 		print("Terminated: %s" % (self.Location,))
         
-    DirectoryRE = re.compile("^d")
-    FileRE = re.compile("^-")
-    PathRE = re.compile("[^ ]+$")
-    SizeRE = re.compile("^[a-z-]+\s+[0-9-]+\s+\d\d:\d\d:\d\d\s*(?P<size>\d+)")
-
     def run(self):
         t0 = time.time()
 	sys.stderr.write("Start scanning %s %s\n" % ("(recursive)" if self.UseRecursive else "", self.Location))
         location = self.Location
-        lscommand = "xrdfs %s ls -l %s %s" % (self.Server, "-R" if self.UseRecursive else "", self.Location)
+        lscommand = "xrdfs %s ls %s %s" % (self.Server, "-R" if self.UseRecursive else "", self.Location)
 
 	killer = Killer(self, self.Timeout)
 
@@ -83,17 +78,17 @@ class Scanner(Task):
             for l in lines:
                 l = l.strip()
                 if l:
-                    if self.FileRE.match(l):
-                        #size = int(SizeRE.search(l).group("size"))
-                        path = self.PathRE.search(l).group()
-                        name = path.rsplit("/",1)[-1]
+		    last_word = l.rsplit("/",1)[-1]
+                    if '.' in last_word:
+                        path = l
                         path = path if path.startswith(location) else location + "/" + path
                         if not path.endswith("/."):
 				files.append(path)
-                    elif not self.UseRecursive and self.DirectoryRE.match(l):
-                        path = self.PathRE.search(l).group()
-                        path = path if path.startswith(location) else location + "/" + path
-                        self.Master.addDirectory(path)
+                    else:
+			if not self.UseRecursive:
+				path = l
+				path = path if path.startswith(location) else location + "/" + path
+				self.Master.addDirectory(path)
             print("Found %d files under %s" % (len(files), self.Location))
             if files:
                 self.Master.addFiles(files)
@@ -112,6 +107,7 @@ class ScannerMaster(PyThread):
         self.Done = False
         self.Error = None
         self.Failed = False
+        self.Directories = set()
 
     def run(self):
         self.addDirectory(self.Root)
@@ -131,6 +127,7 @@ class ScannerMaster(PyThread):
     def addDirectory(self, path):
         if not self.Failed:
 	    path = self.canonic(path)
+	    self.Directories.add(path)
             assert path.startswith(self.Root)
             relpath = path[len(self.Root):]
             while relpath and relpath[0] == '/':
@@ -205,7 +202,7 @@ if __name__ == "__main__":
         print("Scanner failed:", master.Error)
 
     t = int(time.time() - t0)
-    sys.stderr.write("Found %d files\n" % (n,))
+    sys.stderr.write("Found %d files in %d directories\n" % (n, len(master.Directories)))
     sys.stderr.write("Elapsed time: %dm%ds\n" % (t//60, t%60))
 
     out.close()
