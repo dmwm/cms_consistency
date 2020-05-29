@@ -58,7 +58,8 @@ class Scanner(Task):
 
 	with self:
 		# the killer process will wait for self.Subprocess to become not None or Done to become True
-		self.Subprocess = subprocess.Popen(lscommand, shell=True, stderr=subprocess.STDOUT,
+		self.Subprocess = subprocess.Popen(lscommand, shell=True, 
+			stderr=subprocess.PIPE,
 			stdout=subprocess.PIPE)
 		killer.start()		# do not start killer until self.Subprocess is set
 
@@ -71,7 +72,7 @@ class Scanner(Task):
         	self.Subprocess = None
 
         if retcode or self.Killed:
-            self.Master.scanner_failed(self, out)
+            self.Master.scanner_failed(self, err)
         else:
             files = []
             lines = [x.strip() for x in out.split("\n")]
