@@ -1,6 +1,6 @@
 from pythreader import TaskQueue, Task, Queue, PyThread
 import re
-
+from partition import part
 
 from pythreader import ShellCommand
 
@@ -83,7 +83,6 @@ class ScannerMaster(PyThread):
     def addFiles(self, files):
         self.Results.append(files)
         
-    @synchronized    
     def addDirectory(self, path):
         if not self.Failed:
             self.ScannerQueue.addTask(
@@ -104,15 +103,19 @@ class ScannerMaster(PyThread):
         self.ScannerQueue.flush()
             
 Usage = """
-python xrootd_scanner.py [-m <max scanners>] [-t <timeout>] <server> <root>
-    -m <max scanners>  - max number of directory scanners to run concurrenty (default:5)
-    -t <timeout>       - xrdfs ls operation timeout (default 30 seconds)
+python xrootd_scanner.py [options] <server> <root>
+    -n <n>                   - partition the output into n parts. Default 1. If not 1, -o is required
+    -o <output file prefix>  - output will be sent to <output>.00000, <output>.00001, ...
+    -r <prefix-to-remove>    - remove prefix from paths
+    -a <prefix-to-add>       - add prefix after removing the one specified with -p
+    -m <max scanners>        - max number of directory scanners to run concurrenty (default:5)
+    -t <timeout>             - xrdfs ls operation timeout (default 30 seconds)
 """
         
 if __name__ == "__main__":
     import getopt, sys
     
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:r:a:n:o:")
     opts = dict(opts)
     
     if len(args) != 2:
@@ -122,11 +125,31 @@ if __name__ == "__main__":
     server, root = args
     max_scanners = int(opts.get("-m", 5))
     timeout = int(opts.get("-t", 30))
-        
+    remove_prefix = opts.get("-r")
+    add_prefix = opts.get("-a")
+    output = opts.get("-o")
+    nparts = int(opts.get("-n", 1))
+    if nparts > 1:
+        if not output:
+            print ("Output prefix is required for partitioned output")
+            print (Usage)
+            sys.exit(2)
+    
+    if not output:
+        outputs = [sys.stdout]
+    else:
+        outputs = [open("%s.%05d" % (output, i), "w") for i in range(nparts)]
+            
     master = ScannerMaster(server, top, max_scanners, timeout)
     master.start()
     for path in master.files():
-        print part
-        
+        if remove_prefix and path.startswith(remove_prefix):
+            path = path[len(remove_prefix):]
+        if add_prefix:
+            path = add_prefix + path
+        i = 0 if nparts == 1 else part(nparts, path)
+        outputs[i].write("%s\n" % (path,))
+
+    [out.close() for out in outputs]
     
         
