@@ -3,6 +3,7 @@ import re
 import subprocess, time
 from partition import part
 
+from config import Config
 
 def runCommand(cmd, timeout=None, debug=None):
     return p.returncode, out
@@ -157,15 +158,15 @@ class ScannerMaster(PyThread):
             lst = self.Results.pop()
             if lst:
 		    for path in lst:
-			yield path
+			yield self.canonic(path)
     
             
 Usage = """
-python xrootd_scanner.py [options] <server> <root>
+python xrootd_scanner.py [options] <rse>
     Options:
+    -c <config.json>         - config file, required
     -n <n>                   - partition the output into n parts. Default 1. If not 1, -o is required
     -o <output file prefix>  - output will be sent to <output>.00000, <output>.00001, ...
-    -r <prefix-to-remove>    - remove prefix from paths
     -R <depth>         - user -R option after reaching the <depth> level relative to <root> (default - never)
     -m <max scanners>  - max number of directory scanners to run concurrenty (default:5)
     -t <timeout>       - xrdfs ls operation timeout (default 30 seconds)
@@ -174,21 +175,26 @@ python xrootd_scanner.py [options] <server> <root>
 if __name__ == "__main__":
     import getopt, sys, time
     
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:r:a:n:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:")
     opts = dict(opts)
     
-    if len(args) != 2:
+    if len(args) != 1 or not "-c" in opts:
         print(Usage)
         sys.exit(2)
-        
-    server, root = args
+
+    rse = args[0]
+    config = Config(opts.get("-c"))
+
+    root = config.xrootd_root(rse)
+    server = config.xrootd_server(rse)
+    remove_prefix = config.xrootd_remove_prefix(rse) or root
+    add_prefix = config.xrootd_add_prefix(rse)
+
     max_scanners = int(opts.get("-m", 5))
     timeout = int(opts.get("-t", 30))
     recursive_threshold = opts.get("-R")
     if recursive_threshold: recursive_threshold = int(recursive_threshold)
     
-    remove_prefix = opts.get("-r")
-    add_prefix = opts.get("-a")
     output = opts.get("-o")
     nparts = int(opts.get("-n", 1))
     if nparts > 1:
