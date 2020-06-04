@@ -23,6 +23,7 @@ python replicas_for_rse.py [-a] [-l] [-o<output file> [-n <nparts>]] -c <config.
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
     -n -- split output into <nparts> files named <output file>.00001, <output file>.00002, ...
           <output file> is required
+    -s <path> -- include only files with PFN under <path>
 """
 
 
@@ -110,13 +111,15 @@ class Config:
 		]
 
 Base = declarative_base()
-opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:")
+opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:s:")
 opts = dict(opts)
 
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 nparts = int(opts.get("-n", 1))
 out_file = opts.get("-o")
+subdir = opts.get("-s", "/")
+if not subdir.endswith("/"):	subdir = subdir + "/"
 
 if nparts > 1:
 	if out_file is None:
@@ -187,6 +190,9 @@ for r in replicas:
 				if match.match(r.name):
 					path = match.sub(rewrite, r.name)
 					break
+
+		if not path.startswith(subdir):
+			continue
 
 		ipart = part(nparts, path)
 		out = outputs[ipart]

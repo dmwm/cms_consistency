@@ -1,6 +1,7 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
 import re
 import subprocess, time
+from partition import part
 
 
 def runCommand(cmd, timeout=None, debug=None):
@@ -50,7 +51,7 @@ class Scanner(Task):
         
     def run(self):
         t0 = time.time()
-	sys.stderr.write("Start scanning %s %s\n" % ("(recursive)" if self.UseRecursive else "", self.Location))
+	sys.stderr.write("Start %sscan of %s\n" % ("recursive " if self.UseRecursive else "", self.Location))
         location = self.Location
         lscommand = "xrdfs %s ls %s %s" % (self.Server, "-R" if self.UseRecursive else "", self.Location)
 
@@ -75,6 +76,7 @@ class Scanner(Task):
             self.Master.scanner_failed(self, err)
         else:
             files = []
+            ndirs = 0
             lines = [x.strip() for x in out.split("\n")]
             for l in lines:
                 l = l.strip()
@@ -87,10 +89,11 @@ class Scanner(Task):
 				files.append(path)
                     else:
 			if not self.UseRecursive:
+                                ndirs += 1
 				path = l
 				path = path if path.startswith(location) else location + "/" + path
 				self.Master.addDirectory(path)
-            print("Found %d files under %s" % (len(files), self.Location))
+            print("Found %d files %d directories under %s" % (len(files), ndirs, self.Location))
             if files:
                 self.Master.addFiles(files)
 
@@ -160,7 +163,9 @@ class ScannerMaster(PyThread):
 Usage = """
 python xrootd_scanner.py [options] <server> <root>
     Options:
-    -o <output file>   - default: stdout
+    -n <n>                   - partition the output into n parts. Default 1. If not 1, -o is required
+    -o <output file prefix>  - output will be sent to <output>.00000, <output>.00001, ...
+    -r <prefix-to-remove>    - remove prefix from paths
     -R <depth>         - user -R option after reaching the <depth> level relative to <root> (default - never)
     -m <max scanners>  - max number of directory scanners to run concurrenty (default:5)
     -t <timeout>       - xrdfs ls operation timeout (default 30 seconds)
@@ -169,7 +174,7 @@ python xrootd_scanner.py [options] <server> <root>
 if __name__ == "__main__":
     import getopt, sys, time
     
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:r:a:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:r:a:n:")
     opts = dict(opts)
     
     if len(args) != 2:
