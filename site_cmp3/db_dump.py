@@ -19,11 +19,11 @@ from sqlalchemy.types import TypeDecorator, CHAR, String
 #from sqlalchemy import schema
 
 Usage = """
-python replicas_for_rse.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.json> <rse_name>
+python db_dump.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.yaml> <rse_name>
     -o <prefix> -- output file prefix
+    -c <config file> -- required
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
-    -r <path> -- include only files with physical path under <path>
 """
 
 
