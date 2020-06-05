@@ -1,13 +1,14 @@
 #!/bin/sh
 
 if [ "$1" == "" ]; then
-	echo 'Usage: site_cmp3.sh <config file> <RSE name> <scratch dir>'
+	echo 'Usage: site_cmp3.sh <config file> <RSE name> <scratch dir> [<proxy file>]'
 	exit 2
 fi
 
 config_file=$1
 RSE=$2
 scratch=$3
+proxy=$4
 
 mkdir -p ${scratch}
 if [ ! -d ${scratch} ]; then
@@ -20,6 +21,11 @@ b_prefix=${scratch}/${RSE}_B.list
 r_prefix=${scratch}/${RSE}_R.list
 d_out=${scratch}/${RSE}_D.list
 m_out=${scratch}/${RSE}_M.list
+
+# X509 proxy
+
+if [ "$proxy" != "" ] ; then
+	export X509_USER_PROXY=$proxy
 
 #cd ~/cms_consistency/site_cmp3
 
