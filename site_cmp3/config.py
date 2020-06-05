@@ -18,7 +18,7 @@ class DBConfig:
 
 class Config:
 	def __init__(self, cfg_file_path):
-		cfg = yaml.load(open(cfg_file_path, "r"))
+		cfg = yaml.load(open(cfg_file_path, "r"), Loader=yaml.SafeLoader)
 		self.DBConfig = DBConfig(cfg["database"])
 		self.DBSchema = self.DBConfig.Schema
 		self.DBURL = self.DBConfig.dburl()

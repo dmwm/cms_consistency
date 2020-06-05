@@ -149,7 +149,7 @@ class RSE(Base):
         rse = Column(String)
 
 rse_name = args[0]
-
+print("config.DBURL:", config.DBURL)
 engine = create_engine(config.DBURL,  echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()

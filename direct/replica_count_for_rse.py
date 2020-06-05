@@ -2,7 +2,6 @@ from __future__ import print_function
 import json, re, getopt, os
 import sys, uuid
 
-from config import Config
 from partition import part
 
 from sqlalchemy import create_engine
@@ -19,11 +18,8 @@ from sqlalchemy.types import TypeDecorator, CHAR, String
 #from sqlalchemy import schema
 
 Usage = """
-python db_dump.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.yaml> <rse_name>
-    -o <prefix> -- output file prefix
-    -c <config file> -- required
-    -a -- include all replicas, otherwise active only (state='A')
-    -l -- include more columns, otherwise physical path only, automatically on if -a is used
+python replica_count_for_rse.py [-a] -c <config.json> <rse_name>
+  -a -- count all replicas, not only Active
 """
 
 
@@ -75,49 +71,70 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "o:c:la")
+
+
+class DBConfig:
+
+	def __init__(self, cfg):
+		self.Host = cfg["host"]
+		self.Port = cfg["port"]
+		self.Schema = cfg["schema"]
+		self.User = cfg["user"]
+		self.Password = cfg["password"]
+		self.Service = cfg["service"]
+
+	def dburl(self):
+		return "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
+			self.User, self.Password, self.Host, self.Port, self.Service)
+class Config:
+	def __init__(self, cfg_file_path):
+		cfg = json.load(open(cfg_file_path, "r"))
+		self.DBConfig = DBConfig(cfg["database"])
+		self.DBSchema = self.DBConfig.Schema
+		self.DBURL = self.DBConfig.dburl()
+		self.RSEs = cfg["rses"]
+		my_name = os.environ.get("USER")
+		rucio_cfg = cfg.get("rucio", {})
+		self.RucioAccount = rucio_cfg.get("account",my_name)
+			
+
+	def lfn_to_pfn(self, rse_name):
+		rules = self.RSEs.get(rse_name, self.RSEs.get("*", {}))["lfn_to_pfn"]
+		return [ {
+			"path":re.compile(r["path"]),
+			"out":r["out"].replace("$", "\\")
+			} for r in rules
+		]
+
+Base = declarative_base()
+opts, args = getopt.getopt(sys.argv[1:], "c:a")
 opts = dict(opts)
 
-all_replicas = "-a" in opts
-long_output = "-l" in opts or all_replicas
-out_prefix = opts.get("-o")
 if not args or not "-c" in opts:
 	print (Usage)
 	sys.exit(2)
 
-rse_name = args[0]
-
 config = Config(opts["-c"])
-
-Base = declarative_base()
 Base.metadata.schema = config.DBSchema
 
+all_replicas = "-a" in opts
+
 class Replica(Base):
-	__tablename__ = "replicas"
-	path = Column(String)
-	state = Column(String)
-	rse_id = Column(GUID(), primary_key=True)
-	scope = Column(String, primary_key=True)
-	name = Column(String, primary_key=True)
+        __tablename__ = "replicas"
+        path = Column(String)
+        state = Column(String)
+        rse_id = Column(GUID(), primary_key=True)
+        scope = Column(String, primary_key=True)
+        name = Column(String, primary_key=True)
 
 class RSE(Base):
         __tablename__ = "rses"
         id = Column(GUID(), primary_key=True)
         rse = Column(String)
 
-nparts = config.nparts(rse_name) or 1
 
-if nparts > 1:
-	if out_prefix is None:
-		print("Output file path must be specified if partitioning is requested")
-		sys.exit(1)
 
-outputs = [sys.stdout]
-if out_prefix is not None:
-	outputs = [open("%s.%05d" % (out_prefix, i), "w") for i in range(nparts)]
-
-subdir = config.path_root(rse_name) or "/"
-if not subdir.endswith("/"):	subdir = subdir + "/"
+rse_name = args[0]
 
 engine = create_engine(config.DBURL,  echo=True)
 Session = sessionmaker(bind=engine)
@@ -132,7 +149,10 @@ rse_id = rse.id
 
 print ("rse_id:", type(rse_id), rse_id)
 
-rules = config.lfn_to_path(rse_name)
+#
+# lfn-to-pfn
+#
+rules = config.lfn_to_pfn(rse_name)
 
 batch = 100000
 
@@ -143,30 +163,8 @@ else:
 		.filter(Replica.rse_id==rse_id)	\
 		.filter(Replica.state=='A')	\
 		.yield_per(batch)
-n = 0
-for r in replicas:
-		path = r.path
-		if not path:
-			for rule in rules:
-				match = rule["path"]
-				rewrite = rule["out"]
-				if match.match(r.name):
-					path = match.sub(rewrite, r.name)
-					break
 
-		if not path.startswith(subdir):
-			continue
+n = replicas.count()
 
-		ipart = part(nparts, path)
-		out = outputs[ipart]
-
-		if long_output:
-			out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
-		else:
-			out.write("%s\n" % (path or "null", ))
-		n += 1
-		if n % batch == 0:
-			print(n)
-print(n)
-[out.close() for out in outputs]
+print (n)
 
