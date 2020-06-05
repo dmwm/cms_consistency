@@ -1,14 +1,15 @@
 #!/bin/sh
 
 if [ "$1" == "" ]; then
-	echo 'Usage: site_cmp3.sh <config file> <RSE name> <scratch dir> [<proxy file>]'
+	echo 'Usage: site_cmp3.sh <config file> <RSE name> <scratch dir> [<cert file> <key file>]'
 	exit 2
 fi
 
 config_file=$1
 RSE=$2
 scratch=$3
-proxy=$4
+cert=$4
+key=$5
 
 mkdir -p ${scratch}
 if [ ! -d ${scratch} ]; then
@@ -24,9 +25,10 @@ m_out=${scratch}/${RSE}_M.list
 
 # X509 proxy
 
-if [ "$proxy" != "" ] ; then
-	export X509_USER_PROXY=$proxy
+if [ "$cert" != "" ]; then
+	voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
 fi
+
 
 #cd ~/cms_consistency/site_cmp3
 
