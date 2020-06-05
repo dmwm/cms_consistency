@@ -1,5 +1,5 @@
 from __future__ import print_function
-import json, re, os
+import yaml, re, os
 
 class DBConfig:
 
@@ -18,42 +18,62 @@ class DBConfig:
 
 class Config:
 	def __init__(self, cfg_file_path):
-		cfg = json.load(open(cfg_file_path, "r"))
+		cfg = yaml.load(open(cfg_file_path, "r"))
 		self.DBConfig = DBConfig(cfg["database"])
 		self.DBSchema = self.DBConfig.Schema
 		self.DBURL = self.DBConfig.dburl()
 		self.RSEs = cfg["rses"]
 
-	def lfn_to_pfn(self, rse_name):
-		rules = self.RSEs.get(rse_name, self.RSEs.get("*", {}))["lfn_to_pfn"]
+	def rsecfg(self, rse_name):
+		cfg = {}
+		cfg.update(self.RSEs.get("*", {}))
+		cfg.update(self.RSEs.get(rse_name, {}))
+		return cfg
+
+	def lfn_to_path(self, rse_name):
+		rules = self.rsecfg(rse_name)["dbdump"]["lfn_to_path"]
 		return [ {
 			"path":re.compile(r["path"]),
 			"out":r["out"].replace("$", "\\")
 			} for r in rules
 		]
 
-	def rsecfg(self, rse_name):
-		cfg = self.RSEs.get(rse_name)
-		if cfg is None:
-			cfg = self.RSEs.get("*", {})
-		return cfg
-			
+	def path_root(self, rse_name):
+		return self.rsecfg(rse_name).get("dbdump",{}).get("path_root")
 
-	def xrootd_root(self, rse_name):
-                rsecfg = self.rsecfg(rse_name)
-		return rsecfg.get("xrootd", {}).get("root", "/")
+	def nparts(self, rse_name):
+		return self.rsecfg(rse_name).get("partitions", 10)
 
-	def xrootd_remove_prefix(self, rse_name):
-                rsecfg = self.rsecfg(rse_name)
-		return rsecfg.get("xrootd", {}).get("remove_prefix", None)
+	def scanner_cfg(self, rse_name):
+		return self.rsecfg(rse_name).get("scanner", {})
 
-	def xrootd_add_prefix(self, rse_name):
-                rsecfg = self.rsecfg(rse_name)
-		return rsecfg.get("xrootd", {}).get("add_prefix", None)
+	def scanner_root(self, rse_name):
+                cfg = self.scanner_cfg(rse_name)
+		return cfg.get("root", "/")
 
-	def xrootd_server(self, rse_name):
-                rsecfg = self.rsecfg(rse_name)
-		return rsecfg["xrootd"]["server"]
+	def scanner_remove_prefix(self, rse_name):
+                cfg = self.scanner_cfg(rse_name)
+		return cfg.get("remove_prefix", None)
+
+	def scanner_add_prefix(self, rse_name):
+                cfg = self.scanner_cfg(rse_name)
+		return cfg.get("add_prefix", None)
+
+	def scanner_server(self, rse_name):
+                cfg = self.scanner_cfg(rse_name)
+		return cfg["server"]
+
+	def scanner_workers(self, rse_name):
+                cfg = self.scanner_cfg(rse_name)
+		return cfg.get("workers")
+
+	def scanner_timeout(self, rse_name):
+                cfg = self.scanner_cfg(rse_name)
+		return cfg.get("timeout")
+
+	def scanner_recursion_threshold(self, rse_name):
+                cfg = self.scanner_cfg(rse_name)
+		return cfg.get("recirsion")
 
 	def dbdump_root(self, rse_name):
                 rsecfg = self.rsecfg(rse_name)

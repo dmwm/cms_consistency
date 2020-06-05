@@ -164,12 +164,11 @@ class ScannerMaster(PyThread):
 Usage = """
 python xrootd_scanner.py [options] <rse>
     Options:
-    -c <config.json>         - config file, required
-    -n <n>                   - partition the output into n parts. Default 1. If not 1, -o is required
-    -o <output file prefix>  - output will be sent to <output>.00000, <output>.00001, ...
-    -R <depth>         - user -R option after reaching the <depth> level relative to <root> (default - never)
-    -m <max scanners>  - max number of directory scanners to run concurrenty (default:5)
-    -t <timeout>       - xrdfs ls operation timeout (default 30 seconds)
+    -c <config.json>         	- config file, required
+    -o <output file prefix>  	- output will be sent to <output>.00000, <output>.00001, ...
+    -t <timeout>       		- xrdfs ls operation timeout (default 30 seconds)
+    -m <max workers>		- default 5
+    -R <recursion depth>	- start using -R at or below this depth (dfault 3)
 """
         
 if __name__ == "__main__":
@@ -185,18 +184,16 @@ if __name__ == "__main__":
     rse = args[0]
     config = Config(opts.get("-c"))
 
-    root = config.xrootd_root(rse)
-    server = config.xrootd_server(rse)
-    remove_prefix = config.xrootd_remove_prefix(rse) or root
-    add_prefix = config.xrootd_add_prefix(rse)
+    root = config.scanner_root(rse)
+    server = config.scanner_server(rse)
+    remove_prefix = config.scanner_remove_prefix(rse) or root
+    add_prefix = config.scanner_add_prefix(rse)
+    max_scanners = config.scanner_workers(rse) or int(opts.get("-m", 5))
+    recursive_threshold = config.scanner_recursion_threshold(rse) or int(opts.get("-R", 3))
+    timeout = config.scanner_timeout(rse) or int(opts.get("-t", 30))
+    nparts = config.nparts(rse)
 
-    max_scanners = int(opts.get("-m", 5))
-    timeout = int(opts.get("-t", 30))
-    recursive_threshold = opts.get("-R")
-    if recursive_threshold: recursive_threshold = int(recursive_threshold)
-    
     output = opts.get("-o")
-    nparts = int(opts.get("-n", 1))
     if nparts > 1:
         if not output:
             print ("Output prefix is required for partitioned output")

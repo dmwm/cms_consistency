@@ -19,12 +19,11 @@ from sqlalchemy.types import TypeDecorator, CHAR, String
 #from sqlalchemy import schema
 
 Usage = """
-python replicas_for_rse.py [-a] [-l] [-o<output file> [-n <nparts>]] -c <config.json> <rse_name>
+python replicas_for_rse.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.json> <rse_name>
+    -o <prefix> -- output file prefix
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
-    -n -- split output into <nparts> files named <output file>.00001, <output file>.00002, ...
-          <output file> is required
-    -s <path> -- include only files with PFN under <path>
+    -r <path> -- include only files with physical path under <path>
 """
 
 
@@ -77,19 +76,12 @@ class GUID(TypeDecorator):
             return str(uuid.UUID(value)).replace('-', '').lower()
 
 Base = declarative_base()
-opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:")
+opts, args = getopt.getopt(sys.argv[1:], "o:c:la")
 opts = dict(opts)
 
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
-nparts = int(opts.get("-n", 1))
 out_file = opts.get("-o")
-
-if nparts > 1:
-	if out_file is None:
-		print("Output file path must be specified if partitioning is requested")
-		sys.exit(1)
-
 if not args or not "-c" in opts:
 	print (Usage)
 	sys.exit(2)
@@ -116,6 +108,16 @@ class RSE(Base):
 
 rse_name = args[0]
 
+nparts = config.nparts(rse_name) or 1
+
+if nparts > 1:
+	if out_file is None:
+		print("Output file path must be specified if partitioning is requested")
+		sys.exit(1)
+
+subdir = config.path_root(rse_name) or "/"
+if not subdir.endswith("/"):	subdir = subdir + "/"
+
 engine = create_engine(config.DBURL,  echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -129,9 +131,7 @@ rse_id = rse.id
 
 print ("rse_id:", type(rse_id), rse_id)
 
-rules = config.lfn_to_pfn(rse_name)
-subdir = config.dbdump_root(rse_name) or "/"
-if not subdir.endswith("/"):	subdir = subdir + "/"
+rules = config.lfn_to_path(rse_name)
 
 batch = 100000
 
