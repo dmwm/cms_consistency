@@ -26,6 +26,7 @@ m_out=${scratch}/${RSE}_M.list
 
 if [ "$proxy" != "" ] ; then
 	export X509_USER_PROXY=$proxy
+fi
 
 #cd ~/cms_consistency/site_cmp3
 
