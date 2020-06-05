@@ -1,4 +1,4 @@
-import random, string, sys, glob
+import random, string, sys, glob, time
 
 import os
 
@@ -41,7 +41,7 @@ def cmp3(a, r, b):
 			d.remove(x)
 		if x in a_r:
 			m.add(x)
-	print("memory utilization at the end of cmp3, MB:", getMemory())
+	#print("memory utilization at the end of cmp3, MB:", getMemory())
 	return list(d), list(m)
 
 def lines(f):
@@ -61,7 +61,7 @@ def cmp3_parts(a_prefix, r_prefix, b_prefix):
 
 	d_list, m_list = [], []
 	for i, (an, rn, bn) in enumerate(zip(a_part_names, r_part_names, b_part_names)):
-		print("Comparing %s %s %s..." % (an, rn, bn))
+		#print("Comparing %s %s %s..." % (an, rn, bn))
 		d, m = cmp3(
 			lines(open(an, "r")),
 			lines(open(rn, "r")),
@@ -74,6 +74,8 @@ def cmp3_parts(a_prefix, r_prefix, b_prefix):
 
 def main():
 	import getopt
+
+	t0 = time.time()
 
 	opts, args = getopt.getopt(sys.argv[1:], "")
 
@@ -94,6 +96,11 @@ def main():
 	fd.close()
 	fm.close()
 
+	print("Found %d dark and %d missing replicas" % (len(d), len(m)))
+	t = int(time.time() - t0)
+	s = t % 60
+	m = t // 60
+	print("Elapsed time: %dm%02ds" % (m, s))
 		
 
 		

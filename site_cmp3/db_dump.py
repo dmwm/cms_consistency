@@ -1,5 +1,5 @@
 from __future__ import print_function
-import json, re, getopt, os
+import getopt, os, time
 import sys, uuid
 
 from config import Config
@@ -15,6 +15,10 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.dialects.oracle import RAW, CLOB
 from sqlalchemy.dialects.mysql import BINARY
 from sqlalchemy.types import TypeDecorator, CHAR, String
+
+
+
+t0 = time.time()
 
 #from sqlalchemy import schema
 
@@ -119,7 +123,7 @@ if out_prefix is not None:
 subdir = config.path_root(rse_name) or "/"
 if not subdir.endswith("/"):	subdir = subdir + "/"
 
-engine = create_engine(config.DBURL,  echo=True)
+engine = create_engine(config.DBURL,  echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -130,7 +134,7 @@ if rse is None:
 
 rse_id = rse.id
 
-print ("rse_id:", type(rse_id), rse_id)
+#print ("rse_id:", type(rse_id), rse_id)
 
 rules = config.lfn_to_path(rse_name)
 
@@ -143,6 +147,7 @@ else:
 		.filter(Replica.rse_id==rse_id)	\
 		.filter(Replica.state=='A')	\
 		.yield_per(batch)
+dirs = set()
 n = 0
 for r in replicas:
 		path = r.path
@@ -157,6 +162,13 @@ for r in replicas:
 		if not path.startswith(subdir):
 			continue
 
+		words = path.rsplit("/", 1)
+		if len(words) == 1:
+			dirp = "/"
+		else:
+			dirp = words[0]
+		dirs.add(dirp)
+
 		ipart = part(nparts, path)
 		out = outputs[ipart]
 
@@ -167,6 +179,10 @@ for r in replicas:
 		n += 1
 		if n % batch == 0:
 			print(n)
-print(n)
 [out.close() for out in outputs]
+print("Found %d files in %d directories" % (n, len(dirs)))
+t = int(time.time() - t0)
+s = t % 60
+m = t // 60
+print("Elapsed time: %dm%02ds" % (m, s))
 

@@ -173,7 +173,8 @@ python xrootd_scanner.py [options] <rse>
         
 if __name__ == "__main__":
     import getopt, sys, time
-    
+
+    t0 = time.time()    
     opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:")
     opts = dict(opts)
     
@@ -231,11 +232,13 @@ if __name__ == "__main__":
     if master.Failed:
         print("Scanner failed:", master.Error)
 
+    [out.close() for out in outputs]
     t = int(time.time() - t0)
     sys.stderr.write("Found %d files in %d directories\n" % (n, len(master.Directories)))
-    sys.stderr.write("Elapsed time: %dm%ds\n" % (t//60, t%60))
-
-    [out.close() for out in outputs]
-    
+    t = int(time.time() - t0)
+    s = t % 60
+    m = t // 60
+    sys.stderr.write("Elapsed time: %dm%02ds\n" % (m, s))
+ 
     
         
