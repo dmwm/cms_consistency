@@ -22,7 +22,7 @@ WORKDIR /home/rucio
 
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
 
-WORKDIR /home/rucio/cms_consistency/dbdump
+WORKDIR /home/rucio/cms_consistency/site_cmp3
 
 CMD /bin/bash
 
