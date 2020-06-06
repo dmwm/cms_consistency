@@ -1,8 +1,7 @@
 from __future__ import print_function
-import getopt, os, time
+import json, re, getopt, os
 import sys, uuid
 
-from config import Config
 from partition import part
 
 from sqlalchemy import create_engine
@@ -16,18 +15,14 @@ from sqlalchemy.dialects.oracle import RAW, CLOB
 from sqlalchemy.dialects.mysql import BINARY
 from sqlalchemy.types import TypeDecorator, CHAR, String
 
-
-
-t0 = time.time()
-
 #from sqlalchemy import schema
 
 Usage = """
-python db_dump.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.yaml> <rse_name>
-    -o <prefix> -- output file prefix
-    -c <config file> -- required
+python replicas_for_rse.py [-a] [-l] [-o<output file> [-n <nparts>]] -c <config.json> <rse_name>
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
+    -n -- split output into <nparts> files named <output file>.00001, <output file>.00002, ...
+          <output file> is required
 """
 
 
@@ -79,21 +74,65 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "o:c:la")
+
+
+class DBConfig:
+
+	def __init__(self, cfg):
+		self.Host = cfg["host"]
+		self.Port = cfg["port"]
+		self.Schema = cfg["schema"]
+		self.User = cfg["user"]
+		self.Password = cfg["password"]
+		self.Service = cfg["service"]
+
+	def dburl(self):
+		return "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
+			self.User, self.Password, self.Host, self.Port, self.Service)
+class Config:
+	def __init__(self, cfg_file_path):
+		cfg = json.load(open(cfg_file_path, "r"))
+		self.DBConfig = DBConfig(cfg["database"])
+		self.DBSchema = self.DBConfig.Schema
+		self.DBURL = self.DBConfig.dburl()
+		self.RSEs = cfg["rses"]
+		my_name = os.environ.get("USER")
+		rucio_cfg = cfg.get("rucio", {})
+		self.RucioAccount = rucio_cfg.get("account",my_name)
+			
+
+	def lfn_to_pfn(self, rse_name):
+		rules = self.RSEs.get(rse_name, self.RSEs.get("*", {}))["lfn_to_pfn"]
+		return [ {
+			"path":re.compile(r["path"]),
+			"out":r["out"].replace("$", "\\")
+			} for r in rules
+		]
+
+Base = declarative_base()
+opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:")
 opts = dict(opts)
 
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
-out_prefix = opts.get("-o")
+nparts = int(opts.get("-n", 1))
+out_file = opts.get("-o")
+
+if nparts > 1:
+	if out_file is None:
+		print("Output file path must be specified if partitioning is requested")
+		sys.exit(1)
+
 if not args or not "-c" in opts:
 	print (Usage)
 	sys.exit(2)
 
-rse_name = args[0]
+
+outputs = [sys.stdout]
+if out_file is not None:
+	outputs = [open("%s.%05d" % (out_file, i), "w") for i in range(nparts)]
 
 config = Config(opts["-c"])
-
-Base = declarative_base()
 Base.metadata.schema = config.DBSchema
 
 class Replica(Base):
@@ -109,21 +148,9 @@ class RSE(Base):
         id = Column(GUID(), primary_key=True)
         rse = Column(String)
 
-nparts = config.nparts(rse_name) or 1
+rse_name = args[0]
 
-if nparts > 1:
-	if out_prefix is None:
-		print("Output file path must be specified if partitioning is requested")
-		sys.exit(1)
-
-outputs = [sys.stdout]
-if out_prefix is not None:
-	outputs = [open("%s.%05d" % (out_prefix, i), "w") for i in range(nparts)]
-
-subdir = config.path_root(rse_name) or "/"
-if not subdir.endswith("/"):	subdir = subdir + "/"
-
-engine = create_engine(config.DBURL,  echo=False)
+engine = create_engine(config.DBURL,  echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -134,9 +161,12 @@ if rse is None:
 
 rse_id = rse.id
 
-#print ("rse_id:", type(rse_id), rse_id)
+print ("rse_id:", type(rse_id), rse_id)
 
-rules = config.lfn_to_path(rse_name)
+#
+# lfn-to-pfn
+#
+rules = config.lfn_to_pfn(rse_name)
 
 batch = 100000
 
@@ -147,7 +177,6 @@ else:
 		.filter(Replica.rse_id==rse_id)	\
 		.filter(Replica.state=='A')	\
 		.yield_per(batch)
-dirs = set()
 n = 0
 for r in replicas:
 		path = r.path
@@ -159,16 +188,6 @@ for r in replicas:
 					path = match.sub(rewrite, r.name)
 					break
 
-		if not path.startswith(subdir):
-			continue
-
-		words = path.rsplit("/", 1)
-		if len(words) == 1:
-			dirp = "/"
-		else:
-			dirp = words[0]
-		dirs.add(dirp)
-
 		ipart = part(nparts, path)
 		out = outputs[ipart]
 
@@ -179,10 +198,6 @@ for r in replicas:
 		n += 1
 		if n % batch == 0:
 			print(n)
+print(n)
 [out.close() for out in outputs]
-print("Found %d files in %d directories" % (n, len(dirs)))
-t = int(time.time() - t0)
-s = t % 60
-m = t // 60
-print("Elapsed time: %dm%02ds" % (m, s))
 

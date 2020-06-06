@@ -2,12 +2,12 @@
 
 	$ ./build_image.sh
 
-2. Create config.json file - see the sample config.json-sample
+2. Create config.yaml file - see the sample config.yaml-sample
 
 3. Create output directory (e.g.: /tmp/out)
 
-4. Dump the database:
+4. Run the auditor:
 
-	$ ./run_docker.sh config.json T2_US_Purdue /tmp/out
+	$ ./run_docker.sh config.yaml T2_US_Purdue_Test /tmp/out cert.pem key.pem
 
-5. The results will be in the output directory, files named <RSE name>.dbdump.00001 ...
+5. The results will be in the output directory, files named /tmp/out/<RSE>_D.list and /tmp/out/<RSE>_M.list
