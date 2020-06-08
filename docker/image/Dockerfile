@@ -17,9 +17,8 @@ RUN rpm -i https://download.oracle.com/otn_software/linux/instantclient/19600/or
 RUN pip install SQLAlchemy cx_Oracle pyyaml pythreader
 
 # xrootd client
-RUN rpm -i https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/x/xrootd-libs-4.12.0-1.el7.x86_64.rpm
-RUN rpm -i https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/x/xrootd-client-libs-4.12.0-1.el7.x86_64.rpm
-RUN rpm -i https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/x/xrootd-client-4.12.0-1.el7.x86_64.rpm
+RUN curl -o /etc/yum.repos.d/xrootd-stable-slc7.repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
+RUN yum install -y xrootd-libs xrootd-client
 
 RUN yum install -y git
 
