@@ -169,6 +169,7 @@ python xrootd_scanner.py [options] <rse>
     -t <timeout>       		- xrdfs ls operation timeout (default 30 seconds)
     -m <max workers>		- default 5
     -R <recursion depth>	- start using -R at or below this depth (dfault 3)
+    -n <nparts>
 """
         
 if __name__ == "__main__":
@@ -192,7 +193,10 @@ if __name__ == "__main__":
     max_scanners = config.scanner_workers(rse) or int(opts.get("-m", 5))
     recursive_threshold = config.scanner_recursion_threshold(rse) or int(opts.get("-R", 3))
     timeout = config.scanner_timeout(rse) or int(opts.get("-t", 30))
-    nparts = config.nparts(rse)
+    if "-n" in opts:
+	nparts = int(opts["-n"])
+    else:
+	nparts = config.nparts(rse)
 
     output = opts.get("-o")
     if nparts > 1:
