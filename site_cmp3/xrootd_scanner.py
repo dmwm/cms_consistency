@@ -29,7 +29,7 @@ class Killer(PyThread):
     
 class Scanner(Task):
     
-    def __init__(self, master, server, location, use_recursive, timeout):
+    def __init__(self, master, server, location, recursive, timeout):
         Task.__init__(self)
         self.Server = server
         self.Master = master
