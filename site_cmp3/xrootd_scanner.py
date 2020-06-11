@@ -99,7 +99,7 @@ class Scanner(Task):
                                 path = l
                                 path = path if path.startswith(location) else location + "/" + path
                                 self.Master.addDirectory(path)
-            print("Found %d files %d directories under %s" % (len(files), ndirs, self.Location))
+            sys.stderr.write("Found %d files %d directories under %s" % (len(files), ndirs, self.Location))
             if nfiles == 0 and ndirs == 0:
                 self.Master.emptyDirectory(location)
             if files:
