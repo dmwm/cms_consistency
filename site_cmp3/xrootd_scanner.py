@@ -3,6 +3,12 @@ import re
 import subprocess, time
 from partition import part
 
+try:
+    import tqdm
+    Use_tqdm = True
+except:
+    Use_tqdm = False
+
 from config import Config
 
 def runCommand(cmd, timeout=None, debug=None):
@@ -49,10 +55,10 @@ class Scanner(Task):
                 self.Killed = True
                 self.Subprocess.terminate()
                 print("Terminated: %s" % (self.Location,))
-        
+                
     def run(self):
         t0 = time.time()
-        sys.stderr.write("Start %sscan of %s\n" % ("recursive " if self.Recursive else "", self.Location))
+        #sys.stderr.write("Start %sscan of %s\n" % ("recursive " if self.Recursive else "", self.Location))
         location = self.Location
         
         # make sure to update self.Recursive too so the Master knows how this was scanned
@@ -76,34 +82,41 @@ class Scanner(Task):
                 killer.stop()
                 retcode = self.Subprocess.returncode
                 self.Subprocess = None
-
+                
         if retcode or self.Killed:
             self.Master.scanner_failed(self, err)
+            return
+
+        lines = [x.strip() for x in out.split("\n")]
+        
+        for l in lines:
+            if l and not l.startswith(self.Location):
+                self.Master.scanner_failed(self, "Invalid line in output: %s" % (l,))
+                return
+                
+        files = []
+        dirs = []
+        for l in lines:
+            l = l.strip()
+            if l:
+                if not l.startswith()
+                last_word = l.rsplit("/",1)[-1]
+                if '.' in last_word:
+                    path = l
+                    path = path if path.startswith(location) else location + "/" + path
+                    if not path.endswith("/."):
+                            files.append(path)
+                else:
+                    if not self.Recursive:
+                            ndirs += 1
+                            path = l
+                            path = path if path.startswith(location) else location + "/" + path
+                            dirs.append(path)
+
+        if nfiles == 0 and ndirs == 0:
+            self.Master.scanner_empty(self)
         else:
-            self.Master.scanner_succeeded(self)
-            files = []
-            ndirs = 0
-            lines = [x.strip() for x in out.split("\n")]
-            for l in lines:
-                l = l.strip()
-                if l:
-                    last_word = l.rsplit("/",1)[-1]
-                    if '.' in last_word:
-                        path = l
-                        path = path if path.startswith(location) else location + "/" + path
-                        if not path.endswith("/."):
-                                files.append(path)
-                    else:
-                        if not self.Recursive:
-                                ndirs += 1
-                                path = l
-                                path = path if path.startswith(location) else location + "/" + path
-                                self.Master.addDirectory(path)
-            sys.stderr.write("Found %d files %d directories under %s\n" % (len(files), ndirs, self.Location))
-            if nfiles == 0 and ndirs == 0:
-                self.Master.emptyDirectory(location)
-            if files:
-                self.Master.addFiles(files)
+            self.Master.scanner_succeeded(self, files, dirs)
 
 class ScannerMaster(PyThread):
     
@@ -111,13 +124,13 @@ class ScannerMaster(PyThread):
     MAX_ERRORS = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout):
+    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, display_progress):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Server = server
         self.Root = self.canonic(root)
         self.MaxScanners = max_scanners
-        self.Results = DEQueue(10)
+        self.Results = DEQueue(100)
         self.ScannerQueue = TaskQueue(max_scanners)
         self.Timeout = timeout
         self.Done = False
@@ -128,7 +141,13 @@ class ScannerMaster(PyThread):
         self.Errors = {}                # location -> count
         self.GaveUp = set()
         self.LastReport = time.time()
-        self.EmptyDirs = []
+        self.EmptyDirs = set()
+        self.NScanned = 0
+        self.DisplayProgress = display_progress and Use_tqdm
+        if self.DisplayProgress:
+            self.TQ = tqdm(total=1, unit="dir")
+        self.NFiles = 0
+            
         
     def run(self):
         self.addDirectory(self.Root)
@@ -139,6 +158,7 @@ class ScannerMaster(PyThread):
     def addFiles(self, files):
         if not self.Failed:
             self.Results.append(files)
+            self.NFiles += len(files)
 
     def canonic(self, path):
         while path and "//" in path:
@@ -151,10 +171,6 @@ class ScannerMaster(PyThread):
             return "/"
         else:
             return parts[0]
-            
-    @synchronized
-    def emptyDirectory(self, path):
-        self.EmptyDirs.append(path)
             
     @synchronized
     def recursionVeto(self, path):
@@ -185,18 +201,22 @@ class ScannerMaster(PyThread):
             self.ScannerQueue.addTask(
                 Scanner(self, self.Server, path, recursive, self.Timeout)
             )
+        
+    def addDirectories(self, dirs):
+        for d in dirs:
+            self.addDirectory(d)
+        self.show_progress()
         self.report()
             
     @synchronized
     def report(self):
         if time.time() > self.LastReport + self.REPORT_INTERVAL:
             waiting, active = self.ScannerQueue.tasks()
-            sys.stderr.write("--- Locations to scan: %d\n" % (len(active)+len(waiting),))
+            #sys.stderr.write("--- Locations to scan: %d\n" % (len(active)+len(waiting),))
             self.LastReport = time.time()
     
     def scanner_failed(self, scanner, error):
         path = scanner.Location
-        sys.stderr.write("Error scanning %s: %s -- retrying\n" % (scanner.Location, error))
         if scanner.Recursive:
             with self:
                 parent = self.parent(path)
@@ -215,16 +235,43 @@ class ScannerMaster(PyThread):
             )
         else:
             self.GaveUp.add(path)
-            sys.stderr.write("Gave up on: %s\n" % (path,))
-        self.report()
+            self.NScanned += 1  
+            #sys.stderr.write("Gave up on: %s\n" % (path,))
+        self.show_progress("Error scanning %s: %s -- retrying\n" % (scanner.Location, error))
+        
+    def truncated_path(self, path):
+        parts = path.split("/")
+        if len(parts) <= 3:
+            return path
+        else:
+            return ".../"+"/".join(parts[-3:])
+        
+    @synchronized
+    def scanner_empty(self, scanner):
+        path = scanner.Location
+        if not path in self.EmptyDirs:
+            # rescan again, once
+            self.EmptyDirs.add(path)
+            self.addDirectories([path])     
+        else:
+            self.NScanned += 1  
+        self.show_progress()            
             
-    def scanner_succeeded(self, scanner):
-        if scanner.Recursive:
-            with self:
-                parent = self.parent(scanner.Location)
+    def scanner_succeeded(self, scanner, files, dirs):
+        location = scanner.location
+        with self:
+            if location in self.EmptyDirs:
+                self.EmptyDirs.remove(location)
+            if scanner.Recursive:
+                parent = self.parent(location)
                 nfailed = self.RecursiveFailed.get(parent, 0)
-                self.RecursiveFailed[parent] = nfailed - 1        
-        self.report()
+                self.RecursiveFailed[parent] = nfailed - 1      
+        self.NScanned += 1  
+        self.message(self, "found %d files %d directories under %s\n" % 
+                (len(files), ndirs, self.trucated_path(location)))
+        self.addFiles(files)
+        self.addDirectories(dirs)
+        self.show_progress()
 
     def files(self):
         while not (self.Done and len(self.Results) == 0):
@@ -232,7 +279,22 @@ class ScannerMaster(PyThread):
             if lst:
                     for path in lst:
                         yield self.canonic(path)
-    
+                        
+    @synchronized
+    def show_progress(self, message=None):
+        if self.DisplayProgress:
+            self.TQ.total = max(1, len(self.Directories))
+            self.TQ.update(self.NScanned)
+            self.TQ.set_postfix(f=self.NFiles, d=len(self.Directories), e=len(self.EmptyDirs))
+            if message:
+                self.TQ.write(message)   
+                
+    @synchronized
+    def message(self, message):
+        if self.DisplayProgress:
+            self.TQ.write(message)
+                
+             
             
 Usage = """
 python xrootd_scanner.py [options] <rse>
@@ -243,13 +305,14 @@ python xrootd_scanner.py [options] <rse>
     -m <max workers>            - default 5
     -R <recursion depth>        - start using -R at or below this depth (dfault 3)
     -n <nparts>
+    -d                          - display progress
 """
         
 if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:d")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -266,6 +329,7 @@ if __name__ == "__main__":
     max_scanners = config.scanner_workers(rse) or int(opts.get("-m", 5))
     recursive_threshold = config.scanner_recursion_threshold(rse) or int(opts.get("-R", 3))
     timeout = config.scanner_timeout(rse) or int(opts.get("-t", 30))
+    display_progress = "-d" in opts
     if "-n" in opts:
         nparts = int(opts["-n"])
     else:
@@ -285,7 +349,7 @@ if __name__ == "__main__":
        
     t0 = time.time()
  
-    master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout)
+    master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, display_progress)
     master.start()
     n = 0
     for path in master.files():
