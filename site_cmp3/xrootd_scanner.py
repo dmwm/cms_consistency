@@ -54,7 +54,11 @@ class Scanner(Task):
         t0 = time.time()
         sys.stderr.write("Start %sscan of %s\n" % ("recursive " if self.Recursive else "", self.Location))
         location = self.Location
-        lscommand = "xrdfs %s ls %s %s" % (self.Server, "-R" if self.Recursive else "", self.Location)
+        
+        # make sure to update self.Recursive too so the Master knows how this was scanned
+        self.Recursive = recursive = self.Recursive and not self.Master.recursionVeto(location)
+
+        lscommand = "xrdfs %s ls %s %s" % (self.Server, "-R" if recursive else "", self.Location)
 
         killer = Killer(self, self.Timeout)
 
@@ -96,6 +100,8 @@ class Scanner(Task):
                                 path = path if path.startswith(location) else location + "/" + path
                                 self.Master.addDirectory(path)
             sys.stderr.write("Found %d files %d directories under %s\n" % (len(files), ndirs, self.Location))
+            if nfiles == 0 and ndirs == 0:
+                self.Master.emptyDirectory(location)
             if files:
                 self.Master.addFiles(files)
 
@@ -122,6 +128,7 @@ class ScannerMaster(PyThread):
         self.Errors = {}                # location -> count
         self.GaveUp = set()
         self.LastReport = time.time()
+        self.EmptyDirs = []
         
     def run(self):
         self.addDirectory(self.Root)
@@ -144,6 +151,17 @@ class ScannerMaster(PyThread):
             return "/"
         else:
             return parts[0]
+            
+    @synchronized
+    def emptyDirectory(self, path):
+        self.EmptyDirs.append(path)
+            
+    @synchronized
+    def recursionVeto(self, path):
+        # check if "many" subdirectories under this path's parent fail to scan recursively
+        # if so, tell the scanner not to bother and run in non-recursive way
+        parent = self.parent(path)
+        return self.RecursiveFailed.get(parent, 0) >= self.MAX_RECURSION_FAILED_COUNT
       
     def addDirectory(self, path):
         if not self.Failed:
@@ -161,18 +179,20 @@ class ScannerMaster(PyThread):
             
             recursive = (self.RecursiveThreshold is not None 
                 and reldepth >= self.RecursiveThreshold 
-                and self.RecursiveFailed.get(parent, 0) < self.MAX_RECURSION_FAILED_COUNT
             )
             #if use_recursive:
             #    print("Use recursive for %s" % (path,))
             self.ScannerQueue.addTask(
                 Scanner(self, self.Server, path, recursive, self.Timeout)
             )
+        self.report()
             
-            if time.time() > self.LastReport + self.REPORT_INTERVAL:
-                waiting, active = self.ScannerQueue.tasks()
-                sys.stderr.write("\nLocations to scan: %d\n\n" % (len(active)+len(waiting),))
-                self.LastReport = time.time()
+    @synchronized
+    def report(self):
+        if time.time() > self.LastReport + self.REPORT_INTERVAL:
+            waiting, active = self.ScannerQueue.tasks()
+            sys.stderr.write("--- Locations to scan: %d\n" % (len(active)+len(waiting),))
+            self.LastReport = time.time()
     
     def scanner_failed(self, scanner, error):
         path = scanner.Location
@@ -196,6 +216,7 @@ class ScannerMaster(PyThread):
         else:
             self.GaveUp.add(path)
             sys.stderr.write("Gave up on: %s\n" % (path,))
+        self.report()
             
     def scanner_succeeded(self, scanner):
         if scanner.Recursive:
@@ -203,6 +224,7 @@ class ScannerMaster(PyThread):
                 parent = self.parent(scanner.Location)
                 nfailed = self.RecursiveFailed.get(parent, 0)
                 self.RecursiveFailed[parent] = nfailed - 1        
+        self.report()
 
     def files(self):
         while not (self.Done and len(self.Results) == 0):
@@ -294,11 +316,18 @@ if __name__ == "__main__":
 
     [out.close() for out in outputs]
     t = int(time.time() - t0)
-    sys.stderr.write("Found %d files in %d directories\n" % (n, len(master.Directories)))
+    sys.stderr.write("Files:                %d\n" % (n,))
+    sys.stderr.write("Directories:          %d\n" % (len(master.Directories,)))
+    sys.stderr.write("  empty directories:  %d\n" % (len(master.EmptyDirs,)))
+    sys.stderr.write("Failed directories:   %d\n" % (len(master.GaveUp),))
     t = int(time.time() - t0)
     s = t % 60
     m = t // 60
-    sys.stderr.write("Elapsed time: %dm%02ds\n" % (m, s))
+    sys.stderr.write("Elapsed time:         %dm %02ds\n" % (m, s))
+    if master.GaveUp:
+        sys.exit(1)
+    else:
+        sys.exit(0)
  
     
         
