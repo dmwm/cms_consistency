@@ -95,7 +95,7 @@ class Scanner(Task):
                                 path = l
                                 path = path if path.startswith(location) else location + "/" + path
                                 self.Master.addDirectory(path)
-            print("Found %d files %d directories under %s" % (len(files), ndirs, self.Location))
+            sys.stderr.write("Found %d files %d directories under %s\n" % (len(files), ndirs, self.Location))
             if files:
                 self.Master.addFiles(files)
 
@@ -171,7 +171,7 @@ class ScannerMaster(PyThread):
             
             if time.time() > self.LastReport + self.REPORT_INTERVAL:
                 waiting, active = self.ScannerQueue.tasks()
-                sys.stderr.write("Locations to scan: %d" % (len(active)+len(waiting),))
+                sys.stderr.write("\nLocations to scan: %d\n\n" % (len(active)+len(waiting),))
                 self.LastReport = time.time()
     
     def scanner_failed(self, scanner, error):
