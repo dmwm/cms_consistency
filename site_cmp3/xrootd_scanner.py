@@ -103,6 +103,7 @@ class ScannerMaster(PyThread):
     
     MAX_RECURSION_FAILED_COUNT = 5
     MAX_ERRORS = 5
+    REPORT_INTERVAL = 10.0
     
     def __init__(self, server, root, recursive_threshold, max_scanners, timeout):
         PyThread.__init__(self)
@@ -120,6 +121,7 @@ class ScannerMaster(PyThread):
         self.RecursiveFailed = {}       # parent path -> count
         self.Errors = {}                # location -> count
         self.GaveUp = set()
+        self.LastReport = time.time()
         
     def run(self):
         self.addDirectory(self.Root)
@@ -166,6 +168,11 @@ class ScannerMaster(PyThread):
             self.ScannerQueue.addTask(
                 Scanner(self, self.Server, path, recursive, self.Timeout)
             )
+            
+            if time.time() > self.LastReport + self.REPORT_INTERVAL:
+                waiting, active = self.ScannerQueue.tasks()
+                sys.stderr.write("Locations to scan: %d" % (len(active)+len(waiting),))
+                self.LastReport = time.time()
     
     def scanner_failed(self, scanner, error):
         path = scanner.Location
