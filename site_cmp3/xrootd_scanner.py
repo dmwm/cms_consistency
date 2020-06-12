@@ -159,7 +159,7 @@ class ScannerMaster(PyThread):
     MAX_ERRORS = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, display_progress):
+    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Server = server
@@ -178,7 +178,8 @@ class ScannerMaster(PyThread):
         self.LastReport = time.time()
         self.EmptyDirs = set()
         self.NScanned = 0
-        self.DisplayProgress = display_progress and Use_tqdm
+        self.Quiet = quiet
+        self.DisplayProgress = display_progress and Use_tqdm and not quiet
         if self.DisplayProgress:
             self.TQ = tqdm.tqdm(total=1, unit="dir")
             self.LastV = 0
@@ -327,10 +328,11 @@ class ScannerMaster(PyThread):
                 
     @synchronized
     def message(self, message):
-        if self.DisplayProgress:
-            self.TQ.write(message)
-        else:
-            print(message)
+        if not self.Quiet:
+		if self.DisplayProgress:
+		    self.TQ.write(message)
+		else:
+		    print(message)
 
     def close_progress(self):
         if self.DisplayProgress:
@@ -348,13 +350,14 @@ python xrootd_scanner.py [options] <rse>
     -R <recursion depth>        - start using -R at or below this depth (dfault 3)
     -n <nparts>
     -d                          - display progress
+    -q                          - quiet - only print summary
 """
         
 if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:d")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dq")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -371,7 +374,8 @@ if __name__ == "__main__":
     max_scanners = config.scanner_workers(rse) or int(opts.get("-m", 5))
     recursive_threshold = config.scanner_recursion_threshold(rse) or int(opts.get("-R", 3))
     timeout = config.scanner_timeout(rse) or int(opts.get("-t", 30))
-    display_progress = "-d" in opts
+    quiet = "-q" in opts
+    display_progress = not quiet and "-d" in opts
     if "-n" in opts:
         nparts = int(opts["-n"])
     else:
@@ -391,7 +395,7 @@ if __name__ == "__main__":
        
     t0 = time.time()
  
-    master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, display_progress)
+    master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress)
     master.start()
     n = 0
     for path in master.files():
