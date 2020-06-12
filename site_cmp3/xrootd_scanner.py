@@ -140,10 +140,9 @@ class Scanner(Task):
                     if not path.endswith("/."):
                             files.append(path)
                 else:
-                    if not self.Recursive:
-                            path = l
-                            path = path if path.startswith(location) else location + "/" + path
-                            dirs.append(path)
+                    path = l
+                    path = path if path.startswith(location) else location + "/" + path
+                    dirs.append(path)
         self.Elapsed = time.time() - self.Started
         stats = "%1s %5.1fs %6d/%-3d" % ("r" if recursive else " ", self.Elapsed, len(files), len(dirs))
         self.message("done", stats)
@@ -429,10 +428,13 @@ if __name__ == "__main__":
 
     [out.close() for out in outputs]
     t = int(time.time() - t0)
-    sys.stderr.write("Files:                %d\n" % (n,))
-    sys.stderr.write("Directories:          %d\n" % (len(master.Directories,)))
-    sys.stderr.write("  empty directories:  %d\n" % (len(master.EmptyDirs,)))
-    sys.stderr.write("Failed directories:   %d\n" % (len(master.GaveUp),))
+    print("Files:                %d" % (n,))
+    print("Directories:          %d" % (len(master.Directories,)))
+    print("  empty directories:  %d" % (len(master.EmptyDirs,)))
+    print("Failed directories:   %d" % (len(master.GaveUp),))
+    print("Diectories:")
+    #for d in sorted(list(master.Directories)):
+    #    print(d)
     t = int(time.time() - t0)
     s = t % 60
     m = t // 60
