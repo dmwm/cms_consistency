@@ -11,6 +11,25 @@ except:
 
 from config import Config
 
+def truncated_path(root, path):
+        if path == root:
+            return "/"
+        relpath = path
+        if path.startswith(root+"/"):
+            relpath = path[len(root)+1:]
+        N = 5
+        parts = relpath.split("/")
+        while parts and not parts[0]:
+            parts = parts[1:]
+        if len(parts) <= N:
+            #return "%s -> %s" % (path, relpath)
+            return relpath
+        else:
+            n = len(parts)
+            #return ("%s -> ..(%d)../" % (path, n-N))+"/".join(parts[-N:])
+            return ("..(%d)../" % (n-N))+"/".join(parts[-N:])
+        
+
 def runCommand(cmd, timeout=None, debug=None):
     return p.returncode, out
 
@@ -45,24 +64,30 @@ class Scanner(Task):
         self.Subprocess = None
         self.Done = False
         self.Killed = False
+        self.Started = None
+        self.Elapsed = None
 
     def __str__(self):
         return "Scanner(%s)" % (self.Location,)
+
+    def message(self, status, stats):
+        self.Master.message("%-8s %-22s %s" % (status, stats, truncated_path(self.Master.Root, self.Location)))
+        
 
     @synchronized
     def killme(self):
         if self.Subprocess is not None:
                 self.Killed = True
                 self.Subprocess.terminate()
-                print("Terminated: %s" % (self.Location,))
                 
     def run(self):
-        t0 = time.time()
-        #sys.stderr.write("Start %sscan of %s\n" % ("recursive " if self.Recursive else "", self.Location))
+        self.Started = t0 = time.time()
         location = self.Location
+        self.Recursive = recursive = self.Recursive and not self.Master.recursionVeto(location)
+        stats = "r" if self.Recursive else " "
+        self.message("start", stats)
         
         # make sure to update self.Recursive too so the Master knows how this was scanned
-        self.Recursive = recursive = self.Recursive and not self.Master.recursionVeto(location)
 
         lscommand = "xrdfs %s ls %s %s" % (self.Server, "-R" if recursive else "", self.Location)
 
@@ -84,6 +109,14 @@ class Scanner(Task):
                 self.Subprocess = None
                 
         if retcode or self.Killed:
+            self.Elapsed = time.time() - self.Started
+            if self.Killed:
+		    stats = "%1s %5.1fs" % ("r" if self.Recursive else " ", self.Elapsed)
+                    status = "timeout"
+            else:
+		    stats = "%1s %5.1fs %d" % ("r" if self.Recursive else " ", self.Elapsed, retcode)
+                    status = "failed"
+            self.message(status, stats)
             self.Master.scanner_failed(self, err)
             return
 
@@ -91,6 +124,7 @@ class Scanner(Task):
         
         for l in lines:
             if l and not l.startswith(self.Location):
+                self.Elapsed = time.time() - self.Started
                 self.Master.scanner_failed(self, "Invalid line in output: %s" % (l,))
                 return
                 
@@ -99,7 +133,6 @@ class Scanner(Task):
         for l in lines:
             l = l.strip()
             if l:
-                if not l.startswith()
                 last_word = l.rsplit("/",1)[-1]
                 if '.' in last_word:
                     path = l
@@ -108,15 +141,17 @@ class Scanner(Task):
                             files.append(path)
                 else:
                     if not self.Recursive:
-                            ndirs += 1
                             path = l
                             path = path if path.startswith(location) else location + "/" + path
                             dirs.append(path)
-
-        if nfiles == 0 and ndirs == 0:
+        self.Elapsed = time.time() - self.Started
+        stats = "%1s %5.1fs %6d/%-3d" % ("r" if recursive else " ", self.Elapsed, len(files), len(dirs))
+        self.message("done", stats)
+        if not files and not dirs:
             self.Master.scanner_empty(self)
         else:
             self.Master.scanner_succeeded(self, files, dirs)
+
 
 class ScannerMaster(PyThread):
     
@@ -145,12 +180,13 @@ class ScannerMaster(PyThread):
         self.NScanned = 0
         self.DisplayProgress = display_progress and Use_tqdm
         if self.DisplayProgress:
-            self.TQ = tqdm(total=1, unit="dir")
+            self.TQ = tqdm.tqdm(total=1, unit="dir")
+            self.LastV = 0
         self.NFiles = 0
             
         
     def run(self):
-        self.addDirectory(self.Root)
+        self.addDirectory(self.Root, True)
         self.ScannerQueue.waitUntilEmpty()
         self.Results.close()
         self.Done = True
@@ -177,34 +213,36 @@ class ScannerMaster(PyThread):
         # check if "many" subdirectories under this path's parent fail to scan recursively
         # if so, tell the scanner not to bother and run in non-recursive way
         parent = self.parent(path)
-        return self.RecursiveFailed.get(parent, 0) >= self.MAX_RECURSION_FAILED_COUNT
+        n = self.RecursiveFailed.get(parent, 0)
+        return n >= self.MAX_RECURSION_FAILED_COUNT
       
-    def addDirectory(self, path):
+    def addDirectory(self, path, scan):
         if not self.Failed:
             path = self.canonic(path)
             self.Directories.add(path)
-            assert path.startswith(self.Root)
-            relpath = path[len(self.Root):]
-            while relpath and relpath[0] == '/':
-                relpath = relpath[1:]
-            while relpath and relpath[-1] == '/':
-                relpath = relpath[:-1]
-            reldepth = 0 if not relpath else len(relpath.split('/'))
-            
-            parent = self.parent(path)
-            
-            recursive = (self.RecursiveThreshold is not None 
-                and reldepth >= self.RecursiveThreshold 
-            )
-            #if use_recursive:
-            #    print("Use recursive for %s" % (path,))
-            self.ScannerQueue.addTask(
-                Scanner(self, self.Server, path, recursive, self.Timeout)
-            )
+            if scan:
+		    assert path.startswith(self.Root)
+		    relpath = path[len(self.Root):]
+		    while relpath and relpath[0] == '/':
+			relpath = relpath[1:]
+		    while relpath and relpath[-1] == '/':
+			relpath = relpath[:-1]
+		    reldepth = 0 if not relpath else len(relpath.split('/'))
+		    
+		    parent = self.parent(path)
+		    
+		    recursive = (self.RecursiveThreshold is not None 
+			and reldepth >= self.RecursiveThreshold 
+		    )
+		    #if use_recursive:
+		    #    print("Use recursive for %s" % (path,))
+		    self.ScannerQueue.addTask(
+			Scanner(self, self.Server, path, recursive, self.Timeout)
+		    )
         
-    def addDirectories(self, dirs):
+    def addDirectories(self, dirs, scan=True):
         for d in dirs:
-            self.addDirectory(d)
+            self.addDirectory(d, scan)
         self.show_progress()
         self.report()
             
@@ -214,7 +252,7 @@ class ScannerMaster(PyThread):
             waiting, active = self.ScannerQueue.tasks()
             #sys.stderr.write("--- Locations to scan: %d\n" % (len(active)+len(waiting),))
             self.LastReport = time.time()
-    
+
     def scanner_failed(self, scanner, error):
         path = scanner.Location
         if scanner.Recursive:
@@ -237,28 +275,26 @@ class ScannerMaster(PyThread):
             self.GaveUp.add(path)
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
-        self.show_progress("Error scanning %s: %s -- retrying\n" % (scanner.Location, error))
+        self.show_progress()		#"Error scanning %s: %s -- retrying" % (scanner.Location, error))
         
-    def truncated_path(self, path):
-        parts = path.split("/")
-        if len(parts) <= 3:
-            return path
-        else:
-            return ".../"+"/".join(parts[-3:])
-        
-    @synchronized
     def scanner_empty(self, scanner):
         path = scanner.Location
-        if not path in self.EmptyDirs:
-            # rescan again, once
-            self.EmptyDirs.add(path)
-            self.addDirectories([path])     
+        rescan = False
+        with self:
+              if not path in self.EmptyDirs:
+                # rescan again, once
+                self.EmptyDirs.add(path)
+                #rescan = True
+        if rescan:
+            self.ScannerQueue.addTask(
+                Scanner(self, self.Server, path, False, self.Timeout)
+            )
         else:
             self.NScanned += 1  
         self.show_progress()            
             
     def scanner_succeeded(self, scanner, files, dirs):
-        location = scanner.location
+        location = scanner.Location
         with self:
             if location in self.EmptyDirs:
                 self.EmptyDirs.remove(location)
@@ -267,10 +303,8 @@ class ScannerMaster(PyThread):
                 nfailed = self.RecursiveFailed.get(parent, 0)
                 self.RecursiveFailed[parent] = nfailed - 1      
         self.NScanned += 1  
-        self.message(self, "found %d files %d directories under %s\n" % 
-                (len(files), ndirs, self.trucated_path(location)))
         self.addFiles(files)
-        self.addDirectories(dirs)
+        self.addDirectories(dirs, not scanner.Recursive)
         self.show_progress()
 
     def files(self):
@@ -284,7 +318,9 @@ class ScannerMaster(PyThread):
     def show_progress(self, message=None):
         if self.DisplayProgress:
             self.TQ.total = max(1, len(self.Directories))
-            self.TQ.update(self.NScanned)
+            delta = max(0, self.NScanned - self.LastV)
+            self.TQ.update(delta)
+            self.LastV = self.NScanned
             self.TQ.set_postfix(f=self.NFiles, d=len(self.Directories), e=len(self.EmptyDirs))
             if message:
                 self.TQ.write(message)   
@@ -293,6 +329,12 @@ class ScannerMaster(PyThread):
     def message(self, message):
         if self.DisplayProgress:
             self.TQ.write(message)
+        else:
+            print(message)
+
+    def close_progress(self):
+        if self.DisplayProgress:
+            self.TQ.close()
                 
              
             
@@ -369,6 +411,9 @@ if __name__ == "__main__":
             print ("[Active scanners: %d]" % (len(scanners),))
             for s in scanners:
                 print "    %s" % (s,)
+
+    if display_progress:
+        master.close_progress()
 
     if master.Failed:
         print("Scanner failed:", master.Error)
