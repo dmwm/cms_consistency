@@ -31,6 +31,7 @@ fi
 
 
 #cd ~/cms_consistency/site_cmp3
+git pull
 
 # 1. DB dump "before"
 echo
