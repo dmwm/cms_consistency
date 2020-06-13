@@ -432,7 +432,7 @@ if __name__ == "__main__":
     print("Directories:          %d" % (len(master.Directories,)))
     print("  empty directories:  %d" % (len(master.EmptyDirs,)))
     print("Failed directories:   %d" % (len(master.GaveUp),))
-    print("Diectories:")
+    #print("Directories:")
     #for d in sorted(list(master.Directories)):
     #    print(d)
     t = int(time.time() - t0)
