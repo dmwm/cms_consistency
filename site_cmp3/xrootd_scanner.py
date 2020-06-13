@@ -332,6 +332,7 @@ class ScannerMaster(PyThread):
 		    self.TQ.write(message)
 		else:
 		    print(message)
+                    sys.stdout.flush()
 
     def close_progress(self):
         if self.DisplayProgress:
@@ -438,7 +439,7 @@ if __name__ == "__main__":
     t = int(time.time() - t0)
     s = t % 60
     m = t // 60
-    sys.stderr.write("Elapsed time:         %dm %02ds\n" % (m, s))
+    print("Elapsed time:         %dm %02ds\n" % (m, s))
     if master.GaveUp:
         sys.exit(1)
     else:
