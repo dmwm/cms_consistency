@@ -31,7 +31,7 @@ WORKDIR /home/rucio
 
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
 
-WORKDIR /home/rucio/cms_consistency/site_cmp3
+WORKDIR /home/rucio
 
 CMD /bin/bash
 

@@ -29,4 +29,4 @@ cp $key ${cfg_dir}/key
 chmod go-rwx ${cfg_dir}/*
 
 docker run --rm -v ${cfg_dir}:/config -v ${output}:/output cms-recon \
-	./site_cmp3.sh /config/config.yaml ${RSE} /output /config/cert /config/key
+	./run.sh /config/config.yaml ${RSE} /output /config/cert /config/key
