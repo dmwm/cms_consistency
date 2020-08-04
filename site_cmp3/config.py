@@ -73,7 +73,7 @@ class Config:
 
 	def scanner_recursion_threshold(self, rse_name):
                 cfg = self.scanner_cfg(rse_name)
-		return cfg.get("recirsion")
+		return cfg.get("recursion")
 
 	def dbdump_root(self, rse_name):
                 rsecfg = self.rsecfg(rse_name)
