@@ -177,11 +177,11 @@ class ScannerMaster(PyThread):
         self.LastReport = time.time()
         self.EmptyDirs = set()
         self.NScanned = 0
-        self.NToSnan = 1                # scan root at least
+        self.NToScan = 1                # scan root at least
         self.Quiet = quiet
         self.DisplayProgress = display_progress and Use_tqdm and not quiet
         if self.DisplayProgress:
-            self.TQ = tqdm.tqdm(total=self.NToSnan, unit="dir")
+            self.TQ = tqdm.tqdm(total=self.NToScan, unit="dir")
             self.LastV = 0
         self.NFiles = 0
             
@@ -323,7 +323,10 @@ class ScannerMaster(PyThread):
             delta = max(0, self.NScanned - self.LastV)
             self.TQ.update(delta)
             self.LastV = self.NScanned
-            self.TQ.set_postfix(f=self.NFiles, d=len(self.Directories), e=len(self.EmptyDirs))
+            enf = 0
+            if self.NScanned > 0:
+                enf = int(self.NFiles * self.NToScan/self.NScanned)
+            self.TQ.set_postfix(f=self.NFiles, d=len(self.Directories), enf=enf)
             if message:
                 self.TQ.write(message)   
                 
