@@ -111,10 +111,10 @@ class Scanner(Task):
         if retcode or self.Killed:
             self.Elapsed = time.time() - self.Started
             if self.Killed:
-		    stats = "%1s %5.1fs" % ("r" if self.Recursive else " ", self.Elapsed)
+                    stats = "%1s %5.1fs" % ("r" if self.Recursive else " ", self.Elapsed)
                     status = "timeout"
             else:
-		    stats = "%1s %5.1fs %d" % ("r" if self.Recursive else " ", self.Elapsed, retcode)
+                    stats = "%1s %5.1fs %d" % ("r" if self.Recursive else " ", self.Elapsed, retcode)
                     status = "failed"
             self.message(status, stats)
             self.Master.scanner_failed(self, err)
@@ -177,10 +177,11 @@ class ScannerMaster(PyThread):
         self.LastReport = time.time()
         self.EmptyDirs = set()
         self.NScanned = 0
+        self.NToSnan = 1                # scan root at least
         self.Quiet = quiet
         self.DisplayProgress = display_progress and Use_tqdm and not quiet
         if self.DisplayProgress:
-            self.TQ = tqdm.tqdm(total=1, unit="dir")
+            self.TQ = tqdm.tqdm(total=self.NToSnan, unit="dir")
             self.LastV = 0
         self.NFiles = 0
             
@@ -221,24 +222,25 @@ class ScannerMaster(PyThread):
             path = self.canonic(path)
             self.Directories.add(path)
             if scan:
-		    assert path.startswith(self.Root)
-		    relpath = path[len(self.Root):]
-		    while relpath and relpath[0] == '/':
-			relpath = relpath[1:]
-		    while relpath and relpath[-1] == '/':
-			relpath = relpath[:-1]
-		    reldepth = 0 if not relpath else len(relpath.split('/'))
-		    
-		    parent = self.parent(path)
-		    
-		    recursive = (self.RecursiveThreshold is not None 
-			and reldepth >= self.RecursiveThreshold 
-		    )
-		    #if use_recursive:
-		    #    print("Use recursive for %s" % (path,))
-		    self.ScannerQueue.addTask(
-			Scanner(self, self.Server, path, recursive, self.Timeout)
-		    )
+                assert path.startswith(self.Root)
+                relpath = path[len(self.Root):]
+                while relpath and relpath[0] == '/':
+                    relpath = relpath[1:]
+                while relpath and relpath[-1] == '/':
+                    relpath = relpath[:-1]
+                reldepth = 0 if not relpath else len(relpath.split('/'))
+                
+                parent = self.parent(path)
+                
+                recursive = (self.RecursiveThreshold is not None 
+                    and reldepth >= self.RecursiveThreshold 
+                )
+                #if use_recursive:
+                #    print("Use recursive for %s" % (path,))
+                self.ScannerQueue.addTask(
+                    Scanner(self, self.Server, path, recursive, self.Timeout)
+                )
+                self.NToScan += 1
         
     def addDirectories(self, dirs, scan=True):
         for d in dirs:
@@ -275,7 +277,7 @@ class ScannerMaster(PyThread):
             self.GaveUp.add(path)
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
-        self.show_progress()		#"Error scanning %s: %s -- retrying" % (scanner.Location, error))
+        self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
         
     def scanner_empty(self, scanner):
         path = scanner.Location
@@ -317,7 +319,7 @@ class ScannerMaster(PyThread):
     @synchronized
     def show_progress(self, message=None):
         if self.DisplayProgress:
-            self.TQ.total = max(1, len(self.Directories))
+            self.TQ.total = self.NToScan
             delta = max(0, self.NScanned - self.LastV)
             self.TQ.update(delta)
             self.LastV = self.NScanned
@@ -328,10 +330,10 @@ class ScannerMaster(PyThread):
     @synchronized
     def message(self, message):
         if not self.Quiet:
-		if self.DisplayProgress:
-		    self.TQ.write(message)
-		else:
-		    print(message)
+                if self.DisplayProgress:
+                    self.TQ.write(message)
+                else:
+                    print(message)
                     sys.stdout.flush()
 
     def close_progress(self):
