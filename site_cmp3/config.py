@@ -65,15 +65,15 @@ class Config:
 
 	def scanner_workers(self, rse_name):
                 cfg = self.scanner_cfg(rse_name)
-		return cfg.get("workers")
+		return cfg.get("workers", 5)
 
 	def scanner_timeout(self, rse_name):
                 cfg = self.scanner_cfg(rse_name)
-		return cfg.get("timeout")
+		return cfg.get("timeout", 30)
 
 	def scanner_recursion_threshold(self, rse_name):
                 cfg = self.scanner_cfg(rse_name)
-		return cfg.get("recursion")
+		return cfg.get("recursion", 3)
 
 	def dbdump_root(self, rse_name):
                 rsecfg = self.rsecfg(rse_name)

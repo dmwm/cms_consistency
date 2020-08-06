@@ -111,10 +111,10 @@ class Scanner(Task):
         if retcode or self.Killed:
             self.Elapsed = time.time() - self.Started
             if self.Killed:
-		    stats = "%1s %5.1fs" % ("r" if self.Recursive else " ", self.Elapsed)
+                    stats = "%1s %5.1fs" % ("r" if self.Recursive else " ", self.Elapsed)
                     status = "timeout"
             else:
-		    stats = "%1s %5.1fs %d" % ("r" if self.Recursive else " ", self.Elapsed, retcode)
+                    stats = "%1s %5.1fs %d" % ("r" if self.Recursive else " ", self.Elapsed, retcode)
                     status = "failed"
             self.message(status, stats)
             self.Master.scanner_failed(self, err)
@@ -177,10 +177,11 @@ class ScannerMaster(PyThread):
         self.LastReport = time.time()
         self.EmptyDirs = set()
         self.NScanned = 0
+        self.NToScan = 1                # scan root at least
         self.Quiet = quiet
         self.DisplayProgress = display_progress and Use_tqdm and not quiet
         if self.DisplayProgress:
-            self.TQ = tqdm.tqdm(total=1, unit="dir")
+            self.TQ = tqdm.tqdm(total=self.NToScan, unit="dir")
             self.LastV = 0
         self.NFiles = 0
             
@@ -221,24 +222,25 @@ class ScannerMaster(PyThread):
             path = self.canonic(path)
             self.Directories.add(path)
             if scan:
-		    assert path.startswith(self.Root)
-		    relpath = path[len(self.Root):]
-		    while relpath and relpath[0] == '/':
-			relpath = relpath[1:]
-		    while relpath and relpath[-1] == '/':
-			relpath = relpath[:-1]
-		    reldepth = 0 if not relpath else len(relpath.split('/'))
-		    
-		    parent = self.parent(path)
-		    
-		    recursive = (self.RecursiveThreshold is not None 
-			and reldepth >= self.RecursiveThreshold 
-		    )
-		    #if use_recursive:
-		    #    print("Use recursive for %s" % (path,))
-		    self.ScannerQueue.addTask(
-			Scanner(self, self.Server, path, recursive, self.Timeout)
-		    )
+                assert path.startswith(self.Root)
+                relpath = path[len(self.Root):]
+                while relpath and relpath[0] == '/':
+                    relpath = relpath[1:]
+                while relpath and relpath[-1] == '/':
+                    relpath = relpath[:-1]
+                reldepth = 0 if not relpath else len(relpath.split('/'))
+                
+                parent = self.parent(path)
+                
+                recursive = (self.RecursiveThreshold is not None 
+                    and reldepth >= self.RecursiveThreshold 
+                )
+                #if use_recursive:
+                #    print("Use recursive for %s" % (path,))
+                self.ScannerQueue.addTask(
+                    Scanner(self, self.Server, path, recursive, self.Timeout)
+                )
+                self.NToScan += 1
         
     def addDirectories(self, dirs, scan=True):
         for d in dirs:
@@ -275,7 +277,7 @@ class ScannerMaster(PyThread):
             self.GaveUp.add(path)
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
-        self.show_progress()		#"Error scanning %s: %s -- retrying" % (scanner.Location, error))
+        self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
         
     def scanner_empty(self, scanner):
         path = scanner.Location
@@ -296,8 +298,11 @@ class ScannerMaster(PyThread):
     def scanner_succeeded(self, scanner, files, dirs):
         location = scanner.Location
         with self:
-            if location in self.EmptyDirs:
-                self.EmptyDirs.remove(location)
+            if len(files) == 0 and (scanner.Recursive or len(dirs) == 0):
+                self.EmptyDirs.add(location)
+            else:
+	        if location in self.EmptyDirs:
+                    self.EmptyDirs.remove(location)
             if scanner.Recursive:
                 parent = self.parent(location)
                 nfailed = self.RecursiveFailed.get(parent, 0)
@@ -317,21 +322,24 @@ class ScannerMaster(PyThread):
     @synchronized
     def show_progress(self, message=None):
         if self.DisplayProgress:
-            self.TQ.total = max(1, len(self.Directories))
+            self.TQ.total = self.NToScan
             delta = max(0, self.NScanned - self.LastV)
             self.TQ.update(delta)
             self.LastV = self.NScanned
-            self.TQ.set_postfix(f=self.NFiles, d=len(self.Directories), e=len(self.EmptyDirs))
+            enf = 0
+            if self.NScanned > 0:
+                enf = int(self.NFiles * self.NToScan/self.NScanned)
+            self.TQ.set_postfix(f=self.NFiles, ed=len(self.EmptyDirs), d=len(self.Directories), enf=enf)
             if message:
                 self.TQ.write(message)   
                 
     @synchronized
     def message(self, message):
         if not self.Quiet:
-		if self.DisplayProgress:
-		    self.TQ.write(message)
-		else:
-		    print(message)
+                if self.DisplayProgress:
+                    self.TQ.write(message)
+                else:
+                    print(message)
                     sys.stdout.flush()
 
     def close_progress(self):
@@ -371,9 +379,9 @@ if __name__ == "__main__":
     server = config.scanner_server(rse)
     remove_prefix = config.scanner_remove_prefix(rse) or root
     add_prefix = config.scanner_add_prefix(rse)
-    max_scanners = config.scanner_workers(rse) or int(opts.get("-m", 5))
-    recursive_threshold = config.scanner_recursion_threshold(rse) or int(opts.get("-R", 3))
-    timeout = config.scanner_timeout(rse) or int(opts.get("-t", 30))
+    max_scanners = int(opts.get("-m", config.scanner_workers(rse)))
+    recursive_threshold = int(opts.get("-R", config.scanner_recursion_threshold(rse)))
+    timeout = int(opts.get("-t", config.scanner_timeout(rse)))
     quiet = "-q" in opts
     display_progress = not quiet and "-d" in opts
     if "-n" in opts:
@@ -394,6 +402,11 @@ if __name__ == "__main__":
         outputs = [open("%s.%05d" % (output, i), "w") for i in range(nparts)]
        
     t0 = time.time()
+
+    print("Starting scan of %s:%s with:" % (server, root))
+    print("  Recursive threshold = %d" % (recursive_threshold,))
+    print("  Max scanner threads = %d" % max_scanners)
+    print("  Timeout             = %s" % timeout)
  
     master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress)
     master.start()
