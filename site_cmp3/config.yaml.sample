@@ -1,0 +1,47 @@
+database: 
+        host:           cmsr1-s.cern.ch
+        port:           10121
+        service:        cmsr.cern.ch
+        schema:         CMS_RUCIO_INT
+        user:           cms_rucio_int_r
+        password:       "password"
+rses: 
+        "*": # default
+                partitions:     5
+                scanner:
+                        recursion:      3
+                        workers:        5
+                        timeout:        30
+                dbdump:
+                        lfn_root:   /
+                        lfn_to_path:
+                                -       path:   "^/+store/(.*)"
+                                        out:    "/$1"
+
+        T2_US_Purdue_Test: 
+                scanner: 
+                        server: xrootd.rcac.purdue.edu
+                        root:   /store/test/rucio/int/cms/store
+        T2_US_Purdue_Temp: 
+                scanner: 
+                        server: xrootd.rcac.purdue.edu
+                        root:   /store/test/rucio/cms
+        ProtoDUNE_NP04:
+                scanner: 
+                        server: eospublic.cern.ch
+                        root:   /eos/experiment/neutplatform/protodune/rawdata/np04
+        ProtoDUNE_NP02:
+                scanner: 
+                        server: eospublic.cern.ch
+                        root:   /eos/experiment/neutplatform/protodune/rawdata/np02
+        FNAL_dCache:
+                scanner:
+                        server: cmsdcadisk.fnal.gov
+                        root: /dcache/uscmsdisk/store/mc
+                        recursion:      2
+                        workers:        5
+                        timeout:        30
+                        remove_prefix: /dcache/uscmsdisk
+
+
+
