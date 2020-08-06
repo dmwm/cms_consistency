@@ -41,6 +41,7 @@ rses:
                         recursion:      2
                         workers:        5
                         timeout:        30
+                        remove_prefix: /dcache/uscmsdisk
 
 
 
