@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cd ~/cms_consistency
-git pull
+git pull				# make sure to pick up the latest version
 
 cd site_cmp3
 
