@@ -9,4 +9,4 @@ rse=$2
 nparts=$3
 out_prefix=$4
 
-python replicas_for_rse.py -c $config -o $out_prefix -n $nparts $rse
+python db_dump.py -c $config -o $out_prefix -n $nparts $rse

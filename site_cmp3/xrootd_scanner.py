@@ -301,7 +301,7 @@ class ScannerMaster(PyThread):
             if len(files) == 0 and (scanner.Recursive or len(dirs) == 0):
                 self.EmptyDirs.add(location)
             else:
-	        if location in self.EmptyDirs:
+                if location in self.EmptyDirs:
                     self.EmptyDirs.remove(location)
             if scanner.Recursive:
                 parent = self.parent(location)
@@ -427,7 +427,7 @@ if __name__ == "__main__":
             scanners = list(master.ScannerQueue.activeTasks())
             print ("[Active scanners: %d]" % (len(scanners),))
             for s in scanners:
-                print "    %s" % (s,)
+                print ("    %s" % (s,))
 
     if display_progress:
         master.close_progress()

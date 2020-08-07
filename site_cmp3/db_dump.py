@@ -89,8 +89,8 @@ all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 out_prefix = opts.get("-o")
 if not args or not "-c" in opts:
-	print (Usage)
-	sys.exit(2)
+        print (Usage)
+        sys.exit(2)
 
 rse_name = args[0]
 
@@ -100,12 +100,12 @@ Base = declarative_base()
 Base.metadata.schema = config.DBSchema
 
 class Replica(Base):
-	__tablename__ = "replicas"
-	path = Column(String)
-	state = Column(String)
-	rse_id = Column(GUID(), primary_key=True)
-	scope = Column(String, primary_key=True)
-	name = Column(String, primary_key=True)
+        __tablename__ = "replicas"
+        path = Column(String)
+        state = Column(String)
+        rse_id = Column(GUID(), primary_key=True)
+        scope = Column(String, primary_key=True)
+        name = Column(String, primary_key=True)
 
 class RSE(Base):
         __tablename__ = "rses"
@@ -113,21 +113,21 @@ class RSE(Base):
         rse = Column(String)
 
 if "-n" in opts:
-	nparts = int(opts["-n"])
+        nparts = int(opts["-n"])
 else:
-	nparts = config.nparts(rse_name) or 1
+        nparts = config.nparts(rse_name) or 1
 
 if nparts > 1:
-	if out_prefix is None:
-		print("Output file path must be specified if partitioning is requested")
-		sys.exit(1)
+        if out_prefix is None:
+                print("Output file path must be specified if partitioning is requested")
+                sys.exit(1)
 
 outputs = [sys.stdout]
 if out_prefix is not None:
-	outputs = [open("%s.%05d" % (out_prefix, i), "w") for i in range(nparts)]
+        outputs = [open("%s.%05d" % (out_prefix, i), "w") for i in range(nparts)]
 
 subdir = config.path_root(rse_name) or "/"
-if not subdir.endswith("/"):	subdir = subdir + "/"
+if not subdir.endswith("/"):    subdir = subdir + "/"
 
 engine = create_engine(config.DBURL,  echo=verbose)
 Session = sessionmaker(bind=engine)
@@ -135,8 +135,8 @@ session = Session()
 
 rse = session.query(RSE).filter(RSE.rse == rse_name).first()
 if rse is None:
-	print ("RSE %s not found" % (rse_name,))
-	sys.exit(1)
+        print ("RSE %s not found" % (rse_name,))
+        sys.exit(1)
 
 rse_id = rse.id
 
@@ -147,46 +147,46 @@ rules = config.lfn_to_path(rse_name)
 batch = 100000
 
 if all_replicas:
-	sys.stderr.write("including all replias\n")
-	replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(batch)
+        sys.stderr.write("including all replias\n")
+        replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(batch)
 else:
-	sys.stderr.write("including active replias only\n")
-	replicas = session.query(Replica)	\
-		.filter(Replica.rse_id==rse_id)	\
-		.filter(Replica.state=='A')	\
-		.yield_per(batch)
+        sys.stderr.write("including active replias only\n")
+        replicas = session.query(Replica)       \
+                .filter(Replica.rse_id==rse_id) \
+                .filter(Replica.state=='A')     \
+                .yield_per(batch)
 dirs = set()
 n = 0
 for r in replicas:
-		path = r.path
-		if not path:
-			for rule in rules:
-				match = rule["path"]
-				rewrite = rule["out"]
-				if match.match(r.name):
-					path = match.sub(rewrite, r.name)
-					break
+                path = r.path
+                if not path:
+                        for rule in rules:
+                                match = rule["path"]
+                                rewrite = rule["out"]
+                                if match.match(r.name):
+                                        path = match.sub(rewrite, r.name)
+                                        break
 
-		if not path.startswith(subdir):
-			continue
+                if not path.startswith(subdir):
+                        continue
 
-		words = path.rsplit("/", 1)
-		if len(words) == 1:
-			dirp = "/"
-		else:
-			dirp = words[0]
-		dirs.add(dirp)
+                words = path.rsplit("/", 1)
+                if len(words) == 1:
+                        dirp = "/"
+                else:
+                        dirp = words[0]
+                dirs.add(dirp)
 
-		ipart = part(nparts, path)
-		out = outputs[ipart]
+                ipart = part(nparts, path)
+                out = outputs[ipart]
 
-		if long_output:
-			out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
-		else:
-			out.write("%s\n" % (path or "null", ))
-		n += 1
-		if n % batch == 0:
-			print(n)
+                if long_output:
+                        out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
+                else:
+                        out.write("%s\n" % (path or "null", ))
+                n += 1
+                if n % batch == 0:
+                        print(n)
 [out.close() for out in outputs]
 sys.stderr.write("Found %d files in %d directories\n" % (n, len(dirs)))
 t = int(time.time() - t0)

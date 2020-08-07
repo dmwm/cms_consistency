@@ -1,4 +1,4 @@
-FROM conda/miniconda2-centos7
+FROM conda/miniconda3-centos7
 USER root
 
 # PKI stuff
@@ -9,7 +9,6 @@ RUN rpm -i http://mirror.grid.uchicago.edu/pub/osg/3.3/el7/testing/x86_64/voms-c
 RUN yum install -y osg-ca-certs
 
 COPY vomses /etc
-
 
 # Oracle client
 RUN yum install -y libaio
@@ -32,6 +31,7 @@ WORKDIR /home/rucio
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
 
 WORKDIR /home/rucio
+COPY run.sh .
 
 CMD /bin/bash
 
