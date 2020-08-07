@@ -14,7 +14,7 @@ COPY vomses /etc
 # Oracle client
 RUN yum install -y libaio
 RUN rpm -i https://download.oracle.com/otn_software/linux/instantclient/19600/oracle-instantclient19.6-basic-19.6.0.0.0-1.x86_64.rpm
-RUN pip install SQLAlchemy cx_Oracle pyyaml pythreader
+RUN pip install SQLAlchemy pyyaml pythreader #cx_Oracle
 
 # xrootd client
 RUN curl -o /etc/yum.repos.d/xrootd-stable-slc7.repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
