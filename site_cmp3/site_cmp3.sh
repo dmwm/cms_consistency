@@ -24,10 +24,6 @@ d_out=${scratch}/${RSE}_D.list
 m_out=${scratch}/${RSE}_M.list
 
 # X509 proxy
-cp $cert /tmp/my_cert
-cp $key /tmp/my_key
-chmod go-rwx /tmp/my_cert /tmp/my_key
-
 if [ "$cert" != "" ]; then
 	voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
 fi
