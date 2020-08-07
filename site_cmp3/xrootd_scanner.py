@@ -2,6 +2,7 @@ from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
 import re
 import subprocess, time
 from partition import part
+from py3 import to_str
 
 try:
     import tqdm
@@ -101,6 +102,8 @@ class Scanner(Task):
                 killer.start()          # do not start killer until self.Subprocess is set
 
         out, err = self.Subprocess.communicate()
+        out = to_str(out)
+        err = to_str(err)
 
         with self:
                 # make this a critical section so the killer process does not intercept us
