@@ -37,7 +37,7 @@ def cmp3(a, r, b):
 	m = set()
 	for x in b:
 		try:    d.remove(x)
-                except KeyError:    pass
+		except KeyError:    pass
 		if x in a_r:
 			m.add(x)
 	#print("memory utilization at the end of cmp3, MB:", getMemory())
