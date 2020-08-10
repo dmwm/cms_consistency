@@ -4,15 +4,23 @@ import yaml, re, os
 class DBConfig:
 
         def __init__(self, cfg):
-                self.Host = cfg["host"]
-                self.Port = cfg["port"]
-                self.Schema = cfg["schema"]
                 self.User = cfg["user"]
                 self.Password = cfg["password"]
-                self.Service = cfg["service"]
+                self.Schema = cfg["schema"]
+                self.ConnStr = None
+                if "connstr" in cfg:
+                    self.ConnStr = cfg["connstr"]
+                else:
+                        self.Host = cfg["host"]
+                        self.Port = cfg["port"]
+                        self.Service = cfg["service"]
 
         def dburl(self):
-                return "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
+                if self.ConnStr is not None:
+                    print("DBConfig: using connstr")
+                    return "oracle+cx_oracle://%s:%s@%s" % (self.User, self.Password, self.ConnStr)
+                else:
+                    return "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
                         self.User, self.Password, self.Host, self.Port, self.Service)
 
 
