@@ -24,11 +24,15 @@ RUN rpm -i https://download.oracle.com/otn_software/linux/instantclient/19600/or
 
 # Python packages
 RUN yum install -y python3 python3-pip
-RUN pip3 install SQLAlchemy pyyaml pythreader cx_Oracle
+RUN pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle
 
 # xrootd client
 RUN curl -o /etc/yum.repos.d/xrootd-stable-slc7.repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
 RUN yum install -y xrootd-libs xrootd-client
+
+# clear yum cacheyum 
+RUN clean all \
+    && rm -rf /var/cache/yum
 
 RUN useradd -ms /bin/bash rucio
 
