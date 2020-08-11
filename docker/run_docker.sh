@@ -1,14 +1,14 @@
 #!/bin/sh
 
 if [ "$1" == "" ]; then
-	echo 'Usage: run_site_cmp3.sh <config file> <rucio.cfg> <RSE name> <output dir> <cert> <key>'
+	echo 'Usage: run_site_cmp3.sh [--shell] <config file> <rucio.cfg> <RSE name> <output dir> <cert> <key>'
 	exit 2
 fi
 
-do_run="yes"
+shell=""
 
-if [ "$1" == "shell" ]; then
-	do_run="no"
+if [ "$1" == "--shell" ]; then
+	shell="--shell"
 	shift
 fi
 
@@ -43,10 +43,14 @@ cp $cert ${cfg_dir}/cert
 cp $key ${cfg_dir}/key
 chmod go-rwx ${cfg_dir}/*
 
-if [ "$do_run" == "yes" ]; then
-	docker run --rm -v ${cfg_dir}:/config -v ${output}:/output cms-recon \
-	   ./run.sh /config ${RSE} /output /config/cert /config/key
-else
-	echo would run: ./run.sh /config ${RSE} /output /config/cert /config/key
+if [ "$shell" == "--shell" ]; then
+        echo would run: ./run.sh $shell /config ${RSE} /output /config/cert /config/key
 	docker run -ti --rm -v ${cfg_dir}:/config -v ${output}:/output cms-recon /bin/bash
-fi	
+else
+	docker run --rm -v ${cfg_dir}:/config -v ${output}:/output cms-recon \
+		   ./run.sh $shell /config ${RSE} /output /config/cert /config/key
+fi
+
+
+
+
