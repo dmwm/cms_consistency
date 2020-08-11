@@ -8,7 +8,7 @@ class DBConfig:
 	def __init__(self, path):
 		cfg = configparser.ConfigParser()
 		cfg.read(path)
-		dbparams = dict(cfg.section("database"))
+		dbparams = dict(cfg.items("database"))
 		self.Schema = dbparams.get("schema")
 		self.DBURL = dbparams["default"]
 

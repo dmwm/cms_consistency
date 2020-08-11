@@ -1,6 +1,8 @@
 scratch
 .*
 !.gitignore
+*.yaml
+*.cfg
 
 config.json
 
