@@ -5,7 +5,9 @@ if [ "$1" == "" ]; then
 	exit 2
 fi
 
-config_file=$1
+cfgdir=$1
+config_file=${cfgdir}/config.yaml
+rucio_config_file=${cfgdir}/rucio.cfg
 RSE=$2
 scratch=$3
 cert=$4
@@ -41,7 +43,7 @@ echo DB dump before ...
 echo
 
 rm -rf ${b_prefix}*
-$python db_dump.py -o ${b_prefix} -c ${config_file} ${RSE} 
+$python db_dump.py -o ${b_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
 #ls -l ${b_prefix}*
 sleep 10
 
@@ -61,8 +63,7 @@ echo DB dump after ...
 echo
 
 rm -rf ${a_prefix}*
-$python db_dump.py -o ${a_prefix} -c ${config_file} ${RSE} 
-#ls -l ${a_prefix}*
+$python db_dump.py -o ${b_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
 
 # 4. cmp3
 
