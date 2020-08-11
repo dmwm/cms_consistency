@@ -19,5 +19,6 @@ git pull				# make sure to pick up the latest version
 
 cd site_cmp3
 
-./site_cmp3.sh $cfg $rse $scratch /tmp/my_cert /tmp/my_key
+PYTHON=python3 \
+	./site_cmp3.sh $cfg $rse $scratch /tmp/my_cert /tmp/my_key
 

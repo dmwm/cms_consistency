@@ -2,7 +2,7 @@ from __future__ import print_function
 import getopt, os, time
 import sys, uuid
 
-from config import Config
+from config import DBConfig, Config
 from partition import part
 
 from sqlalchemy import create_engine
@@ -28,6 +28,7 @@ python db_dump.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.yaml> <rse_
     -n <nparts>
     -o <prefix> -- output file prefix
     -c <config file> -- required
+    -d <db config file> -- required, uses rucio.cfg format
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
 """
@@ -81,23 +82,25 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:v")
+opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:vd:")
 opts = dict(opts)
 
 verbose = "-v" in opts
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 out_prefix = opts.get("-o")
-if not args or not "-c" in opts:
+if not args or not "-c" in opts or not "-d" in opts:
         print (Usage)
         sys.exit(2)
 
 rse_name = args[0]
 
+dbconfig = DBConfig(opts["-d"])
 config = Config(opts["-c"])
 
 Base = declarative_base()
-Base.metadata.schema = config.DBSchema
+if dbconfig.Schema:
+	Base.metadata.schema = dbconfig.Schema
 
 class Replica(Base):
         __tablename__ = "replicas"

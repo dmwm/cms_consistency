@@ -1,7 +1,18 @@
 from __future__ import print_function
-import yaml, re, os
+import yaml, re, os, configparser
 
 class DBConfig:
+
+	# class to read relevant parameters from rucio.cfg
+
+	def __init__(self, path):
+		cfg = configparser.ConfigParser()
+		cfg.read(path)
+		dbparams = dict(cfg.section("database"))
+		self.Schema = dbparams.get("schema")
+		self.DBURL = dbparams["default"]
+
+class dbcfg:
 
         def __init__(self, cfg):
                 self.User = cfg["user"]
@@ -27,7 +38,7 @@ class DBConfig:
 class Config:
         def __init__(self, cfg_file_path):
                 cfg = yaml.load(open(cfg_file_path, "r"), Loader=yaml.SafeLoader)
-                self.DBConfig = DBConfig(cfg["database"])
+                self.DBConfig = dbcfg(cfg["database"])
                 self.DBSchema = self.DBConfig.Schema
                 self.DBURL = self.DBConfig.dburl()
                 self.RSEs = cfg["rses"]
