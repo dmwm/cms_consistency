@@ -3,9 +3,9 @@ USER root
 
 RUN yum upgrade -y 
 
-RUN yum install -y git curl
+RUN yum install -y git curl which
 
-RUN yum install -y epel-release.noarch python3 python3-pip
+RUN yum install -y epel-release.noarch
 
 # PKI stuff
 RUN yum install -y https://repo.opensciencegrid.org/osg/3.5/osg-3.5-el7-release-latest.rpm
@@ -16,35 +16,31 @@ RUN rpm -i http://mirror.grid.uchicago.edu/pub/osg/3.5/el7/release/x86_64/voms-c
 RUN yum install -y osg-ca-certs
 
 COPY vomses /etc
+COPY run.sh ~rucio
 
 # Oracle client
 RUN yum install -y libaio
 RUN rpm -i https://download.oracle.com/otn_software/linux/instantclient/19600/oracle-instantclient19.6-basic-19.6.0.0.0-1.x86_64.rpm
 
-# Python pacjakges
-RUN pip install SQLAlchemy pyyaml pythreader cx_Oracle
+# Python packages
+RUN yum install -y python3 python3-pip
+RUN pip3 install SQLAlchemy pyyaml pythreader cx_Oracle
 
 # xrootd client
 RUN curl -o /etc/yum.repos.d/xrootd-stable-slc7.repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
 RUN yum install -y xrootd-libs xrootd-client
 
-RUN yum clean all && \
-    rm -rf /var/cache/yum
-
-# end if yum suff here
-
 RUN useradd -ms /bin/bash rucio
 
 RUN ls -l /home
 
-#USER rucio
 WORKDIR /home/rucio
 
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
 
-WORKDIR /home/rucio
 COPY run.sh .
 
 CMD /bin/bash
+
 
 
