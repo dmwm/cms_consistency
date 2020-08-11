@@ -1,5 +1,9 @@
 #!/bin/sh
 
+version="1.3"
+
+echo site_cmp3 version: $version
+
 if [ "$1" == "" ]; then
 	echo 'Usage: site_cmp3.sh <config file> <RSE name> <scratch dir> [<cert file> <key file>]'
 	exit 2
@@ -14,6 +18,8 @@ cert=$4
 key=$5
 
 python=${PYTHON:-python}
+
+echo will use python: $python
 
 mkdir -p ${scratch}
 if [ ! -d ${scratch} ]; then
