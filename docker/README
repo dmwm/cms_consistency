@@ -8,6 +8,6 @@
 
 4. Run the auditor:
 
-	$ ./run_docker.sh config.yaml T2_US_Purdue_Test /tmp/out cert.pem key.pem
+	$ ./run_docker.sh config.yaml rucio.cfg T2_US_Purdue_Test /tmp/out cert.pem key.pem
 
 5. The results will be in the output directory, files named /tmp/out/<RSE>_D.list and /tmp/out/<RSE>_M.list
