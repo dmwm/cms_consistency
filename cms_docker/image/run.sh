@@ -38,7 +38,7 @@ if [ ! -d /var/cache/consistency-temp ]; then
     exit 1
 fi
 
-if [ ! -f /etc/jobber-config/dot-jobber.yaml]; then
+if [ ! -f /etc/jobber-config/dot-jobber.yaml ]; then
     echo /etc/jobber-config/dot-jobber.yaml not found
     exit 1
 fi
