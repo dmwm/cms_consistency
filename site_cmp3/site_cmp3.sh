@@ -55,12 +55,17 @@ if [ "$cert" != "" ]; then
 fi
 
 
+
+# 0. delete old lists
+rm -rf ${a_prefix}*
+rm -rf ${b_prefix}*
+rm -rf ${r_prefix}*
+
 # 1. DB dump "before"
 echo
 echo DB dump before ...
 echo
 
-rm -rf ${b_prefix}*
 $python db_dump.py -o ${b_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
 #ls -l ${b_prefix}*
 sleep 10
@@ -70,7 +75,6 @@ echo
 echo Site dump ...
 echo
 
-rm -rf ${r_prefix}*
 $python xrootd_scanner.py -o ${r_prefix} -c ${config_file} ${RSE} 
 #ls -l ${r_prefix}*
 sleep 10
@@ -80,7 +84,6 @@ echo
 echo DB dump after ...
 echo
 
-rm -rf ${a_prefix}*
 $python db_dump.py -o ${a_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
 
 # 4. cmp3
