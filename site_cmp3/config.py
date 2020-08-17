@@ -38,9 +38,12 @@ class dbcfg:
 class Config:
         def __init__(self, cfg_file_path):
                 cfg = yaml.load(open(cfg_file_path, "r"), Loader=yaml.SafeLoader)
-                self.DBConfig = dbcfg(cfg["database"])
-                self.DBSchema = self.DBConfig.Schema
-                self.DBURL = self.DBConfig.dburl()
+                self.DBSchema = self.DBURL = None
+                self.DBConfig = None
+                if "database" in cfg:
+                    self.DBConfig = dbcfg(cfg["database"])
+                    self.DBSchema = self.DBConfig.Schema
+                    self.DBURL = self.DBConfig.dburl()
                 self.RSEs = cfg["rses"]
 
         def rsecfg(self, rse_name):
