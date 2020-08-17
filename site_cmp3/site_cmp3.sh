@@ -5,17 +5,17 @@ version="1.3"
 echo site_cmp3 version: $version
 
 if [ "$1" == "" ]; then
-	echo 'Usage: site_cmp3.sh <config dir> <RSE name> <scratch dir> [<cert file> [<key file>]]'
+	echo 'Usage: site_cmp3.sh <config file> <rucio.cfg> <RSE name> <scratch dir> <out dir> [<cert file> [<key file>]]'
 	exit 2
 fi
 
-cfgdir=$1
-config_file=${cfgdir}/config.yaml
-rucio_config_file=${cfgdir}/rucio.cfg
-RSE=$2
-scratch=$3
-cert=$4
-key=$5
+config_file=$1
+rucio_config_file=$2
+RSE=$3
+scratch=$4
+out=$5
+cert=$6
+key=$7
 
 python=${PYTHON:-python}
 
@@ -30,22 +30,21 @@ fi
 a_prefix=${scratch}/${RSE}_A.list
 b_prefix=${scratch}/${RSE}_B.list
 r_prefix=${scratch}/${RSE}_R.list
-d_out=${scratch}/${RSE}_D.list
-m_out=${scratch}/${RSE}_M.list
+
+now=`date +%Y_%m_%d_%H_%M`
+
+d_out=${out}/${RSE}_${now}_D.list
+m_out=${out}/${RSE}_${now}_M.list
 
 # X509 proxy
 if [ "$cert" != "" ]; then
         if [ "$key" == "" ]; then
             export X509_USER_PROXY=$cert
         else
-	    voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
+            voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
         fi
 fi
 
-
-#cd ~/cms_consistency/site_cmp3
-#echo git pull...
-#git pull
 
 # 1. DB dump "before"
 echo

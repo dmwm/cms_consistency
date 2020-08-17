@@ -1,33 +1,12 @@
 from gzip import GzipFile
 
-class PathListRead1(object):
-    
-    def __init__(self, f):
-        self.F = f
-        self.LastPath = []
-        
-    def read(self):
-        done = False
-        while not done:
-            line = self.F.readline()
-            if not line:    return None     # EOF
-            line = line.strip()
-            if line:
-                words = line.split(":",1)
-                n = int(words[0])
-                tail = words[1]
-                parts = tail.split("/")
-                path_parts = self.LastPath[:n] + parts
-                self.LastPath = path_parts
-                return "/".join(path_parts)
-    
-    def paths(self):
-        done = False
-        while not done:
-            path = self.read()
-            if not path:    break
-            yield path
-            
+Usage = """
+pyhton path_list.py compress <input> <putput>
+pyhton path_list.py decompress <input> <putput>
+"""
+
+from py3 import to_bytes, to_str
+
 class PathListRead(object):
     
     def __init__(self, f):
@@ -54,37 +33,6 @@ class PathListRead(object):
             if not path:    break
             yield path
             
-class PathListWrite1(object):
-
-    BUFFER_SIZE = 100000
-    
-    def __init__(self, f):
-        self.F = f
-        self.LastPath = ""
-        self.Buffer = []
-        
-    def write(self, path):
-        self.Buffer.append(path)
-        if len(self.Buffer) >= self.BUFFER_SIZE:
-            self.flush()
-    
-    def flush(self):
-        paths = sorted(self.Buffer)
-        for path in paths:
-            words = path.split("/")
-            words_cmp = words[:len(self.LastPath)]
-            n = 0
-            for n, (w, p) in enumerate(zip(words_cmp, self.LastPath)):
-                if w != p:
-                    break
-            self.F.write("%d:%s" % (n, "/".join(words[n:])))
-            self.LastPath = words
-        self.Buffer = []
-    
-    def close(self):
-        self.flush()
-        self.F.close()
-        
 class PathListWrite(object):
 
     BUFFER_SIZE = 100000
@@ -117,39 +65,73 @@ class PathListWrite(object):
         
 class PathListWrite_gzip(object):
 
-    BUFFER_SIZE = 100000
+    def __init__(self, f):
+        self.F = f
+        self.G = GzipFile(fileobj=f, mode="wb")
+        
+    def write(self, path):
+        self.G.write(to_bytes(path+"\n"))
+    
+    def flush(self):
+        pass
+    
+    def close(self):
+        self.G.close()
+        
+class PathListRead_gzip(object):
     
     def __init__(self, f):
         self.F = f
-        self.G = GzipFile(f, mode="w")
-        self.LastPath = []
-        self.Buffer = []
+        self.G = GzipFile(fileobj=f, mode="rb")
         
-    def write(self, path):
-        self.Buffer.append(path)
-        if len(self.Buffer) >= self.BUFFER_SIZE:
-            self.flush()
+    def read(self):
+        done = False
+        while not done:
+            line = self.G.readline()
+            if not line:    return None     # EOF
+            path = line.strip()
+            return path
     
-    def flush(self):
-        paths = sorted(self.Buffer)
-        self.G.write(paths)
-        self.Buffer = []
-    
-    def close(self):
-        self.flush()
-        self.F.close()
+    def paths(self):
+        done = False
+        while not done:
+            path = self.read()
+            if not path:    break
+            yield path
+            
+
         
 if __name__ == "__main__":
     import sys
-    if sys.argv[1] == "write":
-        w = PathListWrite(sys.stdout)
-        for line in sys.stdin.readlines():
-            w.write(line)
+    
+    if len(sys.argv[1:]) < 3:
+        print (Usage)
+        sys.exit(2)
+
+    cmd, inp, out = sys.argv[1:]
+    
+    if sys.argv[1] == "compress":
+        if inp == "-":
+            inp = sys.stdin
+        else:
+            inp = open(inp, "r")
+        out = open(out, "wb")
+        w = PathListWrite_gzip(out)
+        for line in inp.readlines():
+            path = line.strip()
+            if path:
+                w.write(path)
         w.close()
     else:
-        r = PathListRead(sys.stdin)
+        inp = open(inp, "rb")
+        if out == "-":
+            out = sys.stdout
+        else:
+            out = open(out, "w")
+        r = PathListRead_gzip(inp)
         for path in r.paths():
-            sys.stdout.write(path+"\n")
+            out.write(to_str(path)+"\n")
+        out.close()
     
         
             
