@@ -9,6 +9,7 @@ if [ "$1" == "" ]; then
 	exit 2
 fi
 
+
 config_file=$1
 rucio_config_file=$2
 RSE=$3
@@ -16,6 +17,14 @@ scratch=$4
 out=$5
 cert=$6
 key=$7
+
+echo "config_file:               $config_file"
+echo "rucio_config_file:         $rucio_config_file"
+echo "RSE:                       $RSE"
+echo "scratch:                   $scratch"
+echo "out:                       $out"
+echo "cert:                      $cert"
+echo "key:                       $key"
 
 python=${PYTHON:-python}
 

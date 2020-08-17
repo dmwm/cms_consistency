@@ -132,7 +132,7 @@ if out_prefix is not None:
 subdir = config.path_root(rse_name) or "/"
 if not subdir.endswith("/"):    subdir = subdir + "/"
 
-engine = create_engine(config.DBURL,  echo=verbose)
+engine = create_engine(dbconfig.DBURL,  echo=verbose)
 Session = sessionmaker(bind=engine)
 session = Session()
 
