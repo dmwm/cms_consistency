@@ -5,7 +5,7 @@ version="1.3"
 echo site_cmp3 version: $version
 
 if [ "$1" == "" ]; then
-	echo 'Usage: site_cmp3.sh <config file> <RSE name> <scratch dir> [<cert file> <key file>]'
+	echo 'Usage: site_cmp3.sh <config dir> <RSE name> <scratch dir> [<cert file> [<key file>]]'
 	exit 2
 fi
 
@@ -35,7 +35,11 @@ m_out=${scratch}/${RSE}_M.list
 
 # X509 proxy
 if [ "$cert" != "" ]; then
-	voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
+        if [ "$key" == "" ]; then
+            export X509_USER_PROXY=$cert
+        else
+	    voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
+        fi
 fi
 
 
@@ -63,13 +67,13 @@ $python xrootd_scanner.py -o ${r_prefix} -c ${config_file} ${RSE}
 #ls -l ${r_prefix}*
 sleep 10
 
-# 3. DB dump "before"
+# 3. DB dump "after"
 echo
 echo DB dump after ...
 echo
 
 rm -rf ${a_prefix}*
-$python db_dump.py -o ${b_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
+$python db_dump.py -o ${a_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
 
 # 4. cmp3
 
