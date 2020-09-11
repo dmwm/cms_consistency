@@ -3,6 +3,7 @@ scratch
 !.gitignore
 *.yaml
 *.cfg
+Untitled.ipynb
 
 config.json
 

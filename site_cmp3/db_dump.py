@@ -95,7 +95,11 @@ if not args or not "-c" in opts or not "-d" in opts:
 
 rse_name = args[0]
 
-dbconfig = DBConfig(opts["-d"])
+if "-d" in opts:
+    dbconfig = DBConfig.from_cfg(opts["-d"])
+else:
+    dbconfig = DBConfig.from_yaml(opts["-c"])
+
 config = Config(opts["-c"])
 
 Base = declarative_base()
@@ -129,7 +133,7 @@ outputs = [sys.stdout]
 if out_prefix is not None:
         outputs = [open("%s.%05d" % (out_prefix, i), "w") for i in range(nparts)]
 
-subdir = config.path_root(rse_name) or "/"
+subdir = config.dbdump_root(rse_name) or "/"
 if not subdir.endswith("/"):    subdir = subdir + "/"
 
 engine = create_engine(dbconfig.DBURL,  echo=verbose)
@@ -144,8 +148,6 @@ if rse is None:
 rse_id = rse.id
 
 #print ("rse_id:", type(rse_id), rse_id)
-
-rules = config.lfn_to_path(rse_name)
 
 batch = 100000
 
@@ -162,13 +164,6 @@ dirs = set()
 n = 0
 for r in replicas:
                 path = r.path
-                if not path:
-                        for rule in rules:
-                                match = rule["path"]
-                                rewrite = rule["out"]
-                                if match.match(r.name):
-                                        path = match.sub(rewrite, r.name)
-                                        break
 
                 if not path.startswith(subdir):
                         continue

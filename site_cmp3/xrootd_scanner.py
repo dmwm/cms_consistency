@@ -378,15 +378,12 @@ if __name__ == "__main__":
     rse = args[0]
     config = Config(opts.get("-c"))
 
-    root = config.scanner_root(rse)
-    server = config.scanner_server(rse)
-    remove_prefix = config.scanner_remove_prefix(rse) or root
-    add_prefix = config.scanner_add_prefix(rse)
-    max_scanners = int(opts.get("-m", config.scanner_workers(rse)))
-    recursive_threshold = int(opts.get("-R", config.scanner_recursion_threshold(rse)))
-    timeout = int(opts.get("-t", config.scanner_timeout(rse)))
     quiet = "-q" in opts
     display_progress = not quiet and "-d" in opts
+    override_recursive_threshold = int(opts.get("-R", 0))
+    override_timeout = int(opts.get("-t", 0))
+    override_max_scanners = int(opts.get("-m", 0))
+    
     if "-n" in opts:
         nparts = int(opts["-n"])
     else:
@@ -398,60 +395,93 @@ if __name__ == "__main__":
             print ("Output prefix is required for partitioned output")
             print (Usage)
             sys.exit(2)
-    
+
     if not output:
         outputs = [sys.stdout]
     else:
         outputs = [open("%s.%05d" % (output, i), "w") for i in range(nparts)]
-       
-    t0 = time.time()
 
-    print("Starting scan of %s:%s with:" % (server, root))
-    print("  Recursive threshold = %d" % (recursive_threshold,))
-    print("  Max scanner threads = %d" % max_scanners)
-    print("  Timeout             = %s" % timeout)
+    server = config.scanner_server(rse)
+
+    for root in config.scanner_roots(rse):
+        recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
+        timeout = override_timeout or config.scanner_timeout(rse, root)
+        max_scanners = override_max_scanners or config.scanner_workers(rse, root)
+
+        remove_prefix = config.scanner_remove_prefix(rse, root)
+        add_prefix = config.scanner_add_prefix(rse, root)
+        path_filter = config.scanner_filter(rse, root)
+        if path_filter is not None:
+            path_filter = re.compile(path_filter)
+        rewrite_path, rewrite_out = config.scanner_rewrite(rse, root)
+        if rewrite_path is not None:
+            assert rewrite_out is not None
+            rewrite_path, rewrite_out = re.compile(rewrite_path), re.compile(rewrite_out)
+    
+        t0 = time.time()
+
+        print("Starting scan of %s:%s with:" % (server, root))
+        print("  Recursive threshold = %d" % (recursive_threshold,))
+        print("  Max scanner threads = %d" % max_scanners)
+        print("  Timeout             = %s" % timeout)
  
-    master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress)
-    master.start()
-    n = 0
-    for path in master.files():
-
-        if remove_prefix and path.startswith(remove_prefix):
-            path = path[len(remove_prefix):]
+        master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress)
+        master.start()
+        n = 0
+        path_prefix = root
+        if not path_prefix.endswith("/"):
+            path_prefix += "/"
+        for path in master.files():
             
-        if add_prefix:
-            path = add_prefix + path
+            assert path.startswith(path_prefix)
+            path = "/" + path[len(path_prefix):]
+
+            if remove_prefix and path.startswith(remove_prefix):
+                path = path[len(remove_prefix):]
             
-        i = 0 if nparts == 1 else part(nparts, path)
-        outputs[i].write("%s\n" % (path,))
+            if add_prefix:
+                path = add_prefix + path
+            
+            if path_filter:
+                if not path_filter.search(path):
+                    continue
+            
+            if rewrite_path is not None:
+                if not rewrite_path.match(path):
+                    sys.stderr.write(f"Path rewrite pattern for root {root} did not find a match in path {path}\n")
+                    sys.exit(1)
+                path = rewrite_path.sub(rewrite_out, path)                
+            
+            i = part(nparts, path)
+            outputs[i].write("%s\n" % (path,))
 
-        n += 1
-        if False and (n % 100 == 0):
-            scanners = list(master.ScannerQueue.activeTasks())
-            print ("[Active scanners: %d]" % (len(scanners),))
-            for s in scanners:
-                print ("    %s" % (s,))
+            n += 1
+            if False and (n % 100 == 0):
+                scanners = list(master.ScannerQueue.activeTasks())
+                print ("[Active scanners: %d]" % (len(scanners),))
+                for s in scanners:
+                    print ("    %s" % (s,))
 
-    if display_progress:
-        master.close_progress()
+        if display_progress:
+            master.close_progress()
 
-    if master.Failed:
-        print("Scanner failed:", master.Error)
+        if master.Failed:
+            sys.stderr.write("Scanner failed: %s\n" % (master.Error,))
+            sys.exit(1)
         
-    if master.GaveUp:
-        print("Scanner failed to scan the following %d locations:" % (len(master.GaveUp),))
-        for p in sorted(list(master.GaveUp)):
-            print(p)
+        if master.GaveUp:
+            sys.stderr.write("Scanner failed to scan the following %d locations:\n" % (len(master.GaveUp),))
+            for p in sorted(list(master.GaveUp)):
+                sys.stderr.write(p+"\n")
+            sys.exit(1)
+
+        print("Files:                %d" % (n,))
+        print("Directories:          %d" % (len(master.Directories,)))
+        print("  empty directories:  %d" % (len(master.EmptyDirs,)))
+        print("Failed directories:   %d" % (len(master.GaveUp),))
 
     [out.close() for out in outputs]
     t = int(time.time() - t0)
-    print("Files:                %d" % (n,))
-    print("Directories:          %d" % (len(master.Directories,)))
-    print("  empty directories:  %d" % (len(master.EmptyDirs,)))
-    print("Failed directories:   %d" % (len(master.GaveUp),))
-    #print("Directories:")
-    #for d in sorted(list(master.Directories)):
-    #    print(d)
     t = int(time.time() - t0)
     s = t % 60
     m = t // 60

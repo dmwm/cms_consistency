@@ -5,45 +5,47 @@ class DBConfig:
 
 	# class to read relevant parameters from rucio.cfg
 
-	def __init__(self, path):
-		cfg = configparser.ConfigParser()
-		cfg.read(path)
-		dbparams = dict(cfg.items("database"))
-		self.Schema = dbparams.get("schema")
-		self.DBURL = dbparams["default"]
+    def __init__(self, schema, dburl):
+        self.DBURL = schema
+        self.Schema = dburl
+    
+    @staticmethod
+    def from_cfg(path):
+        cfg = configparser.ConfigParser()
+        cfg.read(path)
+        dbparams = dict(cfg.items("database"))
+        return DBConfig(dbparams.get("schema"), dbparams["default"])
+        
+    @staticmethod
+    def from_yaml(path_or_dict):
+        if isinstance(path_or_dict, str):
+            cfg = yaml.load(open(path_or_dict, "r"), Loader=yaml.SafeLoader)["database"]
+        else:
+            cfg = path_or_dict
 
-class dbcfg:
-
-        def __init__(self, cfg):
-                self.User = cfg["user"]
-                self.Password = cfg["password"]
-                self.Schema = cfg["schema"]
-                self.ConnStr = None
-                if "connstr" in cfg:
-                    self.ConnStr = cfg["connstr"]
-                else:
-                        self.Host = cfg["host"]
-                        self.Port = cfg["port"]
-                        self.Service = cfg["service"]
-
-        def dburl(self):
-                if self.ConnStr is not None:
-                    print("DBConfig: using connstr")
-                    return "oracle+cx_oracle://%s:%s@%s" % (self.User, self.Password, self.ConnStr)
-                else:
-                    return "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
-                        self.User, self.Password, self.Host, self.Port, self.Service)
-
+        user = cfg["user"]
+        password = cfg["password"]
+        schema = cfg["schema"]
+        conn_str = None
+        if "connstr" in cfg:
+            conn_str = cfg["connstr"]
+            dburl = "oracle+cx_oracle://%s:%s@%s" % (user, password, conn_str)
+        else:
+            host = cfg["host"]
+            port = cfg["port"]
+            service = cfg["service"]
+            dburl = "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
+                                    user, password, host, port, service)
+        return DBConfig(schema, dburl)
+    
+        
+    
 
 class Config:
         def __init__(self, cfg_file_path):
                 cfg = yaml.load(open(cfg_file_path, "r"), Loader=yaml.SafeLoader)
-                self.DBSchema = self.DBURL = None
-                self.DBConfig = None
-                if "database" in cfg:
-                    self.DBConfig = dbcfg(cfg["database"])
-                    self.DBSchema = self.DBConfig.Schema
-                    self.DBURL = self.DBConfig.dburl()
+                self.Config = cfg
+                self.Defaults = cfg["rses"].get("*", {})
                 self.RSEs = cfg["rses"]
 
         def rsecfg(self, rse_name):
@@ -51,53 +53,74 @@ class Config:
                 cfg.update(self.RSEs.get("*", {}))
                 cfg.update(self.RSEs.get(rse_name, {}))
                 return cfg
+                
+        def get_by_path(self, *path, default=None):
+            c = self.Config
+            for p in path[:-1]:
+                c1 = c.get(p, None)
+                if not c1:
+                    return default
+                c = c1
+            return c.get(path[-1], default)
+                
+        def general_param(self, rse_name, param, default=None):
+            return self.get_by_path("rses", rse_name, param, 
+                    default = self.get_by_path("rses", "*", param, default=default))
 
-        def lfn_to_path(self, rse_name):
-                rules = self.rsecfg(rse_name)["dbdump"]["lfn_to_path"]
-                return [ {
-                        "path":re.compile(r["path"]),
-                        "out":r["out"].replace("$", "\\")
-                        } for r in rules
-                ]
+        def scanner_param(self, rse_name, param, default=None, root=None):
+            common = self.get_by_path("rses", "scanner", param, default=default)
+            if root:
+                d = self.get_by_path("rses", "scanner", "roots", default=[])
+                for x in d:
+                    if x.path == root:
+                        return x.get(param, common)
+            return common
 
-        def path_root(self, rse_name):
-                return self.rsecfg(rse_name).get("dbdump",{}).get("path_root")
-
-        def nparts(self, rse_name):
-                return self.rsecfg(rse_name).get("partitions", 10)
-
-        def scanner_cfg(self, rse_name):
-                return self.rsecfg(rse_name).get("scanner", {})
-
-        def scanner_root(self, rse_name):
-                cfg = self.scanner_cfg(rse_name)
-                return cfg.get("root", "/")
-
-        def scanner_remove_prefix(self, rse_name):
-                cfg = self.scanner_cfg(rse_name)
-                return cfg.get("remove_prefix", None)
-
-        def scanner_add_prefix(self, rse_name):
-                cfg = self.scanner_cfg(rse_name)
-                return cfg.get("add_prefix", None)
-
-        def scanner_server(self, rse_name):
-                cfg = self.scanner_cfg(rse_name)
-                return cfg["server"]
-
-        def scanner_workers(self, rse_name):
-                cfg = self.scanner_cfg(rse_name)
-                return cfg.get("workers", 5)
-
-        def scanner_timeout(self, rse_name):
-                cfg = self.scanner_cfg(rse_name)
-                return cfg.get("timeout", 30)
-
-        def scanner_recursion_threshold(self, rse_name):
-                cfg = self.scanner_cfg(rse_name)
-                return cfg.get("recursion", 3)
+        def dbdump_param(self, rse_name, param, default=None):
+            default = self.get_by_path("rses", "*", "dbdump", param, default=default)
+            return self.get_by_path("rses", rse_name, "dbdump", param, default=default)
 
         def dbdump_root(self, rse_name):
-                rsecfg = self.rsecfg(rse_name)
-                return rsecfg.get("dbdump_root", "/")
-                
+            return self.dbdump_param(rse_name, "path_roots", "/")
+
+        def nparts(self, rse_name):
+            return self.general_param(rse_name, "partitions", 10)
+
+        def scanner_roots(self, rse_name):
+            d = self.get_by_path("rses", rse_name, "scanner", "roots")
+            return sorted([x["path"] for x in d])
+            
+        def scanner_root_config(self, rse_name, root):
+            lst = self.get_by_path("rses", rse_name, "scanner", "roots")
+            for d in lst:
+                if d["path"] == root:
+                    return d
+            return {}
+            
+        def scanner_remove_prefix(self, rse_name, root):
+            return self.scanner_param(rse_name, "remove_prefix", root=root)
+
+        def scanner_add_prefix(self, rse_name, root):
+            return self.scanner_param(rse_name, "add_prefix", root=root)
+
+        def scanner_filter(self, rse_name, root):
+            return self.scanner_param(rse_name, "filter", root=root)
+
+        def scanner_rewrite(self, rse_name, root):
+            dct = self.scanner_param(rse_name, "rewrite", root=root)
+            if not dct:
+                return None, None
+            return dct["path"], dct["out"]
+
+        def scanner_server(self, rse_name):
+            return self.scanner_param(rse_name, "server", default="")
+
+        def scanner_workers(self, rse_name, root):
+            return self.scanner_param(rse_name, "nworkers", root=root, default=10)
+
+        def scanner_timeout(self, rse_name, root):
+            return self.scanner_param(rse_name, "timeout", root=root, default=60)
+
+        def scanner_recursion_threshold(self, rse_name, root):
+            return self.scanner_param(rse_name, "recursion", root=root, default=3)
+
