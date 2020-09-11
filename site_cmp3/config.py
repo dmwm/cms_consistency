@@ -68,9 +68,9 @@ class Config:
                     default = self.get_by_path("rses", "*", param, default=default))
 
         def scanner_param(self, rse_name, param, default=None, root=None):
-            common = self.get_by_path("rses", "scanner", param, default=default)
+            common = self.get_by_path("rses", rse_name, "scanner", param, default=default)
             if root:
-                d = self.get_by_path("rses", "scanner", "roots", default=[])
+                d = self.get_by_path("rses", rse_name, "scanner", "roots", default=[])
                 for x in d:
                     if x.path == root:
                         return x.get(param, common)
@@ -113,7 +113,7 @@ class Config:
             return dct["path"], dct["out"]
 
         def scanner_server(self, rse_name):
-            return self.scanner_param(rse_name, "server", default="")
+            return self.scanner_param(rse_name, "server")
 
         def scanner_workers(self, rse_name, root):
             return self.scanner_param(rse_name, "nworkers", root=root, default=10)
