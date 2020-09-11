@@ -91,6 +91,7 @@ class Scanner(Task):
         # make sure to update self.Recursive too so the Master knows how this was scanned
 
         lscommand = "xrdfs %s ls %s %s" % (self.Server, "-R" if recursive else "", self.Location)
+        #print("lscommand:", lscommand)
 
         killer = Killer(self, self.Timeout)
 
@@ -402,6 +403,7 @@ if __name__ == "__main__":
         outputs = [open("%s.%05d" % (output, i), "w") for i in range(nparts)]
 
     server = config.scanner_server(rse)
+    server_root = config.scanner_server_root(rse)
 
     for root in config.scanner_roots(rse):
         recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
@@ -416,26 +418,30 @@ if __name__ == "__main__":
         rewrite_path, rewrite_out = config.scanner_rewrite(rse, root)
         if rewrite_path is not None:
             assert rewrite_out is not None
-            rewrite_path, rewrite_out = re.compile(rewrite_path), re.compile(rewrite_out)
+            rewrite_path = re.compile(rewrite_path)
     
         t0 = time.time()
 
-        print("Starting scan of %s:%s with:" % (server, root))
+        root_path = server_root + "/" + root
+
+        print("Starting scan of %s:%s with:" % (server, root_path))
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
         print("  Timeout             = %s" % timeout)
+
  
-        master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress)
+        master = ScannerMaster(server, root_path, recursive_threshold, max_scanners, timeout, quiet, display_progress)
         master.start()
         n = 0
         path_prefix = root
         if not path_prefix.endswith("/"):
             path_prefix += "/"
         for path in master.files():
-            
-            assert path.startswith(path_prefix)
-            path = "/" + path[len(path_prefix):]
 
+            assert path.startswith(server_root+"/")
+            
+            path = path[len(server_root):]
+            
             if remove_prefix and path.startswith(remove_prefix):
                 path = path[len(remove_prefix):]
             
@@ -447,7 +453,7 @@ if __name__ == "__main__":
                     continue
             
             if rewrite_path is not None:
-                if not rewrite_path.match(path):
+                if not rewrite_path.search(path):
                     sys.stderr.write(f"Path rewrite pattern for root {root} did not find a match in path {path}\n")
                     sys.exit(1)
                 path = rewrite_path.sub(rewrite_out, path)                
