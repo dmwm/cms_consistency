@@ -89,7 +89,7 @@ verbose = "-v" in opts
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 out_prefix = opts.get("-o")
-if not args or not "-c" in opts or not "-d" in opts:
+if not args or (not "-c" in opts and not "-d" in opts):
         print (Usage)
         sys.exit(2)
 
@@ -99,6 +99,8 @@ if "-d" in opts:
     dbconfig = DBConfig.from_cfg(opts["-d"])
 else:
     dbconfig = DBConfig.from_yaml(opts["-c"])
+
+print("dbconfig: url:", dbconfig.DBURL, "schema:", dbconfig.Schema)
 
 config = Config(opts["-c"])
 
@@ -163,7 +165,7 @@ else:
 dirs = set()
 n = 0
 for r in replicas:
-                path = r.path
+                path = r.name
 
                 if not path.startswith(subdir):
                         continue

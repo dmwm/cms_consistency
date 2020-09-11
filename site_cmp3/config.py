@@ -6,8 +6,8 @@ class DBConfig:
 	# class to read relevant parameters from rucio.cfg
 
     def __init__(self, schema, dburl):
-        self.DBURL = schema
-        self.Schema = dburl
+        self.DBURL = dburl
+        self.Schema = schema
     
     @staticmethod
     def from_cfg(path):
