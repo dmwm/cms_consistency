@@ -72,7 +72,7 @@ class Config:
             if root:
                 d = self.get_by_path("rses", rse_name, "scanner", "roots", default=[])
                 for x in d:
-                    if x.path == root:
+                    if x["path"] == root:
                         return x.get(param, common)
             return common
 
@@ -85,6 +85,9 @@ class Config:
 
         def nparts(self, rse_name):
             return self.general_param(rse_name, "partitions", 10)
+
+        def scanner_server_root(self, rse_name):
+            return self.scanner_param(rse_name, "server_root")
 
         def scanner_roots(self, rse_name):
             d = self.get_by_path("rses", rse_name, "scanner", "roots")
