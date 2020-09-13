@@ -403,7 +403,7 @@ if __name__ == "__main__":
         outputs = [open("%s.%05d" % (output, i), "w") for i in range(nparts)]
 
     server = config.scanner_server(rse)
-    server_root = config.server_root(rse)
+    server_root = config.scanner_server_root(rse)
 
     for root in config.scanner_roots(rse):
 
