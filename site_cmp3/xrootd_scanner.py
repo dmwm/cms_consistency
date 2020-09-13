@@ -403,7 +403,6 @@ if __name__ == "__main__":
         outputs = [open("%s.%05d" % (output, i), "w") for i in range(nparts)]
 
     server = config.scanner_server(rse)
-    server_root = config.scanner_server_root(rse)
 
     for root in config.scanner_roots(rse):
         recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
@@ -422,15 +421,13 @@ if __name__ == "__main__":
     
         t0 = time.time()
 
-        root_path = server_root + "/" + root
-
-        print("Starting scan of %s:%s with:" % (server, root_path))
+        print("Starting scan of %s:%s with:" % (server, root))
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
         print("  Timeout             = %s" % timeout)
 
  
-        master = ScannerMaster(server, root_path, recursive_threshold, max_scanners, timeout, quiet, display_progress)
+        master = ScannerMaster(server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress)
         master.start()
         n = 0
         path_prefix = root
@@ -438,9 +435,9 @@ if __name__ == "__main__":
             path_prefix += "/"
         for path in master.files():
 
-            assert path.startswith(server_root+"/")
+            assert path.startswith(path_prefix)
             
-            path = path[len(server_root):]
+            path = "/" + path[len(path_prefix):]
             
             if remove_prefix and path.startswith(remove_prefix):
                 path = path[len(remove_prefix):]
