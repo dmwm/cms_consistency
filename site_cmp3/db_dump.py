@@ -24,11 +24,11 @@ t0 = time.time()
 
 Usage = """
 python db_dump.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.yaml> <rse_name>
+    -c <config file> -- required
+    -d <db config file> -- required - uses rucio.cfg format. Must contain "default" and "schema" under [databse]
     -v -- verbose
     -n <nparts>
     -o <prefix> -- output file prefix
-    -c <config file> -- required
-    -d <db config file> -- required, uses rucio.cfg format
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
 """

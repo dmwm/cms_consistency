@@ -23,16 +23,20 @@ rses:
                         timeout:        30
                         server: xrootd.rcac.purdue.edu
                         server_root: /store/test/rucio/int/cms/store
+                        remove_prefix: /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
+                        add_prefix:    /store/mc   # should be terminated with /
+                        # alternative to remove/add prefix: using regexp:
+                        # rewrite:                # Path to LFN mapping, will be applied *after* remove/add prefix
+                        #    path: "^/(.*)"
+                        #    out: "/store/data/($1)"
+                        filter: .*                # optional, include only LFNs where the regexp is found
                         roots:   
                             -   path: mc		# always relative to server_root
-                                filter: some_re                             # only paths matching the pattern will pass
-                                remove_prefix: /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
-                                add_prefix:    /store/mc   # should be terminated with /
+                                filter: NANOAOD                             # only paths where the patern is found will pass
+                                                                            # if exact match is needed, use ^
                                 recursion:      2           # root specific settings
                             -   path: data		# always relative to server_root
-                                rewrite:                # Path to LFN mapping, will be applied *after* remove/add prefix
-                                    path: "^/(.*)"
-                                    out: "/store/data/($1)"
+                        
                             
         ProtoDUNE_NP04:
                 scanner: 
