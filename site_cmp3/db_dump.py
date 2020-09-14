@@ -24,11 +24,11 @@ t0 = time.time()
 
 Usage = """
 python db_dump.py [-a] [-l] [-o<output file>] [-r <path>] -c <config.yaml> <rse_name>
+    -c <config file> -- required
+    -d <db config file> -- required - uses rucio.cfg format. Must contain "default" and "schema" under [databse]
     -v -- verbose
     -n <nparts>
     -o <prefix> -- output file prefix
-    -c <config file> -- required
-    -d <db config file> -- required, uses rucio.cfg format
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
 """
@@ -89,13 +89,19 @@ verbose = "-v" in opts
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 out_prefix = opts.get("-o")
-if not args or not "-c" in opts or not "-d" in opts:
+if not args or (not "-c" in opts and not "-d" in opts):
         print (Usage)
         sys.exit(2)
 
 rse_name = args[0]
 
-dbconfig = DBConfig(opts["-d"])
+if "-d" in opts:
+    dbconfig = DBConfig.from_cfg(opts["-d"])
+else:
+    dbconfig = DBConfig.from_yaml(opts["-c"])
+
+print("dbconfig: url:", dbconfig.DBURL, "schema:", dbconfig.Schema)
+
 config = Config(opts["-c"])
 
 Base = declarative_base()
@@ -129,7 +135,7 @@ outputs = [sys.stdout]
 if out_prefix is not None:
         outputs = [open("%s.%05d" % (out_prefix, i), "w") for i in range(nparts)]
 
-subdir = config.path_root(rse_name) or "/"
+subdir = config.dbdump_root(rse_name) or "/"
 if not subdir.endswith("/"):    subdir = subdir + "/"
 
 engine = create_engine(dbconfig.DBURL,  echo=verbose)
@@ -145,8 +151,6 @@ rse_id = rse.id
 
 #print ("rse_id:", type(rse_id), rse_id)
 
-rules = config.lfn_to_path(rse_name)
-
 batch = 100000
 
 if all_replicas:
@@ -161,14 +165,7 @@ else:
 dirs = set()
 n = 0
 for r in replicas:
-                path = r.path
-                if not path:
-                        for rule in rules:
-                                match = rule["path"]
-                                rewrite = rule["out"]
-                                if match.match(r.name):
-                                        path = match.sub(rewrite, r.name)
-                                        break
+                path = r.name
 
                 if not path.startswith(subdir):
                         continue
