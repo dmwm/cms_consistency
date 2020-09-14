@@ -14,28 +14,30 @@ rses:
                         workers:        5
                         timeout:        30
                 dbdump:
-                        path_root:   /			# default
+                        path_root:   /  # default
 
         T2_US_Purdue_Test: 
                 scanner: 
                         recursion:      3       # defaults for all roots
                         workers:        5
                         timeout:        30
-                        server: xrootd.rcac.purdue.edu
-                        server_root: /store/test/rucio/int/cms/store
-                        remove_prefix: /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
-                        add_prefix:    /store/mc   # should be terminated with /
-                        # alternative to remove/add prefix: using regexp:
-                        # rewrite:                # Path to LFN mapping, will be applied *after* remove/add prefix
+                        server:         xrootd.rcac.purdue.edu
+                        server_root:    /store/test/rucio/int/cms/store
+                        remove_prefix:  /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
+                        add_prefix:     /store       # should be terminated with /
+                        
+                        # more flexible alternative to remove/add prefix, using regexp:
+                        # rewrite:                  # Path to LFN mapping, will be applied *after* remove/add prefix
                         #    path: "^/(.*)"
-                        #    out: "/store/data/($1)"
-                        filter: .*                # optional, include only LFNs where the regexp is found
+                        #    out: "/store/($1)"
+
+                        filter: .*                  # optional, include only LFNs where the regexp is found
                         roots:   
-                            -   path: mc		# always relative to server_root
-                                filter: NANOAOD                             # only paths where the patern is found will pass
-                                                                            # if exact match is needed, use ^
-                                recursion:      2           # root specific settings
-                            -   path: data		# always relative to server_root
+                            -   path: mc            # always relative to server_root
+                                filter: NANOAOD     # only paths where the patern is found will pass
+                                                    # if exact match is needed, use ^
+                                recursion:      2   # root specific settings
+                            -   path: data          # always relative to server_root
                         
                             
         ProtoDUNE_NP04:
