@@ -25,6 +25,9 @@ rses:
                         server_root:    /store/test/rucio/int/cms/store
                         remove_prefix:  /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
                         add_prefix:     /store       # should be terminated with /
+
+			filter: NANOAOD              # only paths where the patern is found will pass
+                                                     # if exact match is needed, use ^
                         
                         # more flexible alternative to remove/add prefix, using regexp:
                         # rewrite:                  # Path to LFN mapping, will be applied *after* remove/add prefix
@@ -34,8 +37,6 @@ rses:
                         filter: .*                  # optional, include only LFNs where the regexp is found
                         roots:   
                             -   path: mc            # always relative to server_root
-                                filter: NANOAOD     # only paths where the patern is found will pass
-                                                    # if exact match is needed, use ^
                                 recursion:      2   # root specific settings
                             -   path: data          # always relative to server_root
                         
