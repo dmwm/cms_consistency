@@ -26,7 +26,8 @@ rses:
                         remove_prefix:  /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
                         add_prefix:     /store       # should be terminated with /
 
-			filter: NANOAOD              # only paths where the patern is found will pass
+                        # filter: .*                 # default
+			# filter: NANOAOD            # only paths where the patern is found will pass
                                                      # if exact match is needed, use ^
                         
                         # more flexible alternative to remove/add prefix, using regexp:
@@ -34,7 +35,6 @@ rses:
                         #    path: "^/(.*)"
                         #    out: "/store/($1)"
 
-                        filter: .*                  # optional, include only LFNs where the regexp is found
                         roots:   
                             -   path: mc            # always relative to server_root
                                 recursion:      2   # root specific settings
