@@ -35,7 +35,7 @@ For each RSE, the following parameters may be defined:
   * server_root - string - the top path of the area to scan in the xrood namespace
   * recursion - integer - the level relative to the server_root at which to start using "xrdfs ls -R"
   * timeout - integer - timeout in seconds for "xrdfs ls" command
-  * worker - integer - number of parallel "xrdfs ls" clients to run
+  * workers - integer - number of parallel "xrdfs ls" clients to run
   * remove_prefix - string - additional path prefix to remove from the found path after the server_root was removed
   * add_prefix - string - prefix to add to the path after applying "remove_prefix"
   * rewrite - dictionary - defines further path-to-LFN rewriting rules using RegExp
@@ -49,7 +49,7 @@ For each RSE, the following parameters may be defined:
       * path - subdirectory relative to the server_root, should not begin with "/"
       * recursion - integer - optional, overrides the site setting
       * timeout - integer - optional, overrides the site setting
-      * worker - integer - optional, overrides the site setting
+      * workers - integer - optional, overrides the site setting
       
 Path to LFN conversion
 ----------------------
@@ -58,8 +58,7 @@ For each path:
 1. Site root is removed from the head of the path. The resulting path will begin with "/".
 2. If "remove prefix" is present for the site, it is removed from the head of the path.
 3. If "add prefix" is present, it will be prepended to the path
-4. If there is the "rewrite" section for the site, it will be used to search-and-replace portions of the path according to the
-RegExp specified.
+4. If there is the "rewrite" section for the site, it will be used to search-and-replace portions of the path according to the RegExp specified.
 
 The filter is applied after the Path is converted to LFN
 
