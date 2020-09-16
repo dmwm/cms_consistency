@@ -68,7 +68,7 @@ class Config:
                     default = self.get_by_path("rses", "*", param, default=default))
 
         def scanner_root_config(self, rse_name, root):
-            lst = self.scanner_param(rse_name, "roots", self.scanner_param("*", roots, []))
+            lst = self.scanner_param(rse_name, "roots", self.scanner_param("*", "roots", []))
             for d in lst:
                 if d["path"] == root:
                     return d
