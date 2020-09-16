@@ -100,7 +100,7 @@ if "-d" in opts:
 else:
     dbconfig = DBConfig.from_yaml(opts["-c"])
 
-print("dbconfig: url:", dbconfig.DBURL, "schema:", dbconfig.Schema)
+#print("dbconfig: url:", dbconfig.DBURL, "schema:", dbconfig.Schema)
 
 config = Config(opts["-c"])
 
