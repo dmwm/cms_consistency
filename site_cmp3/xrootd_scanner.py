@@ -408,14 +408,14 @@ if __name__ == "__main__":
     for root in config.scanner_roots(rse):
 
         recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
-        timeout = override_timeout or config.scanner_timeout(rse, root)
-        max_scanners = override_max_scanners or config.scanner_workers(rse, root)
-        remove_prefix = config.scanner_remove_prefix(rse, root)
-        add_prefix = config.scanner_add_prefix(rse, root)
-        path_filter = config.scanner_filter(rse, root)
+        timeout = override_timeout or config.scanner_timeout(rse)
+        max_scanners = override_max_scanners or config.scanner_workers(rse)
+        remove_prefix = config.scanner_remove_prefix(rse)
+        add_prefix = config.scanner_add_prefix(rse)
+        path_filter = config.scanner_filter(rse)
         if path_filter is not None:
             path_filter = re.compile(path_filter)
-        rewrite_path, rewrite_out = config.scanner_rewrite(rse, root)
+        rewrite_path, rewrite_out = config.scanner_rewrite(rse)
         if rewrite_path is not None:
             assert rewrite_out is not None
             rewrite_path = re.compile(rewrite_path)
@@ -427,7 +427,7 @@ if __name__ == "__main__":
         print("Starting scan of %s:%s with:" % (server, top_path))
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
-        print("  Timeout             = %s" % timeout)
+        print("  Timeout              = %s" % timeout)
 
  
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress)

@@ -68,13 +68,31 @@ class Config:
                     default = self.get_by_path("rses", "*", param, default=default))
 
         def scanner_param(self, rse_name, param, default=None, root=None):
-            common = self.get_by_path("rses", rse_name, "scanner", param, default=default)
+            
+            #
+            # Param lookup order if root is specified:
+            # 1. rses->rse->root->param
+            # 2. rses->rse->param
+            # 3. rses->*->root->param
+            # 4. rses->*->param
+            #
+            # If no root specified:
+            # 1. rses->rse->param
+            # 2. rses->*->param
+            # 
+            
             if root:
-                d = self.get_by_path("rses", rse_name, "scanner", "roots", default=[])
-                for x in d:
-                    if x["path"] == root:
-                        return x.get(param, common)
-            return common
+                value = self.get_by_path("rses", rse_name, "scanner", "roots", root, param)
+                if value is not None:   return value
+                value = self.get_by_path("rses", rse_name, "scanner", param)
+                if value is not None:   return value
+                value = self.get_by_path("rses", "*", "scanner", "roots", root, param)
+                if value is not None:   return value
+                value = self.get_by_path("rses", "*", "scanner", param, default=default)
+            else:
+                default = self.get_by_path("rses", "*", "scanner", param, default=default)
+                value = self.get_by_path("rses", rse_name, "scanner", param, default=default)
+            return value
 
         def dbdump_param(self, rse_name, param, default=None):
             default = self.get_by_path("rses", "*", "dbdump", param, default=default)
@@ -90,27 +108,27 @@ class Config:
             return self.scanner_param(rse_name, "server_root")
 
         def scanner_roots(self, rse_name):
-            d = self.get_by_path("rses", rse_name, "scanner", "roots")
+            d = self.scanner_param(rse_name, "roots", [])
             return sorted([x["path"] for x in d])
             
         def scanner_root_config(self, rse_name, root):
-            lst = self.get_by_path("rses", rse_name, "scanner", "roots")
+            lst = self.scanner_param(rse_name, "roots", [])
             for d in lst:
                 if d["path"] == root:
                     return d
             return {}
             
-        def scanner_remove_prefix(self, rse_name, root):
-            return self.scanner_param(rse_name, "remove_prefix", root=root)
+        def scanner_remove_prefix(self, rse_name):
+            return self.scanner_param(rse_name, "remove_prefix")
 
         def scanner_add_prefix(self, rse_name, root):
-            return self.scanner_param(rse_name, "add_prefix", root=root)
+            return self.scanner_param(rse_name, "add_prefix")
 
-        def scanner_filter(self, rse_name, root):
-            return self.scanner_param(rse_name, "filter", root=root)
+        def scanner_filter(self, rse_name):
+            return self.scanner_param(rse_name, "filter")
 
-        def scanner_rewrite(self, rse_name, root):
-            dct = self.scanner_param(rse_name, "rewrite", root=root)
+        def scanner_rewrite(self, rse_name):
+            dct = self.scanner_param(rse_name, "rewrite")
             if not dct:
                 return None, None
             return dct["path"], dct["out"]
@@ -118,11 +136,11 @@ class Config:
         def scanner_server(self, rse_name):
             return self.scanner_param(rse_name, "server")
 
-        def scanner_workers(self, rse_name, root):
-            return self.scanner_param(rse_name, "nworkers", root=root, default=10)
+        def scanner_workers(self, rse_name):
+            return self.scanner_param(rse_name, "nworkers", default=10)
 
-        def scanner_timeout(self, rse_name, root):
-            return self.scanner_param(rse_name, "timeout", root=root, default=60)
+        def scanner_timeout(self, rse_name):
+            return self.scanner_param(rse_name, "timeout", default=60)
 
         def scanner_recursion_threshold(self, rse_name, root):
             return self.scanner_param(rse_name, "recursion", root=root, default=3)

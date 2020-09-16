@@ -5,7 +5,7 @@ database:		# optional. rucio.cfg can be used instead
         schema:         CMS_RUCIO_INT
         user:           cms_rucio_int_r
         password:       "password"
-		
+
 rses: 
         "*": # default
                 partitions:     5
@@ -16,7 +16,7 @@ rses:
                 dbdump:
                         path_root:   /  # default
 
-        T2_US_Purdue_Test: 
+        T2_US_Purdue_Test:
                 scanner: 
                         recursion:      3       # defaults for all roots
                         workers:        5
@@ -27,7 +27,7 @@ rses:
                         add_prefix:     /store       # should be terminated with /
 
                         # filter: .*                 # default
-			# filter: NANOAOD            # only paths where the patern is found will pass
+                        # filter: NANOAOD            # only paths where the patern is found will pass
                                                      # if exact match is needed, use ^
                         
                         # more flexible alternative to remove/add prefix, using regexp:
