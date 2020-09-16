@@ -406,7 +406,8 @@ if __name__ == "__main__":
     server_root = config.scanner_server_root(rse)
     if not server_root:
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
-
+        sys.exit(2)
+        
     for root in config.scanner_roots(rse):
 
         recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
