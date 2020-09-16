@@ -53,7 +53,7 @@ class Config:
                 cfg.update(self.RSEs.get("*", {}))
                 cfg.update(self.RSEs.get(rse_name, {}))
                 return cfg
-                
+
         def get_by_path(self, *path, default=None):
             c = self.Config
             for p in path[:-1]:
@@ -62,33 +62,34 @@ class Config:
                     return default
                 c = c1
             return c.get(path[-1], default)
-                
+
         def general_param(self, rse_name, param, default=None):
             return self.get_by_path("rses", rse_name, param, 
                     default = self.get_by_path("rses", "*", param, default=default))
 
+        def scanner_root_config(self, rse_name, root):
+            lst = self.scanner_param(rse_name, "roots", self.scanner_param("*", roots, []))
+            for d in lst:
+                if d["path"] == root:
+                    return d
+            return {}
+
         def scanner_param(self, rse_name, param, default=None, root=None):
-            
             #
             # Param lookup order if root is specified:
             # 1. rses->rse->root->param
-            # 2. rses->rse->param
-            # 3. rses->*->root->param
+            # 2. rses->*->root->param
+            # 3. rses->rse->param
             # 4. rses->*->param
             #
             # If no root specified:
             # 1. rses->rse->param
             # 2. rses->*->param
             # 
-            
             if root:
-                value = self.get_by_path("rses", rse_name, "scanner", "roots", root, param)
-                if value is not None:   return value
-                value = self.get_by_path("rses", rse_name, "scanner", param)
-                if value is not None:   return value
-                value = self.get_by_path("rses", "*", "scanner", "roots", root, param)
-                if value is not None:   return value
-                value = self.get_by_path("rses", "*", "scanner", param, default=default)
+                cfg = self.scanner_root_config(rse_name, root)  # that will look in the rse-specific first and then "*"
+                value = cfg.get(param)
+                if value is None:   value = self.scanner_param(rse_name, param, default=default)
             else:
                 default = self.get_by_path("rses", "*", "scanner", param, default=default)
                 value = self.get_by_path("rses", rse_name, "scanner", param, default=default)
@@ -110,13 +111,6 @@ class Config:
         def scanner_roots(self, rse_name):
             d = self.scanner_param(rse_name, "roots", [])
             return sorted([x["path"] for x in d])
-            
-        def scanner_root_config(self, rse_name, root):
-            lst = self.scanner_param(rse_name, "roots", [])
-            for d in lst:
-                if d["path"] == root:
-                    return d
-            return {}
             
         def scanner_remove_prefix(self, rse_name):
             return self.scanner_param(rse_name, "remove_prefix")
