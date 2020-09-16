@@ -404,6 +404,8 @@ if __name__ == "__main__":
 
     server = config.scanner_server(rse)
     server_root = config.scanner_server_root(rse)
+    if not server_root:
+        print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
 
     for root in config.scanner_roots(rse):
 
