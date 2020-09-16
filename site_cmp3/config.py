@@ -115,7 +115,7 @@ class Config:
         def scanner_remove_prefix(self, rse_name):
             return self.scanner_param(rse_name, "remove_prefix")
 
-        def scanner_add_prefix(self, rse_name, root):
+        def scanner_add_prefix(self, rse_name):
             return self.scanner_param(rse_name, "add_prefix")
 
         def scanner_filter(self, rse_name):
