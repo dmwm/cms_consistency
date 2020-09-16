@@ -1,5 +1,5 @@
 from __future__ import print_function
-import getopt, os, time
+import getopt, os, time, re
 import sys, uuid
 
 from config import DBConfig, Config
@@ -164,10 +164,17 @@ else:
                 .yield_per(batch)
 dirs = set()
 n = 0
+filter_re = config.dbdump_param(rse, "filter")
+if filter_re:
+    filter_re = re.compile(filter_re)
 for r in replicas:
                 path = r.name
 
                 if not path.startswith(subdir):
+                        continue
+
+                if filter_re is not None:
+                    if not filter_re.search(path):
                         continue
 
                 words = path.rsplit("/", 1)
