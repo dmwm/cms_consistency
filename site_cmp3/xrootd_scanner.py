@@ -1,7 +1,7 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
 import re
 import subprocess, time
-from partition import part
+from part import part
 from py3 import to_str
 
 try:

@@ -3,7 +3,7 @@ import getopt, os, time, re, gzip
 import sys, uuid
 
 from config import DBConfig, Config
-from partition import part
+from part import part
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
