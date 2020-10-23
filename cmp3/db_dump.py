@@ -8,9 +8,8 @@ from part import part
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.dialects.oracle import RAW
 from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.dialects.oracle import RAW, CLOB
 from sqlalchemy.dialects.mysql import BINARY

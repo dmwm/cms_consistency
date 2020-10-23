@@ -475,14 +475,12 @@ if __name__ == "__main__":
             master.close_progress()
 
         if master.Failed:
-            sys.stderr.write("Scanner failed: %s\n" % (master.Error,))
-            sys.exit(1)
+            sys.stderr.write("Scanner failed to scan %s: %s\n" % (root, master.Error))
         
         if master.GaveUp:
             sys.stderr.write("Scanner failed to scan the following %d locations:\n" % (len(master.GaveUp),))
             for p in sorted(list(master.GaveUp)):
                 sys.stderr.write(p+"\n")
-            sys.exit(1)
 
         print("Files:                %d" % (n,))
         print("Directories:          %d" % (len(master.Directories,)))
