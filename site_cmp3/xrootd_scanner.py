@@ -61,7 +61,7 @@ class Scanner(Task):
         self.Master = master
         self.Location = location
         self.Timeout = timeout
-        self.Recursive = recursive
+        self.WasRecursive = self.Recursive = recursive
         self.Subprocess = None
         self.Done = False
         self.Killed = False
@@ -72,7 +72,8 @@ class Scanner(Task):
         return "Scanner(%s)" % (self.Location,)
 
     def message(self, status, stats):
-        self.Master.message("%-8s %-25s %s" % (status, stats, truncated_path(self.Master.Root, self.Location)))
+        if self.Master is not None:
+            self.Master.message("%-8s %-25s %s" % (status, stats, truncated_path(self.Master.Root, self.Location)))
         
 
     @synchronized
@@ -80,20 +81,15 @@ class Scanner(Task):
         if self.Subprocess is not None:
                 self.Killed = True
                 self.Subprocess.terminate()
-                
-    def run(self):
-        self.Started = t0 = time.time()
-        location = self.Location
-        self.Recursive = recursive = self.Recursive and not self.Master.recursionVeto(location)
-        stats = "r" if self.Recursive else " "
-        self.message("start", stats)
-        
-        # make sure to update self.Recursive too so the Master knows how this was scanned
 
-        lscommand = "xrdfs %s ls %s %s" % (self.Server, "-R" if recursive else "", self.Location)
+    def scan(self, recursive):
+        server = self.Server
+        location = self.Location
+        timeout = self.Timeout
+        lscommand = "xrdfs %s ls %s %s" % (server, "-R" if recursive else "", location)
         #print("lscommand:", lscommand)
 
-        killer = Killer(self, self.Timeout)
+        killer = Killer(self, timeout)
 
         with self:
                 # the killer process will wait for self.Subprocess to become not None or Done to become True
@@ -112,50 +108,66 @@ class Scanner(Task):
                 retcode = self.Subprocess.returncode
                 self.Subprocess = None
                 
-        if retcode or self.Killed:
-            self.Elapsed = time.time() - self.Started
-            if self.Killed:
-                    stats = "%1s %5.1fs" % ("r" if self.Recursive else " ", self.Elapsed)
-                    status = "timeout"
-            else:
-                    stats = "%1s %5.1fs %d" % ("r" if self.Recursive else " ", self.Elapsed, retcode)
-                    status = "failed"
-            self.message(status, stats)
-            self.Master.scanner_failed(self, err)
-            return
-
-        lines = [x.strip() for x in out.split("\n")]
-        
-        for l in lines:
-            if l and not l.startswith(self.Location):
-                self.Elapsed = time.time() - self.Started
-                self.Master.scanner_failed(self, "Invalid line in output: %s" % (l,))
-                return
-                
         files = []
         dirs = []
-        for l in lines:
-            l = l.strip()
-            if l:
-                last_word = l.rsplit("/",1)[-1]
-                if '.' in last_word:
-                    path = l
-                    path = path if path.startswith(location) else location + "/" + path
-                    if not path.endswith("/."):
-                            files.append(path)
-                else:
-                    path = l
-                    path = path if path.startswith(location) else location + "/" + path
-                    dirs.append(path)
-        self.Elapsed = time.time() - self.Started
-        stats = "%1s %7.3fs %6df/%-3dd" % ("r" if recursive else " ", self.Elapsed, len(files), len(dirs))
-        self.message("done", stats)
-        if not files and not dirs:
-            self.Master.scanner_empty(self)
+        status = "OK"
+        reason = ""
+        if retcode or self.Killed:
+            if self.Killed:
+                    status = "timeout"
+            else:
+                    status = "failed"
+                    reason = str(retcode)
         else:
-            self.Master.scanner_succeeded(self, files, dirs)
+            lines = [x.strip() for x in out.split("\n")]
+            for l in lines:
+                if l:
+                    if not l.startswith(location):
+                        status = "failed"
+                        reason = "Invalid line in output: %s" % (l,)
+                        break
+                    last_word = l.rsplit("/",1)[-1]
+                    if '.' in last_word:
+                        path = l
+                        path = path if path.startswith(location) else location + "/" + path
+                        if not path.endswith("/."):
+                                files.append(path)
+                    else:
+                        path = l
+                        path = path if path.startswith(location) else location + "/" + path
+                        dirs.append(path)
+        return status, reason, dirs, files
 
+    def run(self):
+        self.Started = t0 = time.time()
+        location = self.Location
+        self.WasRecursive = recursive = self.Recursive and not self.Master.recursionVeto(location)
+        stats = "r" if recursive else " "
+        self.message("start", stats)
 
+        status, reason, dirs, files = self.scan(recursive)
+        self.Elapsed = time.time() - self.Started
+        stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
+        
+        if status != "OK":
+            stats += " " + reason
+            self.message(status, stats)
+            if self.Master is not None:
+                self.Master.scanner_failed(self, err)
+
+        else:
+            stats += "%6df/%-3dd" % (len(files), len(dirs))
+            self.message("done", stats)
+            if self.Master is not None:
+                self.Master.scanner_succeeded(location, recursive, files, dirs)
+        
+                
+    @staticmethod
+    def scan_location(server, location, recursive, timeout):
+        s = Scanner(None, server, location, recursive, timeout)
+        return s.scan(recursive)
+        
+                
 class ScannerMaster(PyThread):
     
     MAX_RECURSION_FAILED_COUNT = 5
@@ -191,7 +203,17 @@ class ScannerMaster(PyThread):
             
         
     def run(self):
-        self.addDirectory(self.Root, True)
+        #
+        # scan Root non-recursovely first, if failed, return immediarely
+        #
+        #server, location, recursive, timeout
+        status, reason, dirs, files = Scanner.scan_location(self.Server, self.Root, False, self.Timeout)
+        if status != "OK":
+            self.Failed = True
+            self.Error = f"Root scan failed: {reason}"
+        else:
+            scanner_succeeded(self.Root, False, files, dirs)    # this will start recursive scanning
+            
         self.ScannerQueue.waitUntilEmpty()
         self.Results.close()
         self.Done = True
@@ -261,14 +283,14 @@ class ScannerMaster(PyThread):
 
     def scanner_failed(self, scanner, error):
         path = scanner.Location
-        if scanner.Recursive:
+        if scanner.WasRecursive:
             with self:
                 parent = self.parent(path)
                 nfailed = self.RecursiveFailed.get(parent, 0)
                 self.RecursiveFailed[parent] = nfailed + 1
                 
         retry = True
-        if not scanner.Recursive:
+        if not scanner.WasRecursive:
             with self:
                 nerrors = self.Errors.setdefault(path, 0)
                 nerrors = self.Errors[path] = nerrors + 1
@@ -283,37 +305,22 @@ class ScannerMaster(PyThread):
             #sys.stderr.write("Gave up on: %s\n" % (path,))
         self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
         
-    def scanner_empty(self, scanner):
-        path = scanner.Location
-        rescan = False
+    def scanner_succeeded(self, location, recursive, files, dirs):
         with self:
-              if not path in self.EmptyDirs:
-                # rescan again, once
-                self.EmptyDirs.add(path)
-                #rescan = True
-        if rescan:
-            self.ScannerQueue.addTask(
-                Scanner(self, self.Server, path, False, self.Timeout)
-            )
-        else:
-            self.NScanned += 1  
-        self.show_progress()            
-            
-    def scanner_succeeded(self, scanner, files, dirs):
-        location = scanner.Location
-        with self:
-            if len(files) == 0 and (scanner.Recursive or len(dirs) == 0):
+            if len(files) == 0 and (recursive or len(dirs) == 0):
                 self.EmptyDirs.add(location)
             else:
                 if location in self.EmptyDirs:
                     self.EmptyDirs.remove(location)
-            if scanner.Recursive:
+            if recursive:
                 parent = self.parent(location)
                 nfailed = self.RecursiveFailed.get(parent, 0)
                 self.RecursiveFailed[parent] = nfailed - 1      
-        self.NScanned += 1  
-        self.addFiles(files)
-        self.addDirectories(dirs, not scanner.Recursive)
+        self.NScanned += 1
+        if files:
+            self.addFiles(files)
+        if dirs:
+            self.addDirectories(dirs, not recursive)
         self.show_progress()
 
     def files(self):
