@@ -1,5 +1,5 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
-import re
+import re, json
 import subprocess, time
 from part import part
 from py3 import to_str
@@ -112,12 +112,12 @@ class Scanner(Task):
         dirs = []
         status = "OK"
         reason = ""
-        if retcode or self.Killed:
-            if self.Killed:
-                    status = "timeout"
-            else:
-                    status = "failed"
-                    reason = str(retcode)
+        if self.Killed:
+            status = "timeout"
+        elif retcode:
+            status = "failed"
+            reason = "status: %d" % (retcode,)
+            if err: reason += " " + err.strip()
         else:
             lines = [x.strip() for x in out.split("\n")]
             for l in lines:
@@ -156,7 +156,8 @@ class Scanner(Task):
                 self.Master.scanner_failed(self, err)
 
         else:
-            stats += "%6df/%-3dd" % (len(files), len(dirs))
+            counts = "%sf+%sd" % (len(files), len(dirs))
+            stats += "%10s" % (counts,)
             self.message("done", stats)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
@@ -174,7 +175,7 @@ class ScannerMaster(PyThread):
     MAX_ERRORS = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress):
+    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Server = server
@@ -186,6 +187,7 @@ class ScannerMaster(PyThread):
         self.Done = False
         self.Error = None
         self.Failed = False
+        self.RootFailed = False
         self.Directories = set()
         self.RecursiveFailed = {}       # parent path -> count
         self.Errors = {}                # location -> count
@@ -200,6 +202,7 @@ class ScannerMaster(PyThread):
             self.TQ = tqdm.tqdm(total=self.NToScan, unit="dir")
             self.LastV = 0
         self.NFiles = 0
+        self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
             
         
     def run(self):
@@ -209,10 +212,10 @@ class ScannerMaster(PyThread):
         #server, location, recursive, timeout
         status, reason, dirs, files = Scanner.scan_location(self.Server, self.Root, False, self.Timeout)
         if status != "OK":
-            self.Failed = True
+            self.Failed = self.RootFailed = True
             self.Error = f"Root scan failed: {reason}"
         else:
-            scanner_succeeded(self.Root, False, files, dirs)    # this will start recursive scanning
+            self.scanner_succeeded(self.Root, False, files, dirs)    # this will start recursive scanning
             
         self.ScannerQueue.waitUntilEmpty()
         self.Results.close()
@@ -263,10 +266,12 @@ class ScannerMaster(PyThread):
                 )
                 #if use_recursive:
                 #    print("Use recursive for %s" % (path,))
-                self.ScannerQueue.addTask(
-                    Scanner(self, self.Server, path, recursive, self.Timeout)
-                )
-                self.NToScan += 1
+
+                if self.MaxFiles is None or self.NFiles < self.MaxFiles:
+                    self.ScannerQueue.addTask(
+                        Scanner(self, self.Server, path, recursive, self.Timeout)
+                    )
+                    self.NToScan += 1
         
     def addDirectories(self, dirs, scan=True):
         for d in dirs:
@@ -370,13 +375,15 @@ python xrootd_scanner.py [options] <rse>
     -n <nparts>
     -d                          - display progress
     -q                          - quiet - only print summary
+    -M <max_files>              - stop scanning the root after so many files were found
+    -s <stats_file>              - write final statistics to JSON file
 """
         
 if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dq")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dqM:s:")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -391,6 +398,9 @@ if __name__ == "__main__":
     override_recursive_threshold = int(opts.get("-R", 0))
     override_timeout = int(opts.get("-t", 0))
     override_max_scanners = int(opts.get("-m", 0))
+    max_files = opts.get("-M")
+    if max_files is not None: max_files = int(max_files)
+    stats_file = opts.get("-s")
     
     if "-n" in opts:
         nparts = int(opts["-n"])
@@ -414,6 +424,9 @@ if __name__ == "__main__":
     if not server_root:
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
         sys.exit(2)
+
+    stats = {"roots":[]}
+    failed = False
         
     for root in config.scanner_roots(rse):
 
@@ -440,7 +453,8 @@ if __name__ == "__main__":
         print("  Timeout              = %s" % timeout)
 
  
-        master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress)
+        master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
+            max_files = max_files)
         master.start()
         n = 0
         path_prefix = server_root
@@ -493,14 +507,36 @@ if __name__ == "__main__":
         print("Directories:          %d" % (len(master.Directories,)))
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
         print("Failed directories:   %d" % (len(master.GaveUp),))
+        elapsed = int(time.time() - t0)
+        s = elapsed % 60
+        m = elapsed // 60
+        print("Elapsed time:         %dm %02ds\n" % (m, s))
 
+        stats["roots"].append({
+           "root": root,
+           "root_failed": master.RootFailed,
+           "error": master.Error,
+           "failed_subdirectories": list(master.GaveUp),
+           "files": master.NFiles,
+           "directories": len(master.Directories),
+           "empty_directories":len(master.EmptyDirs),
+           "elapsed_time": elapsed
+       })
+
+        if master.GaveUp:
+            failed = True
+            break
+           
     [out.close() for out in outputs]
-    t = int(time.time() - t0)
-    t = int(time.time() - t0)
-    s = t % 60
-    m = t // 60
-    print("Elapsed time:         %dm %02ds\n" % (m, s))
-    if master.GaveUp:
+    if failed:
+        stats["status"] = "failed"
+    else:
+        stats["status"] = "done"
+
+    if stats_file:
+        open(stats_file, "w").write(json.dumps(stats))
+
+    if failed:
         sys.exit(1)
     else:
         sys.exit(0)

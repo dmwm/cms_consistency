@@ -115,7 +115,7 @@ class Config:
 
         def scanner_roots(self, rse_name):
             d = self.scanner_param(rse_name, "roots", [])
-            return sorted([x["path"] for x in d])
+            return [x["path"] for x in d]
             
         def scanner_remove_prefix(self, rse_name):
             return self.scanner_param(rse_name, "remove_prefix")
