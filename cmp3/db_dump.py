@@ -1,5 +1,5 @@
 from __future__ import print_function
-import getopt, os, time, re, gzip
+import getopt, os, time, re, gzip, json
 import sys, uuid
 
 from config import DBConfig, Config
@@ -82,19 +82,20 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:vd:")
+opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:vd:s:S:")
 opts = dict(opts)
+
+if not args or (not "-c" in opts and not "-d" in opts):
+        print (Usage)
+        sys.exit(2)
 
 verbose = "-v" in opts
 all_replicas = "-a" in opts
 long_output = "-l" in opts or all_replicas
 out_prefix = opts.get("-o")
 zout = "-z" in opts
-
-if not args or (not "-c" in opts and not "-d" in opts):
-        print (Usage)
-        sys.exit(2)
-
+stats_file = opts.get("-s")
+stats_key = opts.get("-S", "db_dump")
 
 rse_name = args[0]
 
@@ -201,8 +202,23 @@ for r in replicas:
                         print(n)
 [out.close() for out in outputs]
 sys.stderr.write("Found %d files in %d directories\n" % (n, len(dirs)))
-t = int(time.time() - t0)
+t1 = time.time()
+t = int(t1 - t0)
 s = t % 60
 m = t // 60
 sys.stderr.write("Elapsed time: %dm%02ds\n" % (m, s))
 
+if stats_file:
+    if os.path.isfile(stats_file):
+        stats = json.loads(open(stats_file, "r").read())
+    else:
+        stats = {}    
+    stats[stats_key] = {
+        "rse":rse_name,
+        "start_time":t0,
+        "end_time":t1,
+        "files":n,
+        "elapsed":t1-t0,
+        "directories":len(dirs)
+    }
+    open(stats_file, "w").write(json.dumps(stats))

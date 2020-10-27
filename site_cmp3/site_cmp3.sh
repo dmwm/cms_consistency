@@ -96,7 +96,11 @@ echo
 echo DB dump after ...
 echo
 
-$python db_dump.py -o ${a_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
+if [ "$rucio_config_file" == "-" ]; then
+    $python db_dump.py -o ${a_prefix} -c ${config_file} ${RSE} 
+else
+    $python db_dump.py -o ${a_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
+fi
 
 # 4. cmp3
 
