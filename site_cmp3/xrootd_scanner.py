@@ -966,7 +966,8 @@ if __name__ == "__main__":
             break
            
     out_list.close()
-    
+
+
     if failed:
         my_stats["status"] = "failed"
     else:
@@ -982,7 +983,7 @@ if __name__ == "__main__":
  
     
         
-
+if False:
             print ("Output prefix is required for partitioned output")
             print (Usage)
             sys.exit(2)
