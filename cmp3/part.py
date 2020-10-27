@@ -27,18 +27,15 @@ class PartitionedList(object):
         #
         # mode: "r" or "w"
         #
-        self.NParts = nparts
+        self.NParts = len(filenames)
         self.Mode = mode
         self.FileNames = filenames
+        self.Files = []
         
         if mode == "w":
             self.Files = [open(fn, "wt") if not compressed else gzip.open(fn, "w") for fn in self.FileNames]
         else:
-            for fn in self.FileNames:
-                if fn.endswith(".gz"):
-                    self.Files.append(gzip.open(fn, "rt"))
-                else:
-                    self.Files.append(open(fn, "r"))
+            self.Files = [open(fn, "rt") if not fn.endswith(".gz") else gzip.open(fn, "r") for fn in self.FileNames]
                     
     @staticmethod
     def open(prefix=None, files=None):
