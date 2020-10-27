@@ -1,8 +1,11 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
-import re, json
+import re, json, os, os.path
 import subprocess, time
 from part import part
 from py3 import to_str
+from stats import write_stats
+
+Version = "1.0"
 
 try:
     import tqdm
@@ -383,7 +386,7 @@ if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dqM:s:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dqM:s:S:")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -401,6 +404,7 @@ if __name__ == "__main__":
     max_files = opts.get("-M")
     if max_files is not None: max_files = int(max_files)
     stats_file = opts.get("-s")
+    stats_key = opts.get("-S", "scanner")
     
     if "-n" in opts:
         nparts = int(opts["-n"])
@@ -425,8 +429,12 @@ if __name__ == "__main__":
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
         sys.exit(2)
 
-    stats = {
+    my_stats = {
         "rse":rse,
+        "scanner":{
+            "type":"xrootd",
+            "version":Version
+        },
         "server_root":server_root,
         "server":server,
         "roots":[], 
@@ -436,8 +444,6 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         
-        
-
         recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
         timeout = override_timeout or config.scanner_timeout(rse)
         max_scanners = override_max_scanners or config.scanner_workers(rse)
@@ -539,7 +545,7 @@ if __name__ == "__main__":
             "elapsed_time": t1-t0
         })
 
-        stats["roots"].append(root_stats)
+        my_stats["roots"].append(root_stats)
 
         if master.GaveUp:
             failed = True
@@ -547,14 +553,12 @@ if __name__ == "__main__":
            
     [out.close() for out in outputs]
     if failed:
-        stats["status"] = "failed"
+        my_stats["status"] = "failed"
     else:
-        stats["status"] = "done"
+        my_stats["status"] = "done"
         
-    stats["end_time"] = time.time()
-
-    if stats_file:
-        open(stats_file, "w").write(json.dumps({"xrootd_scanner":stats}))
+    my_stats["end_time"] = time.time()
+    write_stats(my_stats, stats_file, stats_key)
 
     if failed:
         sys.exit(1)

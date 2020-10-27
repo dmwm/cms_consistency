@@ -15,7 +15,9 @@ from sqlalchemy.dialects.oracle import RAW, CLOB
 from sqlalchemy.dialects.mysql import BINARY
 from sqlalchemy.types import TypeDecorator, CHAR, String
 
+from stats import write_stats
 
+Version = "1.0"
 
 t0 = time.time()
 
@@ -31,6 +33,8 @@ python db_dump.py [options] -c <config.yaml> <rse_name>
     -a -- include all replicas, otherwise active only (state='A')
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
     -z -- produce gzipped output
+    -s <stats file> -- write stats into JSON file
+       -S <key> -- add dump stats to stats under the key
 """
 
 
@@ -208,17 +212,15 @@ s = t % 60
 m = t // 60
 sys.stderr.write("Elapsed time: %dm%02ds\n" % (m, s))
 
-if stats_file:
-    if os.path.isfile(stats_file):
-        stats = json.loads(open(stats_file, "r").read())
-    else:
-        stats = {}    
-    stats[stats_key] = {
+write_stats(
+    {
+        "version":Version,
         "rse":rse_name,
         "start_time":t0,
         "end_time":t1,
         "files":n,
         "elapsed":t1-t0,
         "directories":len(dirs)
-    }
-    open(stats_file, "w").write(json.dumps(stats))
+    },
+    stats_file, stats_key
+)

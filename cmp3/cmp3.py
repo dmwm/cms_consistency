@@ -2,9 +2,14 @@ import random, string, sys, glob, time
 from cmplib import cmp3_parts
 
 import os
+from stats import write_stats
+
+Version = "1.0"
+
+
 
 Usage = """
-python cmp3.py [-s <stats file>] <b prefix> <r prefix> <a prefix> <dark output> <missing output>
+python cmp3.py [-s <stats file> [-S <stats key>]] <b prefix> <r prefix> <a prefix> <dark output> <missing output>
 """
 
 
@@ -35,8 +40,7 @@ def main():
 
         stats = None
         stats_file = opts.get("-s")
-        if stats_file:
-            stats = json.loads(open(stats_file, "r").read())
+        stats_key = opts.get("-S", "cmp3")
 
         b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
@@ -54,27 +58,26 @@ def main():
         print("Found %d dark and %d missing replicas" % (len(d), len(m)))
         t1 = time.time()
         
-        if stats is not None:
-            stats["cmp3"] = {
+        my_stats= {
+                "version": Version,
                 "elapsed": t1-t0,
                 "start_time": t0,
                 "end_time": t1,
                 "missing": len(m),
                 "dark": len(d),
-                "b_prefix":b_prefix,
-                "a_prefix":a_prefix,
-                "r_prefix":r_prefix
+                "b_prefix": b_prefix,
+                "a_prefix": a_prefix,
+                "r_prefix": r_prefix
             }
-            open(stats_file, "w").write(json.dumps(stats))
                 
 
         t = int(t1 - t0)
         s = t % 60
         m = t // 60
         print("Elapsed time: %dm%02ds" % (m, s))
+        
+        write_stats(my_stats, stats_file, stats_key)
                 
-
-
 
 if __name__ == "__main__":
         main()
