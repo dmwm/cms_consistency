@@ -52,14 +52,17 @@ def main():
         fm.close()
 
         print("Found %d dark and %d missing replicas" % (len(d), len(m)))
-        t = int(time.time() - t0)
+        t1 = time.time()
+        t = int(t1 - t0)
         s = t % 60
         m = t // 60
         print("Elapsed time: %dm%02ds" % (m, s))
         
         if stats is not None:
             stats["cmp3"] = {
-                "elapsed": t,
+                "elapsed": t1-t0,
+                "start_time": t0,
+                "end_time": t1,
                 "missing": len(m),
                 "dark": len(d)
             }

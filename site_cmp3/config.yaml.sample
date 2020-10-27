@@ -25,7 +25,7 @@ rses:
                         server:         xrootd.rcac.purdue.edu
                         server_root:    /store/test/rucio/int/cms/store
                         remove_prefix:  /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
-                        add_prefix:     /store       # should be terminated with /
+                        add_prefix:     /store/       # should be terminated with /
 
                         # filter: .*                 # default
                         # filter: NANOAOD            # only paths where the patern is found will pass

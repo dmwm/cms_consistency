@@ -367,7 +367,7 @@ class ScannerMaster(PyThread):
 Usage = """
 python xrootd_scanner.py [options] <rse>
     Options:
-    -c <config.json>            - config file, required
+    -c <config.yaml>            - config file, required
     -o <output file prefix>     - output will be sent to <output>.00000, <output>.00001, ...
     -t <timeout>                - xrdfs ls operation timeout (default 30 seconds)
     -m <max workers>            - default 5
@@ -425,10 +425,18 @@ if __name__ == "__main__":
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
         sys.exit(2)
 
-    stats = {"roots":[]}
+    stats = {
+        "rse":rse,
+        "server_root":server_root,
+        "server":server,
+        "roots":[], 
+        "start_time":time.time()
+    }
     failed = False
         
     for root in config.scanner_roots(rse):
+        
+        
 
         recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
         timeout = override_timeout or config.scanner_timeout(rse)
@@ -444,6 +452,13 @@ if __name__ == "__main__":
             rewrite_path = re.compile(rewrite_path)
     
         t0 = time.time()
+        root_stats = {
+           "root": root,
+           "start_time":t0,
+           "timeout":timeout,
+           "recursive_threshold":recursive_threshold,
+           "max_scanners":max_scanners
+        }
 
         top_path = root if root.startswith("/") else server_root + "/" + root
 
@@ -507,21 +522,24 @@ if __name__ == "__main__":
         print("Directories:          %d" % (len(master.Directories,)))
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
         print("Failed directories:   %d" % (len(master.GaveUp),))
-        elapsed = int(time.time() - t0)
+        t1 = time.time()
+        elapsed = int(t1 - t0)
         s = elapsed % 60
         m = elapsed // 60
         print("Elapsed time:         %dm %02ds\n" % (m, s))
 
-        stats["roots"].append({
-           "root": root,
-           "root_failed": master.RootFailed,
-           "error": master.Error,
-           "failed_subdirectories": list(master.GaveUp),
-           "files": master.NFiles,
-           "directories": len(master.Directories),
-           "empty_directories":len(master.EmptyDirs),
-           "elapsed_time": elapsed
+        root_stats.update({
+            "root_failed": master.RootFailed,
+            "error": master.Error,
+            "failed_subdirectories": list(master.GaveUp),
+            "files": master.NFiles,
+            "directories": len(master.Directories),
+            "empty_directories":len(master.EmptyDirs),
+            "end_time":t1,
+            "elapsed_time": t1-t0
         })
+
+        stats["roots"].append(root_stats)
 
         if master.GaveUp:
             failed = True
@@ -532,9 +550,11 @@ if __name__ == "__main__":
         stats["status"] = "failed"
     else:
         stats["status"] = "done"
+        
+    stats["end_time"] = time.time()
 
     if stats_file:
-        open(stats_file, "w").write(json.dumps({"site_scanner":stats}))
+        open(stats_file, "w").write(json.dumps({"xrootd_scanner":stats}))
 
     if failed:
         sys.exit(1)
