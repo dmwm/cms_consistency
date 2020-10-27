@@ -84,10 +84,5 @@ if __name__ == "__main__":
     import sys, glob
     prefix = sys.argv[1]
     lst = PartitionedList.open(prefix=prefix)
-    
-    for i, part in enumerate(lst.partitions()):
-        print(f"----- part {i} -----")
-        files = list(part)
-        for f in files:
-            print(f)
-        
+    for f in lst:
+        print (f)
