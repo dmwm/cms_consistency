@@ -39,8 +39,7 @@ fi
 a_prefix=${scratch}/${RSE}_A.list
 b_prefix=${scratch}/${RSE}_B.list
 r_prefix=${scratch}/${RSE}_R.list
-stats=${out}/${RSE}_${now}_scan_stats.json
-stats=${out}/${RSE}_${now}_scan_stats.json
+stats=${out}/${RSE}_${now}_stats.json
 
 now=`date +%Y_%m_%d_%H_%M`
 
@@ -68,11 +67,12 @@ echo
 echo DB dump before ...
 echo
 
-if [ "$rucio_config_file" == "-" ]; then
-    $python db_dump.py -o ${b_prefix} -c ${config_file} ${RSE} 
-else
-    $python db_dump.py -o ${b_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
+rucio_cfg=""
+if [ "$rucio_config_file" != "-" ]; then
+    rucio_cfg="-d $rucio_config_file"
 fi
+
+$python db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
 
 sleep 10
 
@@ -96,11 +96,7 @@ echo
 echo DB dump after ...
 echo
 
-if [ "$rucio_config_file" == "-" ]; then
-    $python db_dump.py -o ${a_prefix} -c ${config_file} ${RSE} 
-else
-    $python db_dump.py -o ${a_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
-fi
+$python db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
 
 # 4. cmp3
 
