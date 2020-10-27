@@ -61,7 +61,7 @@ class PartitionedList(object):
         return self.Files
         
     def items(self):
-        assert self.Mode = "r"
+        assert self.Mode == "r"
         for f in self.Files:
             l = f.readline()
             while l:
