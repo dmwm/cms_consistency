@@ -36,7 +36,7 @@ def main():
         stats = None
         stats_file = opts.get("-s")
         if stats_file:
-            stats = json.load(open(stats_file, "r"))
+            stats = json.loads(open(stats_file, "r").read())
 
         b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
@@ -45,7 +45,7 @@ def main():
         fd = open(out_dark, "w")
         fm = open(out_missing, "w")
         for x in d:
-                fd.write(x)                     # training newlines are there already
+                fd.write(x)                     # trailing newlines are there already
         for x in m:
                 fm.write(x)
         fd.close()
