@@ -1,6 +1,9 @@
 import random, string, sys, glob, time
 from cmplib import cmp3_parts
 
+from part import PartitionedList
+
+
 import os
 from stats import write_stats
 

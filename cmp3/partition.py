@@ -47,6 +47,8 @@ def main():
         print(Usage)
         sys.exit(2)
     
+    in_lst = PartitionList()
+    
     if zout:
         parts = [gzip.open("%s.%06d.gz" % (out_prefix, i), "wt") for i in range(nparts)]
     else:

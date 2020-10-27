@@ -36,12 +36,16 @@ class PartitionedList(object):
             self.Files = [open(fn, "wt") if not compressed else gzip.open(fn, "w") for fn in self.FileNames]
         else:
             self.Files = [open(fn, "rt") if not fn.endswith(".gz") else gzip.open(fn, "r") for fn in self.FileNames]
+            
+    @property
+    def nfiles(self):
+        return len(self.NFiles)
                     
     @staticmethod
     def open(prefix=None, files=None):
         # open existing set
         if files is None:
-            files = sorted(glob.glob(f"{prefix}*"))
+            files = sorted(glob.glob(f"{prefix}.*"))
         return PartitionedList("r", files)
         
     @staticmethod
@@ -57,8 +61,8 @@ class PartitionedList(object):
         i = part(self.NParts, item)
         self.Files[i].write(item)
         
-    def partitions(self):
-        yield from (_Partition(f) for f in self.Files)
+    def files(self):
+        return self.Files
 
     def close(self):
         [f.close() for f in self.Files]

@@ -29,17 +29,15 @@ def lines(f):
         l = f.readline()
 
 def cmp3_parts(a_prefix, r_prefix, b_prefix):
-    import glob
-    a_part_names = sorted(glob.glob("%s.*" % (a_prefix,)))
-    r_part_names = sorted(glob.glob("%s.*" % (r_prefix,)))
-    b_part_names = sorted(glob.glob("%s.*" % (b_prefix,)))
+    a_list = PartitionedList.open(a_prefix)
+    r_list = PartitionedList.open(r_prefix)
+    b_list = PartitionedList.open(b_prefix)
 
-    assert len(a_part_names) == len(r_part_names) and len(a_part_names) == len(b_part_names), "Inconsistent number of parts"
-
-    print ("%d parts found for each list" % (len(a_part_names),))
+    assert a_list.nfiles == r_list.nfiles and r_list.nfiles == b_list.nfiles, "Inconsistent number of parts: B:%d, R:%d, A:%d" % (
+        b_list.nfiles, r_list.nfiles, a_list.nfiles)
 
     d_list, m_list = [], []
-    for i, (an, rn, bn) in enumerate(zip(a_part_names, r_part_names, b_part_names)):
+    for i, (an, rn, bn) in enumerate(zip(a_list.files(), r_list.files(), b_list.files())):
             #print("Comparing %s %s %s..." % (an, rn, bn))
             d, m = cmp3(
                     lines(open(an, "r")),

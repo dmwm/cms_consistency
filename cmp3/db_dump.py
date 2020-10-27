@@ -2,7 +2,7 @@ import getopt, os, time, re, gzip, json
 import sys, uuid
 
 from config import DBConfig, Config
-from part import part
+from part import PartitionedList
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -138,11 +138,9 @@ if nparts > 1:
                 print("Output file path must be specified if partitioning is requested")
                 sys.exit(1)
 
-outputs = [sys.stdout]
+out_list = None
 if out_prefix is not None:
-    gz = ".gz" if zout else ""
-    paths = ["%s.%05d%s" % (out_prefix, i, gz) for i in range(nparts)]
-    outputs = [open(p, "w") if not zout else gzip.open(p, "wt") for p in paths] 
+    out_list = PartitionedList(nparts, out_prefix, zout)
 
 subdir = config.dbdump_root(rse_name) or "/"
 if not subdir.endswith("/"):    subdir = subdir + "/"
@@ -197,13 +195,13 @@ for r in replicas:
                 out = outputs[ipart]
 
                 if long_output:
-                        out.write("%s\t%s\t%s\t%s\t%s\n" % (rse_name, r.scope, r.name, path or "null", r.state))
+                    out_list.add("%s\t%s\t%s\t%s\t%s" % (rse_name, r.scope, r.name, path or "null", r.state)))
                 else:
-                        out.write("%s\n" % (path or "null", ))
+                    out_list.add(path or "null")
                 n += 1
                 if n % batch == 0:
                         print(n)
-[out.close() for out in outputs]
+out_list.close()
 sys.stderr.write("Found %d files in %d directories\n" % (n, len(dirs)))
 t1 = time.time()
 t = int(t1 - t0)
