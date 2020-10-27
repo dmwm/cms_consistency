@@ -1,4 +1,4 @@
-from part import part, PartitionList
+from part import part, PartitionedList
 import sys, getopt, re, gzip
 from config import Config
 try:
