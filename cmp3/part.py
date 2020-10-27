@@ -27,20 +27,16 @@ class PartitionedList(object):
         #
         # mode: "r" or "w"
         #
-        self.NParts = len(filenames)
         self.Mode = mode
         self.FileNames = filenames
         self.Files = []
+        self.NParts = len(filenames)
         
         if mode == "w":
             self.Files = [open(fn, "wt") if not compressed else gzip.open(fn, "w") for fn in self.FileNames]
         else:
             self.Files = [open(fn, "rt") if not fn.endswith(".gz") else gzip.open(fn, "r") for fn in self.FileNames]
             
-    @property
-    def nfiles(self):
-        return len(self.NFiles)
-                    
     @staticmethod
     def open(prefix=None, files=None):
         # open existing set
@@ -57,9 +53,9 @@ class PartitionedList(object):
         
     def add(self, item):
         if self.Mode != "w":    raise ValueError("The list is not open for writing")
-        if not item.endswith("\n"): item += "\n"
+        item = item.strip()
         i = part(self.NParts, item)
-        self.Files[i].write(item)
+        self.Files[i].write(item+"\n")
         
     def files(self):
         return self.Files

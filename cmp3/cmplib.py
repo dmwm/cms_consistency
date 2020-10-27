@@ -1,3 +1,4 @@
+from part import PartitionedList
 
 def cmp3(a, r, b):
     #
@@ -33,17 +34,13 @@ def cmp3_parts(a_prefix, r_prefix, b_prefix):
     r_list = PartitionedList.open(r_prefix)
     b_list = PartitionedList.open(b_prefix)
 
-    assert a_list.nfiles == r_list.nfiles and r_list.nfiles == b_list.nfiles, "Inconsistent number of parts: B:%d, R:%d, A:%d" % (
-        b_list.nfiles, r_list.nfiles, a_list.nfiles)
+    assert a_list.NParts == r_list.NParts and r_list.NParts == b_list.NParts, "Inconsistent number of parts: B:%d, R:%d, A:%d" % (
+        b_list.NParts, r_list.NParts, a_list.NParts)
 
     d_list, m_list = [], []
-    for i, (an, rn, bn) in enumerate(zip(a_list.files(), r_list.files(), b_list.files())):
+    for i, (af, rf, bf) in enumerate(zip(a_list.files(), r_list.files(), b_list.files())):
             #print("Comparing %s %s %s..." % (an, rn, bn))
-            d, m = cmp3(
-                    lines(open(an, "r")),
-                    lines(open(rn, "r")),
-                    lines(open(bn, "r"))
-            )
+            d, m = cmp3(lines(af), lines(rf), lines(bf))
             d_list += d
             m_list += m
             print("Partition %d compared: dark:%d missing:%d" % (i, len(d), len(m))) 
