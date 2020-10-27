@@ -67,8 +67,12 @@ echo
 echo DB dump before ...
 echo
 
-$python db_dump.py -o ${b_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
-#ls -l ${b_prefix}*
+if [ "$rucio_config_file" == "-" ]; then
+    $python db_dump.py -o ${b_prefix} -c ${config_file} ${RSE} 
+else
+    $python db_dump.py -o ${b_prefix} -d ${rucio_config_file} -c ${config_file} ${RSE} 
+fi
+
 sleep 10
 
 # 2. Site dump

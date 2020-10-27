@@ -27,7 +27,7 @@ def main():
         t0 = time.time()
 
         opts, args = getopt.getopt(sys.argv[1:], "s:")
-        opts = dict(opt)
+        opts = dict(opts)
 
         if len(args) < 5:
                 print (Usage)
@@ -36,7 +36,7 @@ def main():
         stats = None
         stats_file = opts.get("-s")
         if stats_file:
-            stats = json.loads(open(stats_file, "r").read())
+            stats = {}
 
         b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
@@ -53,10 +53,6 @@ def main():
 
         print("Found %d dark and %d missing replicas" % (len(d), len(m)))
         t1 = time.time()
-        t = int(t1 - t0)
-        s = t % 60
-        m = t // 60
-        print("Elapsed time: %dm%02ds" % (m, s))
         
         if stats is not None:
             stats["cmp3"] = {
@@ -64,11 +60,18 @@ def main():
                 "start_time": t0,
                 "end_time": t1,
                 "missing": len(m),
-                "dark": len(d)
+                "dark": len(d),
+                "b_prefix":b_prefix,
+                "a_prefix":a_prefix,
+                "r_prefix":r_prefix
             }
             open(stats_file, "w").write(json.dumps(stats))
                 
 
+        t = int(t1 - t0)
+        s = t % 60
+        m = t // 60
+        print("Elapsed time: %dm%02ds" % (m, s))
                 
 
 
