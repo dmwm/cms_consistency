@@ -1,4 +1,3 @@
-from __future__ import print_function
 import getopt, os, time, re, gzip, json
 import sys, uuid
 
