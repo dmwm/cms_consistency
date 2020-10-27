@@ -534,7 +534,7 @@ if __name__ == "__main__":
         stats["status"] = "done"
 
     if stats_file:
-        open(stats_file, "w").write(json.dumps(stats))
+        open(stats_file, "w").write(json.dumps({"site_scanner":stats}))
 
     if failed:
         sys.exit(1)

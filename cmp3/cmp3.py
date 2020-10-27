@@ -4,7 +4,7 @@ from cmplib import cmp3_parts
 import os
 
 Usage = """
-python cmp3.py <b prefix> <r prefix> <a prefix> <dark output> <missing output>
+python cmp3.py [-s <stats file>] <b prefix> <r prefix> <a prefix> <dark output> <missing output>
 """
 
 
@@ -22,15 +22,21 @@ def getMemory():
         return float(vmsize)/1024.0, float(vmrss)/1024.0
 
 def main():
-        import getopt
+        import getopt, json
 
         t0 = time.time()
 
-        opts, args = getopt.getopt(sys.argv[1:], "")
+        opts, args = getopt.getopt(sys.argv[1:], "s:")
+        opts = dict(opt)
 
         if len(args) < 5:
                 print (Usage)
                 sys.exit(2)
+
+        stats = None
+        stats_file = opts.get("-s")
+        if stats_file:
+            stats = json.load(open(stats_file, "r"))
 
         b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
@@ -50,6 +56,14 @@ def main():
         s = t % 60
         m = t // 60
         print("Elapsed time: %dm%02ds" % (m, s))
+        
+        if stats is not None:
+            stats["cmp3"] = {
+                "elapsed": t,
+                "missing": len(m),
+                "dark": len(d)
+            }
+            open(stats_file, "w").write(json.dumps(stats))
                 
 
                 
