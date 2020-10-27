@@ -523,9 +523,9 @@ if __name__ == "__main__":
            "elapsed_time": elapsed
        })
 
-        if master.GaveUp:
-            failed = True
-            break
+       if master.GaveUp:
+           failed = True
+           break
            
     [out.close() for out in outputs]
     if failed:

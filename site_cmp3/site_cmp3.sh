@@ -44,6 +44,7 @@ now=`date +%Y_%m_%d_%H_%M`
 
 d_out=${out}/${RSE}_${now}_D.list
 m_out=${out}/${RSE}_${now}_M.list
+stats=${out}/${RSE}_${now}_stats.json
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -57,9 +58,9 @@ fi
 
 
 # 0. delete old lists
-rm -rf ${a_prefix}*
-rm -rf ${b_prefix}*
-rm -rf ${r_prefix}*
+rm -f ${a_prefix}*
+rm -f ${b_prefix}*
+rm -f ${r_prefix}*
 
 # 1. DB dump "before"
 echo
@@ -75,7 +76,13 @@ echo
 echo Site dump ...
 echo
 
-$python xrootd_scanner.py -o ${r_prefix} -c ${config_file} ${RSE} 
+$python xrootd_scanner.py -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 
+if [ "$?" != "0" ]; then
+	rm -f ${r_prefix}*
+        echo "Site scan failed. Exiting"
+	exit 1
+fi
+        
 #ls -l ${r_prefix}*
 sleep 10
 
@@ -96,5 +103,6 @@ $python cmp3.py ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
 
 echo Dark list:    `wc -l ${d_out}`
 echo Missing list: `wc -l ${m_out}`
+
 
 
