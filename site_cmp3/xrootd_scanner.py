@@ -156,7 +156,7 @@ class Scanner(Task):
             stats += " " + reason
             self.message(status, stats)
             if self.Master is not None:
-                self.Master.scanner_failed(self, err)
+                self.Master.scanner_failed(self)
 
         else:
             counts = "%sf+%sd" % (len(files), len(dirs))
@@ -289,7 +289,7 @@ class ScannerMaster(PyThread):
             #sys.stderr.write("--- Locations to scan: %d\n" % (len(active)+len(waiting),))
             self.LastReport = time.time()
 
-    def scanner_failed(self, scanner, error):
+    def scanner_failed(self, scanner):
         path = scanner.Location
         if scanner.WasRecursive:
             with self:
