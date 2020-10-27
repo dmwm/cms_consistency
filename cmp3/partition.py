@@ -47,8 +47,8 @@ def main():
         print(Usage)
         sys.exit(2)
     
-    in_lst = PartitionList.open(files=args)
-    out_lst = PartitionList.create(nparts, out_prefix, zout)
+    in_lst = PartitionedList.open(files=args)
+    out_lst = PartitionedList.create(nparts, out_prefix, zout)
     
     for path in in_lst:
         if rewrite_match is not None:
