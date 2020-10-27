@@ -31,6 +31,7 @@ class PartitionedList(object):
         self.FileNames = filenames
         self.Files = []
         self.NParts = len(filenames)
+        self.Compressed = compressed
         
         if mode == "w":
             self.Files = [open(fn, "wt") if not compressed else gzip.open(fn, "w") for fn in self.FileNames]
@@ -55,7 +56,9 @@ class PartitionedList(object):
         if self.Mode != "w":    raise ValueError("The list is not open for writing")
         item = item.strip()
         i = part(self.NParts, item)
-        self.Files[i].write(item+"\n")
+        item = item+"\n"
+        if self.Compressed: item = to_bytes(item)
+        self.Files[i].write(item)
         
     def files(self):
         return self.Files
