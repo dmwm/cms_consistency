@@ -521,11 +521,11 @@ if __name__ == "__main__":
            "directories": len(master.Directories),
            "empty_directories":len(master.EmptyDirs),
            "elapsed_time": elapsed
-       })
+        })
 
-       if master.GaveUp:
-           failed = True
-           break
+        if master.GaveUp:
+            failed = True
+            break
            
     [out.close() for out in outputs]
     if failed:
