@@ -39,12 +39,12 @@ fi
 a_prefix=${scratch}/${RSE}_A.list
 b_prefix=${scratch}/${RSE}_B.list
 r_prefix=${scratch}/${RSE}_R.list
+stats=${out}/${RSE}_${now}_stats.json
 
 now=`date +%Y_%m_%d_%H_%M`
 
 d_out=${out}/${RSE}_${now}_D.list
 m_out=${out}/${RSE}_${now}_M.list
-stats=${out}/${RSE}_${now}_stats.json
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -99,7 +99,7 @@ echo
 echo Comparing ...
 echo
 
-$python cmp3.py ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
+$python cmp3.py -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
 
 echo Dark list:    `wc -l ${d_out}`
 echo Missing list: `wc -l ${m_out}`
