@@ -1,7 +1,7 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
 import re, json, os, os.path
 import subprocess, time
-from part import part
+from part import PartitionedList
 from py3 import to_str
 from stats import write_stats
 
@@ -386,7 +386,7 @@ if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dqM:s:S:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dqM:s:S:z")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -405,6 +405,7 @@ if __name__ == "__main__":
     if max_files is not None: max_files = int(max_files)
     stats_file = opts.get("-s")
     stats_key = opts.get("-S", "scanner")
+    zout = "-z" in opts
     
     if "-n" in opts:
         nparts = int(opts["-n"])
@@ -417,11 +418,9 @@ if __name__ == "__main__":
             print ("Output prefix is required for partitioned output")
             print (Usage)
             sys.exit(2)
+    output = opts.get("-o","out.list")
 
-    if not output:
-        outputs = [sys.stdout]
-    else:
-        outputs = [open("%s.%05d" % (output, i), "w") for i in range(nparts)]
+    out_list = PartitionedList.create(nparts, output, zout)
 
     server = config.scanner_server(rse)
     server_root = config.scanner_server_root(rse)
@@ -501,11 +500,10 @@ if __name__ == "__main__":
                 if not rewrite_path.search(path):
                     sys.stderr.write(f"Path rewrite pattern for root {root} did not find a match in path {path}\n")
                     sys.exit(1)
-                path = rewrite_path.sub(rewrite_out, path)                
+                path = rewrite_path.sub(rewrite_out, path)   
             
-            i = part(nparts, path)
-            outputs[i].write("%s\n" % (path,))
-
+            out_list.add(path)             
+            
             n += 1
             if False and (n % 100 == 0):
                 scanners = list(master.ScannerQueue.activeTasks())

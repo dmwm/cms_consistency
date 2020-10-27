@@ -9,7 +9,7 @@ Version = "1.0"
 
 
 Usage = """
-python cmp3.py [-s <stats file> [-S <stats key>]] <b prefix> <r prefix> <a prefix> <dark output> <missing output>
+python cmp3.py [-z] [-s <stats file> [-S <stats key>]] <b prefix> <r prefix> <a prefix> <dark output> <missing output>
 """
 
 
@@ -31,7 +31,7 @@ def main():
 
         t0 = time.time()
 
-        opts, args = getopt.getopt(sys.argv[1:], "s:")
+        opts, args = getopt.getopt(sys.argv[1:], "s:S:z")
         opts = dict(opts)
 
         if len(args) < 5:
