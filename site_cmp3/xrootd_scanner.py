@@ -984,9 +984,9 @@ if __name__ == "__main__":
     
         
 if False:
-            print ("Output prefix is required for partitioned output")
-            print (Usage)
-            sys.exit(2)
+    print ("Output prefix is required for partitioned output")
+    print (Usage)
+    sys.exit(2)
     output = opts.get("-o","out.list")
 
     out_list = PartitionedList.create(nparts, output, zout)
