@@ -1,3 +1,4 @@
+
 import json, os.path
 
 def write_stats(my_stats, stats_file, stats_key):
