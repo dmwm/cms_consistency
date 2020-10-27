@@ -21,7 +21,7 @@ Optional:
 
 
 def main():
-    opts, args = getopt.getopt(sys.argv[1:], "n:o:c:qr:z:")
+    opts, args = getopt.getopt(sys.argv[1:], "n:o:c:qr:z")
     opts = dict(opts)
     if not args or not ("-o" in opts):
         print(Usage)
@@ -39,7 +39,7 @@ def main():
         rewrite_match = re.compile(rewrite["match"]) if rewrite else None
         rewrite_out = re.compile(rewrite["out"]) if rewrite else None
         nparts = config.nparts(rse)
-    zout = opts.get("-z", "") in ("out", "both")
+    zout = "-z" in opts
     nparts = int(opts.get("-n", nparts))
     
     if nparts is None:
