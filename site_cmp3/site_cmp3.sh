@@ -39,12 +39,12 @@ fi
 a_prefix=${scratch}/${RSE}_A.list
 b_prefix=${scratch}/${RSE}_B.list
 r_prefix=${scratch}/${RSE}_R.list
-stats=${out}/${RSE}_${now}_stats.json
 
 now=`date +%Y_%m_%d_%H_%M`
 
 d_out=${out}/${RSE}_${now}_D.list
 m_out=${out}/${RSE}_${now}_M.list
+stats=${out}/${RSE}_${now}_stats.json
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -96,7 +96,7 @@ echo
 echo DB dump after ...
 echo
 
-$python db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+$python db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
 
 # 4. cmp3
 

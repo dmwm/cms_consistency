@@ -11,7 +11,7 @@ rses:
                 partitions:     5
                 scanner:
                         recursion:      3
-                        workers:        5
+                        nworkers:        5
                         timeout:        30
                 dbdump:
                         path_root:   /  # default
@@ -20,7 +20,7 @@ rses:
         T2_US_Purdue_Test:
                 scanner: 
                         recursion:      3       # defaults for all roots
-                        workers:        5
+                        nworkers:        5
                         timeout:        30
                         server:         xrootd.rcac.purdue.edu
                         server_root:    /store/test/rucio/int/cms/store
