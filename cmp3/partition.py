@@ -47,34 +47,18 @@ def main():
         print(Usage)
         sys.exit(2)
     
-    in_lst = PartitionList()
+    in_lst = PartitionList.open(files=args)
+    out_lst = PartitionList.create(nparts, out_prefix, zout)
     
-    if zout:
-        parts = [gzip.open("%s.%06d.gz" % (out_prefix, i), "wt") for i in range(nparts)]
-    else:
-        parts = [open("%s.%06d" % (out_prefix, i), "w") for i in range(nparts)]
-        
+    for path in in_lst:
+        if rewrite_match is not None:
+            if not rewrite_match.search(path):
+                sys.stderr.write(f"Path rewrite pattern did not find a match in path {path}\n")
+                sys.exit(1)
+            path = rewrite_match.sub(rewrite_out, path)
+        out_lst.add(path)
+    out_lst.close()
     
-    for inp_path in args:
-        try:    
-                inp = gzip.open(inp_path, "rt") 
-                l = inp.readline()
-        except:
-                inp = open(inp_path, "r")  
-                l = inp.readline()
-        while l:
-            path = l.strip()
-            if path:
-                if rewrite_match is not None:
-                    if not rewrite_match.search(path):
-                        sys.stderr.write(f"Path rewrite pattern did not find a match in path {path}\n")
-                        sys.exit(1)
-                    path = rewrite_match.sub(rewrite_out, path)
-                ipart = part(nparts, path)
-                parts[ipart].write(path+"\n")
-            l = inp.readline()
-                
-    [out.close() for out in parts]
    
 if __name__ == "__main__":
     main()

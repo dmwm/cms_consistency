@@ -59,6 +59,17 @@ class PartitionedList(object):
         
     def files(self):
         return self.Files
+        
+    def items(self):
+        assert self.Mode = "r"
+        for f in self.Files:
+            l = f.readline()
+            while l:
+                yield l.strip()
+                l = f.readline()
+                
+    def __iter__(self):
+        return self.items()
 
     def close(self):
         [f.close() for f in self.Files]
