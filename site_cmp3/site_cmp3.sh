@@ -5,7 +5,7 @@ version="1.3"
 echo site_cmp3 version: $version
 
 if [ "$1" == "" ]; then
-	echo 'Usage: site_cmp3.sh <config file> <rucio.cfg> <RSE name> <scratch dir> <out dir> [<cert file> [<key file>]]'
+	echo 'Usage: site_cmp3.sh <config file> (<rucio.cfg>|-) <RSE name> <scratch dir> <out dir> [<cert file> [<key file>]]'
 	exit 2
 fi
 
@@ -39,7 +39,8 @@ fi
 a_prefix=${scratch}/${RSE}_A.list
 b_prefix=${scratch}/${RSE}_B.list
 r_prefix=${scratch}/${RSE}_R.list
-stats=${out}/${RSE}_${now}_stats.json
+stats=${out}/${RSE}_${now}_scan_stats.json
+stats=${out}/${RSE}_${now}_scan_stats.json
 
 now=`date +%Y_%m_%d_%H_%M`
 

@@ -36,7 +36,7 @@ def main():
         stats = None
         stats_file = opts.get("-s")
         if stats_file:
-            stats = {}
+            stats = json.loads(open(stats_file, "r").read())
 
         b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
