@@ -39,13 +39,13 @@ def main():
         if preprocess is not None:
             filter_in = preprocess.get("filter")
             if filter_in is not None:
-                print("filtering:", filter_in)
+                #print("filtering:", filter_in)
                 filter_in = re.compile(filter_in)
             rewrite = preprocess.get("rewrite", {})
             if rewrite:
                 rewrite_match = re.compile(rewrite["match"])
-                rewrite_out = re.compile(rewrite["out"])
-                print("rewriting:", rewrite["match"], rewrite["out"])
+                rewrite_out = rewrite["out"]
+                #print("rewriting:", rewrite["match"], rewrite["out"])
         nparts = config.nparts(rse)
     zout = "-z" in opts
     nparts = int(opts.get("-n", nparts))
