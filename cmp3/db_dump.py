@@ -140,7 +140,7 @@ if nparts > 1:
 
 out_list = None
 if out_prefix is not None:
-    out_list = PartitionedList(nparts, out_prefix, zout)
+    out_list = PartitionedList.create(nparts, out_prefix, zout)
 
 subdir = config.dbdump_root(rse_name) or "/"
 if not subdir.endswith("/"):    subdir = subdir + "/"
@@ -195,7 +195,7 @@ for r in replicas:
                 out = outputs[ipart]
 
                 if long_output:
-                    out_list.add("%s\t%s\t%s\t%s\t%s" % (rse_name, r.scope, r.name, path or "null", r.state)))
+                    out_list.add("%s\t%s\t%s\t%s\t%s" % (rse_name, r.scope, r.name, path or "null", r.state))
                 else:
                     out_list.add(path or "null")
                 n += 1
