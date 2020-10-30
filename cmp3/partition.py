@@ -31,7 +31,7 @@ def main():
     
     nparts = None
     out_prefix = opts["-o"]
-    rewrite_match = rewrite_out = filter_in = None
+    rewrite_match = rewrite_out = filter_in = remove_prefix = add_prefix = None
     if "-c" in opts:
         rse = opts["-r"]
         config = Config(opts.get("-c"))
@@ -43,8 +43,12 @@ def main():
                 filter_in = re.compile(filter_in)
             rewrite = preprocess.get("rewrite", {})
             if rewrite:
-                rewrite_match = re.compile(rewrite["match"])
-                rewrite_out = rewrite["out"]
+                if "remove_prefix" in rewrite:
+                    remove_prefix = rewrite["remove_prefix"]
+                    add_prefix = rewrite.get("add_prefix", "")
+                else:
+                    rewrite_match = re.compile(rewrite["match"])
+                    rewrite_out = rewrite["out"]
                 #print("rewriting:", rewrite["match"], rewrite["out"])
         nparts = config.nparts(rse)
     zout = "-z" in opts
@@ -59,15 +63,18 @@ def main():
     out_lst = PartitionedList.create(nparts, out_prefix, zout)
     
     for path in in_lst:
-        if filter_in is not None:
-            if not filter_in.search(path):
-                continue
-        if rewrite_match is not None:
-            if not rewrite_match.search(path):
-                sys.stderr.write(f"Path rewrite pattern did not find a match in path {path}\n")
-                sys.exit(1)
-            path = rewrite_match.sub(rewrite_out, path)
-        out_lst.add(path)
+        if filter_in is None or filter_in.search(path) is not None:
+            if remove_prefix is not None:
+                if not path.startswith(remove_prefix):
+                    sys.stderr.write(f"Path {path} does not begin with prefix {remove_prefix}\n")
+                    sys.exit(1)
+                path = (add_prefix or "") + path[len(remove_prefix):]
+            elif rewrite_match is not None:
+                if not rewrite_match.search(path):
+                    sys.stderr.write(f"Path rewrite pattern did not find a match in path {path}\n")
+                    sys.exit(1)
+                path = rewrite_match.sub(rewrite_out, path)
+            out_lst.add(path)
     out_lst.close()
     
    
