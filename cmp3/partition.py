@@ -14,7 +14,7 @@ python partition.py -o <output prefix> <file> ...
 Optional:    
             -q - quiet
             -c <config file> 
-            -r <rse> - RSE name
+            -r <rse> - RSE name - to use RSE-specific configuration
             -n <nparts> - override the value from the <config file>
             -z - use gzip compression for output
 """
@@ -37,13 +37,15 @@ def main():
         config = Config(opts.get("-c"))
         preprocess = config.import_param(rse, "preprocess")
         if preprocess is not None:
+            filter_in = preprocess.get("filter")
+            if filter_in is not None:
+                print("filtering:", filter_in)
+                filter_in = re.compile(filter_in)
             rewrite = preprocess.get("rewrite", {})
             if rewrite:
                 rewrite_match = re.compile(rewrite["match"])
                 rewrite_out = re.compile(rewrite["out"])
-            filter_in = preprocess.get("filter")
-            if filter_in is not None:
-                filter_in = re.compile(filter_in)
+                print("rewriting:", rewrite["match"], rewrite["out"])
         nparts = config.nparts(rse)
     zout = "-z" in opts
     nparts = int(opts.get("-n", nparts))
@@ -57,6 +59,9 @@ def main():
     out_lst = PartitionedList.create(nparts, out_prefix, zout)
     
     for path in in_lst:
+        if filter_in is not None:
+            if not filter_in.search(path):
+                continue
         if rewrite_match is not None:
             if not rewrite_match.search(path):
                 sys.stderr.write(f"Path rewrite pattern did not find a match in path {path}\n")
