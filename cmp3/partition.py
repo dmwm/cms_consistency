@@ -65,7 +65,7 @@ def main():
         if starts_with and not path.startswith(starts_with):    continue
         if filter_in is not None and not filter_in.search(path): continue
         if remove_prefix is not None:
-            not path.startswith(remove_prefix):
+            if not path.startswith(remove_prefix):
                 sys.stderr.write(f"Path {path} does not begin with prefix {remove_prefix}\n")
                 sys.exit(1)
             path = path[len(remove_prefix):]

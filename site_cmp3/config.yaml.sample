@@ -54,9 +54,11 @@ rses:
         T0_CH_CERN_Tape:
                 partitions: 100
                 preprocess:
-                    filter:     "^path=/eos/ctareadonly/cmstest/cms/store/(data|mc|generator|hidata|himc|lhe|lumi|relval|results)/"
+                    starts_with: "path=/eos/ctareadonly/cmstest/cms/store/" 
+                    filter:     "^path=/eos/ctareadonly/cmstest/cms/store/(data|mc|generator|hidata|himc|lumi|relval|results)/"
+                    remove_prefix: "path=/eos/ctareadonly/cmstest/cms"
                     rewrite:
-                        match:  "^path=/eos/ctareadonly/cmstest/cms(/store/[^ ]+).*"
+                        match:  "^([^ ]+).*"
                         out:    \1
                         
                             
