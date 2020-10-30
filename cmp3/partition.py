@@ -31,13 +31,19 @@ def main():
     
     nparts = None
     out_prefix = opts["-o"]
-    rewrite_match = rewrite_out = None
+    rewrite_match = rewrite_out = filter_in = None
     if "-c" in opts:
         rse = opts["-r"]
         config = Config(opts.get("-c"))
-        rewrite = config.import_param(rse, "rewrite")
-        rewrite_match = re.compile(rewrite["match"]) if rewrite else None
-        rewrite_out = re.compile(rewrite["out"]) if rewrite else None
+        preprocess = config.import_param(rse, "preprocess")
+        if preprocess is not None:
+            rewrite = preprocess.get("rewrite", {})
+            if rewrite:
+                rewrite_match = re.compile(rewrite["match"])
+                rewrite_out = re.compile(rewrite["out"])
+            filter_in = preprocess.get("filter")
+            if filter_in is not None:
+                filter_in = re.compile(filter_in)
         nparts = config.nparts(rse)
     zout = "-z" in opts
     nparts = int(opts.get("-n", nparts))

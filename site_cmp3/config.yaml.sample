@@ -45,9 +45,10 @@ rses:
                         filter:     NANOAOD     # RE, will search for pattern in the path, icluding subdirectoies
                         
         RAL:
-                import:
+                preprocess:
+                    filter:     "^path=/.*/eos/ctareadonly/cmstest/cms/store/(data|mc)/"
                     rewrite:
-                        match:  "^([^ ]+)"
+                        match:  "^path=(/.+?)(\s.*)?"
                         out:    "($1)"
                         
                             
