@@ -35,7 +35,7 @@ def main():
     if "-c" in opts:
         rse = opts["-r"]
         config = Config(opts.get("-c"))
-        preprocess = config.import_param(rse, "preprocess")
+        preprocess = config.rse_param(rse, "preprocess")
         if preprocess is not None:
             filter_in = preprocess.get("filter")
             if filter_in is not None:

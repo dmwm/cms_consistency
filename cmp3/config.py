@@ -66,6 +66,8 @@ class Config:
         def general_param(self, rse_name, param, default=None):
             return self.get_by_path("rses", rse_name, param, 
                     default = self.get_by_path("rses", "*", param, default=default))
+                    
+        rse_param = general_param
 
         def scanner_root_config(self, rse_name, root):
             lst = self.scanner_param(rse_name, "roots", self.scanner_param("*", "roots", []))
