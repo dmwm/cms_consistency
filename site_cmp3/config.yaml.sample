@@ -46,10 +46,18 @@ rses:
                         
         RAL:
                 preprocess:
-                    filter:     "^path=/.*/eos/ctareadonly/cmstest/cms/store/(data|mc)/"
+                    filter:     "^path=/eos/ctareadonly/cmstest/cms/store/(data|mc|generator|hidata|himc|lhe|lumi|relval|results)/"
                     rewrite:
-                        match:  "^path=(/.+?)(\s.*)?"
-                        out:    "($1)"
+                        match:  "^path=/eos/ctareadonly/cmstest/cms(/store/[^ ]+).*"
+                        out:    \1
+                        
+        T0_CH_CERN_Tape:
+                partitions: 100
+                preprocess:
+                    filter:     "^path=/eos/ctareadonly/cmstest/cms/store/(data|mc|generator|hidata|himc|lhe|lumi|relval|results)/"
+                    rewrite:
+                        match:  "^path=/eos/ctareadonly/cmstest/cms(/store/[^ ]+).*"
+                        out:    \1
                         
                             
         ProtoDUNE_NP04:
