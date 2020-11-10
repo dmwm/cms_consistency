@@ -35,9 +35,9 @@ class PartitionedList(object):
         self.Compressed = compressed
         
         if mode == "w":
-            self.Files = [open(fn, "wt") if not compressed else gzip.open(fn, "w") for fn in self.FileNames]
+            self.Files = [open(fn, "w") if not compressed else gzip.open(fn, "wt") for fn in self.FileNames]
         else:
-            self.Files = [open(fn, "rt") if not fn.endswith(".gz") else gzip.open(fn, "r") for fn in self.FileNames]
+            self.Files = [open(fn, "r") if not fn.endswith(".gz") else gzip.open(fn, "rt") for fn in self.FileNames]
             
     @staticmethod
     def open(prefix=None, files=None):
