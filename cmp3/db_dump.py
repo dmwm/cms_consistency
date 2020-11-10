@@ -85,7 +85,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:vd:s:S:")
+opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:vd:s:S:z")
 opts = dict(opts)
 
 if not args or (not "-c" in opts and not "-d" in opts):
@@ -190,9 +190,6 @@ for r in replicas:
                 else:
                         dirp = words[0]
                 dirs.add(dirp)
-
-                ipart = part(nparts, path)
-                out = outputs[ipart]
 
                 if long_output:
                     out_list.add("%s\t%s\t%s\t%s\t%s" % (rse_name, r.scope, r.name, path or "null", r.state))
