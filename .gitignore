@@ -1,6 +1,7 @@
 scratch
 .*
 !.gitignore
+!RAL/partition.yaml
 *.yaml
 *.cfg
 Untitled.ipynb

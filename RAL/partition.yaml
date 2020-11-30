@@ -1,0 +1,10 @@
+rses: 
+        RAL:
+                partitions: 20
+                preprocess:
+                    starts_with:    "path="
+                    filter:     "^path=/eos/ctareadonly/cmstest/cms/store/(data|mc|generator|hidata|himc|lhe|lumi|relval|results)/"
+                    rewrite:
+                        match:  "^path=/eos/ctareadonly/cmstest/cms(/store/[^ ]+).*"
+                        out:    \1
+                        
