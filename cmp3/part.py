@@ -58,7 +58,6 @@ class PartitionedList(object):
         item = item.strip()
         i = part(self.NParts, item)
         item = item+"\n"
-        if self.Compressed: item = to_bytes(item)
         self.Files[i].write(item)
         
     def files(self):

@@ -76,6 +76,7 @@ def main():
                 sys.stderr.write(f"Path rewrite pattern did not find a match in path {path}\n")
                 sys.exit(1)
             path = rewrite_match.sub(rewrite_out, path)
+        #print("path:", type(path), path)
         out_lst.add(path)
     out_lst.close()
     
