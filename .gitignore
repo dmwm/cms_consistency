@@ -1,10 +1,10 @@
 scratch
 .*
 !.gitignore
-!RAL/partition.yaml
 *.yaml
 *.cfg
 Untitled.ipynb
+!RAL/partition.yaml
 
 config.json
 
