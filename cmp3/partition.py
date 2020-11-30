@@ -14,7 +14,7 @@ python partition.py -o <output prefix> <file> ...
 Optional:    
             -q - quiet
             -c <config file> 
-            -r <rse> - RSE name - to use RSE-specific configuration
+            -r <rse> - RSE name - to use RSE-specific configuration, ignored if -c is not used
             -n <nparts> - override the value from the <config file>
             -z - use gzip compression for output
 """
