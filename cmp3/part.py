@@ -6,6 +6,7 @@ from py3 import to_bytes, PY3
 def part(nparts, path):
         if nparts <= 1: return 0
         if PY3:    path = to_bytes(path)
+        #print("part(", nparts, path,"): adler:", adler32(path))
         return adler32(path) % nparts
         
 class _Partition(object):
@@ -57,6 +58,7 @@ class PartitionedList(object):
         if self.Mode != "w":    raise ValueError("The list is not open for writing")
         item = item.strip()
         i = part(self.NParts, item)
+        #print(item, "%", self.NParts, "->", i)
         item = item+"\n"
         self.Files[i].write(item)
         
