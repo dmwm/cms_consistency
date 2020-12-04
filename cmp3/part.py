@@ -25,7 +25,7 @@ class _Partition(object):
         
 class PartitionedList(object):
     
-    def __init__(self, mode, filenames, compressed=False):
+    def __init__(self, mode, filenames, compressed=False, input_compression=None):
         #
         # mode: "r" or "w"
         #
@@ -34,18 +34,17 @@ class PartitionedList(object):
         self.Files = []
         self.NParts = len(filenames)
         self.Compressed = compressed
+        self.InFormat = input_compression
         
         if mode == "w":
             self.Files = [open(fn, "w") if not compressed else gzip.open(fn, "wt") for fn in self.FileNames]
-        else:
-            self.Files = [open(fn, "r") if not fn.endswith(".gz") else gzip.open(fn, "rt") for fn in self.FileNames]
             
     @staticmethod
-    def open(prefix=None, files=None):
+    def open(prefix=None, files=None, compression=None):
         # open existing set
         if files is None:
             files = sorted(glob.glob(f"{prefix}.*"))
-        return PartitionedList("r", files)
+        return PartitionedList("r", files, input_compression=compression)
         
     @staticmethod
     def create(nparts, prefix, compressed=False):
@@ -65,13 +64,42 @@ class PartitionedList(object):
     def files(self):
         return self.Files
         
-    def items(self):
+    def ____items(self):
         assert self.Mode == "r"
         for f in self.Files:
             l = f.readline()
             while l:
                 yield l.strip()
                 l = f.readline()
+                
+    def items(self):
+        assert self.Mode == "r"
+        for fn in self.FileNames:
+            in_format = self.InFormat
+            if in_format is None:
+                if fn.lower().endswith(".gz"):  in_format = "gz"
+                elif fn.lower().endswith(".xz"):  in_format = "xz"
+                else:   in_format = "plain"
+            if fn.startswith("http://") or fn.startswith("https://"):
+                import requests
+                response = requests.get(fn, stream=True)
+                in_file = response.raw
+            else:
+                in_file = open(fn, "rb")
+
+            if in_format == "gz":
+                import gzip
+                in_file = gzip.open(in_file, "rb")
+            elif in_format == "xz":
+                from lzma import LZMAFile
+                in_file = LZMAFile(in_file)
+                
+            l = in_file.readline()
+            while l:
+                l = l.decode("utf-8").strip()
+                #print(l)
+                yield l
+                l = in_file.readline()
                 
     def __iter__(self):
         return self.items()
