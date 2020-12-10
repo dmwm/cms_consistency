@@ -7,7 +7,7 @@ RUN yum install -y git make curl && \
     yum clean all && \
     rm -rf /var/cache/yum
 
-RUN pip install webpie pythreader
+RUN pip install webpie pythreader jinja2
 
 WORKDIR /root
 
