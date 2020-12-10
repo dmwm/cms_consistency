@@ -23,7 +23,7 @@ class DataViewer(object):
         files = glob.glob(f"{self.Path}/*_stats.json")
         rses = set()
         for path in files:
-            fn = path.split("/",1)[-1]
+            fn = path.rsplit("/",1)[-1]
             rse, timestamp, typ, ext = self.parse_filename(fn)
             rses.add(rse)
         return sorted(list(rses))
@@ -72,7 +72,7 @@ class Handler(WPHandler):
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
         runs_with_stats = [(run, self.App.DataViewer.get_run(rse, run)["stats"]) for run in runs]
-        print("runs_with_stats:", runs_with_stats)
+        #print("runs_with_stats:", runs_with_stats)
         return self.render_to_response("show_rse.html", rse=rse, runs_with_stats=runs_with_stats)
 
     def show_run(self, request, relpath, rse=None, run=None, **args):

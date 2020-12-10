@@ -5,17 +5,13 @@
 <h1>RSE:{{rse}} Run:{{run}}</h1>
 
 
-<table class="placement" style="width:100%">
-    <tr>
-        <td>            
             <h2>Run statistics</h2>
             {% for part, part_stats in stats %}
                 <h3>{{part}}</h3>
                 <pre style="font: 12px courier;">{{part_stats|as_json}}
                 </pre>
             {% endfor %}
-        </td>
-        <td>
+            
             <h2>Missing files</h2>
 
             {% for f in missing %}
@@ -31,8 +27,5 @@
                     <span class="lfn">{{f}}</span><br/>
                 </div>
             {% endfor %}
-        </td>
-    </tr>
-</table>
 
 {% endblock %}
