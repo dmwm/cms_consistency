@@ -98,7 +98,7 @@ if __name__ == "__main__":
     import sys, getopt
 
     if not sys.argv[1:]:
-        print Usage
+        print (Usage)
         sys.exit(2) 
     
     port = int(sys.argv[1])
