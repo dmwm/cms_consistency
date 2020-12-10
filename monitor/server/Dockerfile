@@ -14,10 +14,12 @@ WORKDIR /root
 RUN echo 2
 
 ADD start.sh ./start.sh
-CMD mkdir app
+RUN mkdir app
 ADD app ./app
 
 EXPOSE 8080
+
+CMD start.sh
 
 
 
