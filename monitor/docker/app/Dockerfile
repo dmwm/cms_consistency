@@ -13,7 +13,7 @@ WORKDIR /root
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
 RUN cd cms_consistency; git checkout mon_srv
 RUN mkdir bin
-COPY bin bin/
+COPY start.sh ~
 
 
 
