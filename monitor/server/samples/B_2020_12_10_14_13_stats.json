@@ -1,0 +1,39 @@
+{
+    "dbdump_before":    {
+        "start_time":1604257993.0,
+        "end_time":1604267993.0,
+        "files":1234
+    },
+    "scanner":  {
+        "roots":    [
+            {
+                "root": "/root1",
+                "start_time":   1604267993.0,
+                "files":        730,
+                "directories":  12,
+                "end_time":     1604268103.0,
+                "elapsed":      100.0
+            },
+            {
+                "root": "/root2",
+                "start_time":   1604268103.0,
+                "files":        504,
+                "directories":  12,
+                "end_time":     1604268223.0,
+                "elapsed":      120.0
+            }
+        ]
+        
+    },
+    "dbdump_after": {
+        "start_time":1604277993.0,
+        "end_time":1604287993.0,
+        "files":1234
+    },
+    "cmp3": {
+        "start_time": 1604287993.0,
+        "end_time": 160428800.0,
+        "missing": 5,
+        "dark": 12
+    }
+}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>RSE {{rse}}</h1>
+
+<table class="data">
+    
+    
+    <tr>
+        <th></th><th>Start time</th><th>End time</th><th>DB dump files</th><th>Missing</th><th>Dark</th>
+    </tr>
+    {% for t, stats in runs_with_stats %}
+        <tr>
+            <td><a href="./show_run?rse={{rse}}&run={{t}}">{{t}}</a></td>
+            <td>{{stats["dbdump_before"]["start_time"]|as_dt}}</td>
+            <td>{{stats["dbdump_after"]["end_time"]|as_dt}}</td>
+            <td>{{stats["dbdump_before"]["files"]}}</td>
+            <td>{{stats["cmp3"]["missing"]}}</td>
+            <td>{{stats["cmp3"]["dark"]}}</td>
+        </tr>
+    {% endfor %}
+    
+</table>
+
+{% endblock %}

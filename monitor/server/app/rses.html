@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<table class="data">
+    
+    <tr>
+        <th>RSE</th>
+    </tr>
+    {% for r in rses %}
+        <tr><td><a href="./show_rse?rse={{r}}">{{r}}</td></tr>
+    {% endfor %}
+    
+</table>
+
+{% endblock %}

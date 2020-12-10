@@ -1,5 +1,5 @@
 from webpie import WPApp, WPHandler
-import sys, glob, json
+import sys, glob, json, time
 
 class DataViewer(object):
     
@@ -21,15 +21,15 @@ class DataViewer(object):
         
     def list_rses(self):
         files = glob.glob(f"{self.Path}/*_stats.json")
-        rses = []
+        rses = set()
         for path in files:
             fn = path.split("/",1)[-1]
             rse, timestamp, typ, ext = self.parse_filename(fn)
-            rses.append(rse)
-        return rses
+            rses.add(rse)
+        return sorted(list(rses))
     
     def list_runs(self, rse):
-        files = glob.glob(f"{self.Path}/*_stats.json")
+        files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
         runs = []
         for path in files:
             fn = path.split("/",1)[-1]
@@ -44,17 +44,20 @@ class DataViewer(object):
             if typ == "stats":
                 return json.loads(f.read())
             else:
-                return [l.strip() for l in f.readlines()]
+                return [l.strip() for l in f.readlines() if l.strip()]
                 
     def get_run(self, rse, run):
         dark = self.get_data(rse, run, "D")
         missing = self.get_data(rse, run, "M")
         stats = self.get_data(rse, run, "stats")
-        return {
+        
+        out = {
             "stats":stats,
             "dark":dark,
             "missing":missing
         }
+        #print(out)
+        return out
 
 class Handler(WPHandler):
     
@@ -63,20 +66,31 @@ class Handler(WPHandler):
         # list available RSEs
         #
         rses = self.App.DataViewer.list_rses()
+        #print(rses)
         return self.render_to_response("rses.html", rses=rses)
         
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
         runs_with_stats = [(run, self.App.DataViewer.get_run(rse, run)["stats"]) for run in runs]
-        return self.render_to_response("show_rse.html", rse=rse, runs=runs_with_stats)
+        print("runs_with_stats:", runs_with_stats)
+        return self.render_to_response("show_rse.html", rse=rse, runs_with_stats=runs_with_stats)
 
     def show_run(self, request, relpath, rse=None, run=None, **args):
         run_info = self.App.DataViewer.get_run(rse, run)
-        return self.render_to_response("show_run.html", rse=rse, 
-            stats=run_info["stats"], 
+        stats = run_info["stats"]
+        stats_parts = [(part, stats[part]) for part in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]]
+        return self.render_to_response("show_run.html", rse=rse, run=run,
+            stats=stats_parts,
             dark=run_info["dark"],
             missing = run_info["missing"]
         )
+
+def as_dt(t):
+    return time.ctime(t)
+    
+def as_json(d):
+    return json.dumps(d, indent=4)
+    
 
 class App(WPApp):
     
@@ -87,7 +101,7 @@ class App(WPApp):
     def init(self):
         import os
         home = os.path.dirname(__file__) or "."
-        self.initJinjaEnvironment(tempdirs=[home])
+        self.initJinjaEnvironment(tempdirs=[home], filters={"as_dt":as_dt, "as_json":as_json})
         
         
 Usage = """

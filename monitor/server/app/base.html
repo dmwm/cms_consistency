@@ -31,17 +31,18 @@
 	}
         
         
-        table.data, table.file_metadata {
+        table.data, table.file_metadata, table.placement {
             border-collapse: collapse;
         }
         
-        .placement td, th {
-            p-adding: 5px;
-        } 
-            
         .placement th {
             font-weight: bold;
             text-align:  left;
+        }
+        
+        .placement td, .placement th {
+            text-align:  left;
+            vertical-align: top;
         }
         
         .link_menu td {
