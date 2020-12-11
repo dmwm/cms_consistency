@@ -1,23 +1,29 @@
 {% extends 'base.html' %}
 
-{% block content %}
 
-<h1>RSE {{rse}}</h1>
+
+{% block headline %}RSE {{rse}}{% endblock %}
+
+
+{% block link_menu %}<a href="./index">home</a>{% endblock %}
+
+
+
+{% block content %}
 
 <table class="data">
     
     
     <tr>
-        <th></th><th>Start time</th><th>End time</th><th>DB dump files</th><th>Missing</th><th>Dark</th>
+        <th></th><th>Start time</th><th>Missing</th><th>Dark</th><th>Errors</th>
     </tr>
-    {% for t, stats in runs_with_stats %}
+    {% for t, info in runs %}
         <tr>
             <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
-            <td>{{stats["dbdump_before"]["start_time"]|as_dt}}</td>
-            <td>{{stats["dbdump_after"]["end_time"]|as_dt}}</td>
-            <td>{{stats["dbdump_before"]["files"]}}</td>
-            <td>{{stats["cmp3"]["missing"]}}</td>
-            <td>{{stats["cmp3"]["dark"]}}</td>
+            <td>{{info["start_time"]|as_dt}}</td>
+            <td>{{info["nmissing"]|default("")}}</td>
+            <td>{{info["ndark"]|default("")}}</td>
+            <td>{{info["errors"] or ""}}</td>
         </tr>
     {% endfor %}
     

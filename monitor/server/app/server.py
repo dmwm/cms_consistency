@@ -1,5 +1,6 @@
 from webpie import WPApp, WPHandler
 import sys, glob, json, time
+from datetime import datetime
 
 class DataViewer(object):
     
@@ -40,11 +41,24 @@ class DataViewer(object):
     def get_data(self, rse, run, typ):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
-        with open(path, "r") as f:
-            if typ == "stats":
-                return json.loads(f.read())
-            else:
-                return [l.strip() for l in f.readlines() if l.strip()]
+        try:
+            f = open(path, "r")
+        except:
+            return None
+        if typ == "stats":
+            stats = json.loads(f.read())
+            if "scanner" in stats:
+                nfiles = ndirectories = 0
+                for root_info in stats["scanner"]["roots"]:
+                    nfiles += root_info["files"]
+                    ndirectories += root_info["directories"]
+                stats["scanner"]["total_files"] = nfiles
+                stats["scanner"]["total_directories"] = ndirectories
+            out = stats
+        else:
+            out = [l.strip() for l in f.readlines() if l.strip()]
+        f.close()
+        return out
                 
     def get_run(self, rse, run):
         dark = self.get_data(rse, run, "D")
@@ -74,7 +88,26 @@ class Handler(WPHandler):
         runs = sorted(runs, reverse=True)
         runs_with_stats = [(run, self.App.DataViewer.get_run(rse, run)["stats"]) for run in runs]
         #print("runs_with_stats:", runs_with_stats)
-        return self.render_to_response("show_rse.html", rse=rse, runs_with_stats=runs_with_stats)
+        
+        infos = []
+        for run in runs:
+            info = self.App.DataViewer.get_run(rse, run)
+            errors = self.check_run(info)
+            stats = info.get("stats")
+            dark = info.get("dark")
+            missing = info.get("missing")
+            start_time = stats.get("dbdump_before",{}).get("start_time")
+            ndark = len(dark) if dark is not None else None
+            nmissing = len(missing) if missing is not None else None
+            infos.append((
+                run, 
+                {
+                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing,
+                    "errors":len(errors)
+                }
+            ))
+        #print(infos)
+        return self.render_to_response("show_rse.html", rse=rse, runs=infos)
 
     def common_paths(self, lst, space="&nbsp;"):
         lst = sorted(lst)
@@ -93,27 +126,55 @@ class Handler(WPHandler):
             out.append(space*len(head)+"/"+tail)
             prev = parts
         return out
+        
+    def check_run(self, run_info):
+        errors = []
+        if run_info.get("stats") is None:
+            errors.append("run statistics are missing")
+        else:
+            stats = run_info["stats"]
+            if not "scanner" in stats or stats["scanner"] is None:
+                errors.append("Site scanner statistics missing")
+            if not "dbdump_before" in stats or stats["dbdump_before"] is None:
+                errors.append("DB dump before site scan statistics missing")
+            if not "dbdump_after" in stats or stats["dbdump_after"] is None:
+                errors.append("DB dump after site scan statistics missing")
+            if not "cmp3" in stats or stats["cmp3"] is None:
+                errors.append("Comparison statistics missing")
+        if run_info.get("dark") is None:
+            errors.append("Dark file list not found")
+        if run_info.get("missing") is None:
+            errors.append("Missing file list not found")
+        return errors
             
-            
-
     def show_run(self, request, relpath, rse=None, run=None, **args):
         run_info = self.App.DataViewer.get_run(rse, run)
-        stats = run_info["stats"]
-        stats_parts = [(part, stats[part]) for part in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]]
-        return self.render_to_response("show_run.html", rse=rse, run=run,
-            dbdump_before=stats["dbdump_before"],
-            dbdump_after=stats["dbdump_after"],
-            scanner=stats["scanner"],
-            scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"]),
-            cmp3=stats["cmp3"],
-            stats=stats_parts,
-            dark=self.common_paths(sorted(run_info["dark"])),
-            missing = self.common_paths(sorted(run_info["missing"])),
+        errors = self.check_run(run_info)
+        stats = run_info.get("stats", {}) 
+
+        stats_parts = [(part, stats.get(part)) for part in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]]
+        scanner_roots = []
+        if "scanner" in stats and "roots" in stats["scanner"]:
+            scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"])
+            
+        return self.render_to_response("show_run.html", 
+            rse=rse, run=run,
+            errors = errors,
+            dbdump_before=stats.get("dbdump_before"),
+            dbdump_after=stats.get("dbdump_after"),
+            scanner=stats.get("scanner"),
+            scanner_roots = scanner_roots,
+            cmp3=stats.get("cmp3"),
+            stats=stats,
+            dark=self.common_paths(run_info.get("dark") or []),
+            missing = self.common_paths(run_info.get("missing") or []),
             stats_parts=stats_parts
         )
 
 def as_dt(t):
-    return time.ctime(t)
+    # datetim in UTC
+    dt = datetime.utcfromtimestamp(t)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
     
 def as_json(d):
     return "\n"+json.dumps(d, indent=4)

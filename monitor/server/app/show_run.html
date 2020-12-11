@@ -1,44 +1,76 @@
 {% extends 'base.html' %}
 
+{% block headline %}RSE:{{rse}} Run:{{run}}{% endblock %}
+
+{% block link_menu %}<a href="./index">home</a>&nbsp;&nbsp;<a href="./show_rse?rse={{rse}}">{{rse}}</a>{% endblock %}
+
 {% block content %}
 
-<h1>RSE:{{rse}} Run:{{run}}</h1>
+    {% if errors %}
+    
+        <h3>Run errors</h3>
+        <p class=error>
+        {% for e in errors %}
+            {{e}}<br/>
+        {% endfor %}
+        </p>
 
-
-            <h2>Run statistics</h2>
+    {% else %}
+            <h3>Run statistics</h3>
             
-            <h3>DB Dump</h3>
+            <p style="color:gray">Start/end times in UTC</p>
             
             <table class="data">
                 <tr>
-                    <td></td><th>Before site scan</th><th>After site scan</th>
+                    <td></td><th>DB dump before site scan</th><th>Site scan</th><th>DB dump after site scan</th><th>Comparison</th>
                 </tr>
                 <tr>
-                    <th>Start time</th><td>{{dbdump_before["start_time"]|as_dt}}</td><td>{{dbdump_after["start_time"]|as_dt}}</td>
+                    <th>Start time</th>
+                    <td>{{dbdump_before["start_time"]|as_dt}}</td>
+                    <td>{{scanner["start_time"]|as_dt}}
+                    <td>{{dbdump_after["start_time"]|as_dt}}</td>
+                    <td>{{cmp3["start_time"]|as_dt}}
                 </tr>
                 <tr>
-                    <th>End time</th><td>{{dbdump_before["end_time"]|as_dt}}</td><td>{{dbdump_after["end_time"]|as_dt}}</td>
+                    <th>End time</th>
+                    <td>{{dbdump_before["end_time"]|as_dt}}</td>
+                    <td>{{scanner["end_time"]|as_dt}}
+                    <td>{{dbdump_after["end_time"]|as_dt}}</td>
+                    <td>{{cmp3["end_time"]|as_dt}}
                 </tr>
                 <tr>
-                    <th>Elapsed time</th><td>{{dbdump_before["elapsed"]|hms}}</td><td>{{dbdump_after["elapsed"]|hms}}</td>
+                    <th>Elapsed time</th>
+                    <td>{{dbdump_before["elapsed"]|hms}}</td>
+                    <td>{{(scanner["end_time"]-scanner["start_time"])|hms}}</td>
+                    <td>{{dbdump_after["elapsed"]|hms}}</td>
+                    <td>{{cmp3["elapsed"]|hms}}</td>
                 </tr>
                 <tr>
-                    <th>Files</th><td>{{dbdump_before["files"]}}</td><td>{{dbdump_after["files"]}}</td>
+                    <th>Files</th>
+                    <td>{{dbdump_before["files"]}}</td>
+                    <td>{{scanner["total_files"]}}</td>
+                    <td>{{dbdump_after["files"]}}</td>
+                    <td>{% if missing %}missing:{{missing|length}}{% endif %} 
+                        {% if dark %}dark:{{dark|length}}{% endif %} </td>
                 </tr>
                 <tr>
-                    <th>Directories</th><td>{{dbdump_before["directories"]}}</td><td>{{dbdump_after["directories"]}}</td>
+                    <th>Directories</th>
+                    <td>{{dbdump_before["directories"]}}</td>
+                    <td>{{scanner["total_directories"]}}</td>
+                    <td>{{dbdump_after["directories"]}}</td>
+                    <td></td>
                 </tr>
                 <tr>
-                    <th>Version</th><td>{{dbdump_before["version"]}}</td><td>{{dbdump_after["version"]}}</td>
+                    <th>Version</th>
+                    <td>{{dbdump_before["version"]}}</td>
+                    <td>{{scanner["scanner"]["type"]}} {{scanner["scanner"]["version"]}}</td>
+                    <td>{{dbdump_after["version"]}}</td>
+                    <td>{{cmp3["version"]}}</td>
                 </tr>
             </table>
             
-            <h3>Site scan</h3>
+            <h3>Site scan details</h3>
             <table class="data">
-                <tr><th>Start time</th><td>{{scanner["start_time"]|as_dt}}</td></tr>
-                <tr><th>End time</th><td>{{scanner["end_time"]|as_dt}}</td></tr>
-                <tr><th>Elapsed time</th><td>{{(scanner["end_time"]-scanner["start_time"])|hms}}</td></tr>
-                <tr><th>Scanner</th><td>{{scanner["scanner"]["type"]}} {{scanner["scanner"]["version"]}}</td></tr>
                 <tr><th>Server address</th><td>{{scanner["server"]}}</td></tr>
                 <tr><th>Server root</th><td>{{scanner["server_root"]}}</td></tr>
             </table>
@@ -48,28 +80,18 @@
             <table class="data">
                 <tr>
                     <th>Location</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Elapsed time</th>
-                        <th>Failed</th>
-                        <th>Error</th><th>Failed subdirectories</th>
+                        <th>Error</th>
                 </tr>
                 {% for d in scanner_roots %}
                     <tr>
                         <td>{{d["root"]}}</td><td>{{d["files"]}}</td><td>{{d["directories"]}}</td><td>{{d["empty_directories"]}}</td>
                             <td>{{d["elapsed_time"]|hms}}</td>
-                            <td>{{"failed" if d["root_failed"]}}</td>
                             <td>{{d["error"] or ""}}</td>
-                            <td>{% for s in d["failed_subdirectories"] %}{{s}}<br/>{% endfor %}</td>
                     </tr>
                 {% endfor %}
             </table>
             
-            <h3>Comparison</h3>
-            <table class="data">
-                <tr><th>Start time</th><td>{{cmp3["start_time"]|as_dt}}</td></tr>
-                <tr><th>End time</th><td>{{cmp3["end_time"]|as_dt}}</td></tr>
-                <tr><th>Elapsed time</th><td>{{cmp3["elapsed"]|hms}}</td></tr>
-                <tr><th>Version</th><td>{{cmp3["version"]}}</td></tr>
-            </table>
-                
+            <h3>Results</h3>
             
             <h4>Missing files ({{missing|length}})</h4>
             
@@ -91,14 +113,14 @@
                     </div>
                 {% endfor %}
             {% endif %}
-            
-            <h2>JSON statistics</h2>
-            
-            {% for part, stats in stats_parts %}
-                <h3>{{part}}</h3>
-                <pre>
-                {{stats|as_json}}
-                </pre>
-            {% endfor %}
+
+    {% endif %} {# errors #}
+
+    <h3>Raw JSON statistics</h3>
+    
+        <pre class="code">
+        {{stats|as_json}}
+        </pre>
+
 
 {% endblock %}
