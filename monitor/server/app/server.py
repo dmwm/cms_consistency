@@ -71,25 +71,67 @@ class Handler(WPHandler):
         
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
+        runs = sorted(runs, reverse=True)
         runs_with_stats = [(run, self.App.DataViewer.get_run(rse, run)["stats"]) for run in runs]
         #print("runs_with_stats:", runs_with_stats)
         return self.render_to_response("show_rse.html", rse=rse, runs_with_stats=runs_with_stats)
+
+    def common_paths(self, lst, space="&nbsp;"):
+        lst = sorted(lst)
+        prev = []
+        out = []
+        for path in lst:
+            parts = path.split("/")
+            i = 0
+            for j, (x, y) in enumerate(zip(prev, parts)):
+                if x == y:
+                    i = j
+                else:
+                    break
+            head = "/".join(parts[:i+1])
+            tail = "/".join(parts[i+1:])
+            out.append(space*len(head)+"/"+tail)
+            prev = parts
+        return out
+            
+            
 
     def show_run(self, request, relpath, rse=None, run=None, **args):
         run_info = self.App.DataViewer.get_run(rse, run)
         stats = run_info["stats"]
         stats_parts = [(part, stats[part]) for part in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]]
         return self.render_to_response("show_run.html", rse=rse, run=run,
+            dbdump_before=stats["dbdump_before"],
+            dbdump_after=stats["dbdump_after"],
+            scanner=stats["scanner"],
+            scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"]),
+            cmp3=stats["cmp3"],
             stats=stats_parts,
-            dark=run_info["dark"],
-            missing = run_info["missing"]
+            dark=self.common_paths(sorted(run_info["dark"])),
+            missing = self.common_paths(sorted(run_info["missing"])),
+            stats_parts=stats_parts
         )
 
 def as_dt(t):
     return time.ctime(t)
     
 def as_json(d):
-    return json.dumps(d, indent=4)
+    return "\n"+json.dumps(d, indent=4)
+    
+def hms(t):
+    if t < 100:
+        return "%.2fs" % (t)
+    
+    t = int(t)
+    s = t % 60
+    t //= 60
+    m = t % 60
+    h = t // 60
+    
+    if h == 0:
+        return f"{m}m{s}s"
+    else:
+        return f"{h}h{m}m"
     
 
 class App(WPApp):
@@ -101,7 +143,8 @@ class App(WPApp):
     def init(self):
         import os
         home = os.path.dirname(__file__) or "."
-        self.initJinjaEnvironment(tempdirs=[home], filters={"as_dt":as_dt, "as_json":as_json})
+        self.initJinjaEnvironment(tempdirs=[home], 
+            filters={"hms":hms , "as_dt":as_dt, "as_json":as_json})
         
         
 Usage = """

@@ -12,7 +12,7 @@
     </tr>
     {% for t, stats in runs_with_stats %}
         <tr>
-            <td><a href="./show_run?rse={{rse}}&run={{t}}">{{t}}</a></td>
+            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
             <td>{{stats["dbdump_before"]["start_time"]|as_dt}}</td>
             <td>{{stats["dbdump_after"]["end_time"]|as_dt}}</td>
             <td>{{stats["dbdump_before"]["files"]}}</td>
