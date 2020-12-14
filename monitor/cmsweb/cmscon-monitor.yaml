@@ -1,3 +1,16 @@
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-cephfs-pvc
+spec:
+  accessModes:
+  - ReadOnly
+  storageClassName: csi-cephfs
+
+---
+
 kind: Service
 apiVersion: v1
 metadata:
@@ -11,7 +24,7 @@ spec:
     name: http
   selector:
     app: cmscon-monitor
-     
+  
 ---
     
 kind: Deployment
@@ -49,3 +62,22 @@ spec:
             cpu: "1000m"
         ports:
         - containerPort: 8080
+        
+        
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cmscon-monitor
+spec:
+  containers:
+   - name: cmscon-monitor
+     image: ivmfnal/cmscon-monitor
+     volumeMounts:
+       - mountPath: /samples
+         name: mypvc
+  volumes:
+   - name: mypvc
+     persistentVolumeClaim:
+       claimName: csi-cephfs-pvc
+       readOnly: true
