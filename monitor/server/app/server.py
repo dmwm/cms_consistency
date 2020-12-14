@@ -2,6 +2,8 @@ from webpie import WPApp, WPHandler
 import sys, glob, json, time
 from datetime import datetime
 
+Version = "0.1"
+
 class DataViewer(object):
     
     def __init__(self, path):
@@ -19,6 +21,9 @@ class DataViewer(object):
         timestamp = "_".join(timestamp_parts)
         rse = "_".join(parts[:-6])
         return rse, timestamp, typ, ext
+        
+    def is_mounted(self):
+        return os.path.isdir(self.Path)
         
     def list_rses(self):
         files = glob.glob(f"{self.Path}/*_stats.json")
@@ -82,6 +87,9 @@ class Handler(WPHandler):
         rses = self.App.DataViewer.list_rses()
         #print(rses)
         return self.render_to_response("rses.html", rses=rses)
+        
+    def probe(elf, request, relpath, **args):
+        return "OK" if self.App.DataViewer.is_mounted() else ("Data directory unreachable", 500)
         
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
@@ -156,7 +164,15 @@ class Handler(WPHandler):
         scanner_roots = []
         if "scanner" in stats and "roots" in stats["scanner"]:
             scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"])
-            
+        
+        dark = run_info.get("dark") or []
+        missing = run_info.get("missing") or []
+        nmissing = len(missing)
+        ndark = len(dark)
+        
+        dark = dark[:1000]
+        missing = missing[:1000]
+        
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
             errors = errors,
@@ -166,8 +182,9 @@ class Handler(WPHandler):
             scanner_roots = scanner_roots,
             cmp3=stats.get("cmp3"),
             stats=stats,
-            dark=self.common_paths(run_info.get("dark") or []),
-            missing = self.common_paths(run_info.get("missing") or []),
+            ndark = ndark, nmissing=nmissing,
+            dark=self.common_paths(dark),
+            missing = self.common_paths(missing),
             stats_parts=stats_parts
         )
 
@@ -196,6 +213,8 @@ def hms(t):
     
 
 class App(WPApp):
+
+    Version = Version
     
     def __init__(self, handler, path):
         WPApp.__init__(self, handler)
@@ -205,7 +224,8 @@ class App(WPApp):
         import os
         home = os.path.dirname(__file__) or "."
         self.initJinjaEnvironment(tempdirs=[home], 
-            filters={"hms":hms , "as_dt":as_dt, "as_json":as_json})
+            filters={"hms":hms , "as_dt":as_dt, "as_json":as_json}
+            )
         
         
 Usage = """

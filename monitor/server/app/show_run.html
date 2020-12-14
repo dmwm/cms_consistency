@@ -50,8 +50,8 @@
                     <td>{{dbdump_before["files"]}}</td>
                     <td>{{scanner["total_files"]}}</td>
                     <td>{{dbdump_after["files"]}}</td>
-                    <td>{% if missing %}missing:{{missing|length}}{% endif %} 
-                        {% if dark %}dark:{{dark|length}}{% endif %} </td>
+                    <td>{% if nmissing %}missing:{{nmissing}}{% endif %} 
+                        {% if ndark %}dark:{{ndark}}{% endif %} </td>
                 </tr>
                 <tr>
                     <th>Directories</th>
@@ -93,25 +93,33 @@
             
             <h3>Results</h3>
             
-            <h4>Missing files ({{missing|length}})</h4>
+            <h4>Missing files ({{nmissing}}
+            {%- if nmissing > missing|length %}, showing first {{missing|length}} files{% endif -%}
+            )
+            </h4>
             
             {% if not missing %}(none)
             {% else %}
-                {% for f in missing %}
-                    <div id="missing_list">
-                        <span class="lfn">{{f}}</span><br/>
-                    </div>
-                {% endfor %}
+                <div id="missing_list">
+                    {% for f in missing %}
+                            <span class="lfn">{{f}}</span><br/>
+                    {% endfor %}
+                </div>
             {% endif %}
 
-            <h4>Dark files ({{dark|length}})</h4>
+            <h4>Dark files ({{ndark}}
+            {%- if ndark > dark|length %}, showing first {{dark|length}} files{% endif -%}
+            )</h4>
+
+            {% if ndark > dark|length %}<p color=gray>showing first {{dark|length}} files</p>{% endif %}
+
             {% if not dark %}(none)
             {% else %}
-                {% for f in dark %}
-                    <div id="dark_list">
+                <div id="dark_list">
+                    {% for f in dark %}
                         <span class="lfn">{{f}}</span><br/>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             {% endif %}
 
     {% endif %} {# errors #}

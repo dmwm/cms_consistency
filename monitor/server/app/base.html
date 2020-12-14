@@ -130,12 +130,24 @@
     .code, .lfn {
         font: 10px monospace;
         }
+    
+        div#dark_list {
+            background-color: #EEE;
+            padding: 5px;
+        }
         
+        div#missing_list {
+            background-color: #FEC;
+            padding: 5px;
+        }
+        
+    
     pre.code {
-        background-color: #F8F8F8;
+        background-color: #FDFDFD;
         padding: 20px;
         border: solid 1px #E0E0E0;
         }
+        
         
     p.message {
         color: #117711;
@@ -161,8 +173,6 @@
     }
 
     </style>
-    
-    <script src="{{GLOBAL_AppTopPath}}/static/js/request.js"></script>
     
     {% block html_head %}{% endblock %}
 </head>
