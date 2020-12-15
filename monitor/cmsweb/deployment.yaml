@@ -1,40 +1,9 @@
-
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: consistency-report-pvc
-spec:
-  accessModes:
-    - ReadOnly
-  resources:
-    requests:
-      storage: 1GB
-  storageClassName: meyrin-cephfs
----
-
-kind: Service
-apiVersion: v1
-metadata:
-  name: rucio_consistency_monitor
-  namespace: http
-spec:
-  type: ClusterIP
-  ports:
-  - port: 8080 
-    protocol: TCP
-    name: http
-  selector:
-    app: rucio_consistency_monitor
-  
----
-    
 kind: Deployment
 apiVersion: apps/v1
 metadata:
   labels:
     app: rucio_consistency_monitor
-  name: rucio_consistency_monitor
+  name: rucio-consistency-monitor
   namespace: http
 spec:
   selector:
@@ -48,7 +17,7 @@ spec:
     spec:
       containers:
       - image: ivmfnal/rucio_consistency_monitor
-        name: rucio_consistency_monitor
+        name: rucio-consistency-monitor
         livenessProbe:
           httpGet:
             path: /probe
@@ -66,4 +35,9 @@ spec:
         - containerPort: 8400
         volumeMounts:
             - mountPath: /samples
-              name: consistency-report-pvc
+              name: consistency-dump
+      volumes:
+        - name: consistency-dump
+          persistentVolumeClaim:
+                claimName: consistency-report-pvc
+
