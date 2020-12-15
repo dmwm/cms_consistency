@@ -13,7 +13,7 @@ ADD start.sh ./start.sh
 RUN mkdir app
 ADD app ./app
 
-EXPOSE 8080
+EXPOSE 8400
 
 ENTRYPOINT ["/root/start.sh"]
 

@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd ~
-python app/server.py 8888 /samples
+python app/server.py 8400 /samples
