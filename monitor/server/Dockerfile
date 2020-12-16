@@ -10,8 +10,9 @@ WORKDIR /root
 RUN echo 2
 
 ADD start.sh ./start.sh
-RUN mkdir app
+RUN mkdir app samples
 ADD app ./app
+ADD samples ./samples
 
 EXPOSE 8400
 
