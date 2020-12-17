@@ -24,6 +24,7 @@ spec:
             port: 8400
           initialDelaySeconds: 3
           periodSeconds: 3
+        command: ["/root/start.sh"]
         resources:
           requests:
             memory: "256Mi"
@@ -33,11 +34,11 @@ spec:
             cpu: "1000m"
         ports:
         - containerPort: 8400
-        volumeMounts:
-            - mountPath: /samples
-              name: consistency-dump
-      volumes:
-        - name: consistency-dump
-          persistentVolumeClaim:
-                claimName: consistency-report-pvc
+        #volumeMounts:
+        #    - mountPath: /samples
+        #      name: consistency-dump
+      #volumes:
+      #  - name: consistency-dump
+      #    persistentVolumeClaim:
+      #          claimName: consistency-report-pvc
 
