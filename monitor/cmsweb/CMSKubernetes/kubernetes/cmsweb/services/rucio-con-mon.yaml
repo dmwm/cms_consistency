@@ -41,6 +41,9 @@ spec:
       #  - name: consistency-dump
       #    persistentVolumeClaim:
       #          claimName: consistency-report-pvc
+      #
+
+---
 
 kind: Service
 apiVersion: v1
