@@ -216,8 +216,8 @@ class App(WPApp):
 
     Version = Version
     
-    def __init__(self, handler, path):
-        WPApp.__init__(self, handler)
+    def __init__(self, handler, path, prefix):
+        WPApp.__init__(self, handler, prefix=prefix)
         self.DataViewer = DataViewer(path)
 
     def init(self):
@@ -229,20 +229,24 @@ class App(WPApp):
         
         
 Usage = """
-python server.py <port> <data path>
+python server.py [-r <url prefix to remove>] <port> <data path>
 """
 
 if __name__ == "__main__":
     import sys, getopt
 
-    if not sys.argv[1:]:
+    opts, args = getopt.getopt(sys.argv[1:], "r:")
+
+    if not args:
         print (Usage)
         sys.exit(2) 
     
-    port = int(sys.argv[1])
-    path = sys.argv[2]
+    port = int(args[0])
+    path = args[1]
     
-    App(Handler, path).run_server(port)
+    prefix = opts.get("-r")
+    
+    App(Handler, path, prefix).run_server(port)
 
         
         
