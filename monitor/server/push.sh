@@ -1,5 +1,5 @@
 #!/bin/bash 
 
-docker tag cmscon-monitor ivmfnal/cmscon-monitor
-docker push ivmfnal/cmscon-monitor
+docker tag rucio-con-mon ivmfnal/rucio_consistency_monitor
+docker push ivmfnal/rucio_consistency_monitor
 

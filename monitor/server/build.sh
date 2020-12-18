@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t cmscon-monitor .
+docker build -t rucio-con-mon .

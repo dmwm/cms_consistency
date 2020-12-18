@@ -1,5 +1,5 @@
 from webpie import WPApp, WPHandler
-import sys, glob, json, time
+import sys, glob, json, time, os
 from datetime import datetime
 
 Version = "0.1"
@@ -88,7 +88,7 @@ class Handler(WPHandler):
         #print(rses)
         return self.render_to_response("rses.html", rses=rses)
         
-    def probe(elf, request, relpath, **args):
+    def probe(self, request, relpath, **args):
         return "OK" if self.App.DataViewer.is_mounted() else ("Data directory unreachable", 500)
         
     def show_rse(self, request, relpath, rse=None, **args):
