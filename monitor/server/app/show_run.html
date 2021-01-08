@@ -94,7 +94,7 @@
             <h3>Results</h3>
             
             <p>
-            <span style="font-weight:bold">Missing files ({{nmissing}}{% if missing_truncated %} truncated{% endif %})</span>
+            <span style="font-weight:bold">Missing files ({{nmissing}}{% if missing_truncated %}, truncated{% endif %})</span>
             {%- if missing -%}
                 &nbsp;<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">raw</a>
             {%- endif %}
@@ -110,7 +110,7 @@
             {% endif %}
 
             <p>
-            <span style="font-weight:bold">Dark files ({{ndark}}{% if dark_truncated %} truncated{% endif %})</span>
+            <span style="font-weight:bold">Dark files ({{ndark}}{% if dark_truncated %}, truncated{% endif %})</span>
             {%- if dark -%}
                 &nbsp;<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">raw</a>
             {%- endif %}
