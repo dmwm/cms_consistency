@@ -1,7 +1,7 @@
 #!/bin/bash
 
-prefix=cmscon
-app=monitor
+prefix=rucio-con
+app=mon
 
 if [ "$1" == "shell" ]; then
 	docker run --rm --name ${prefix}-$app \
