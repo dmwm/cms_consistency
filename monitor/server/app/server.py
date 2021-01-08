@@ -195,7 +195,7 @@ class Handler(WPHandler):
         Indent = "    "
         last_items = []
         out = []
-        for path in lst:
+        for path in sorted(lst):
             items = [item for item in path.split("/") if item]
             n_common = 0
             for li, i in zip(items, last_items):
