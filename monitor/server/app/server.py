@@ -57,6 +57,8 @@ class DataViewer(object):
         last_file = sorted(files)[-1]
         fn = last_file.split("/",1)[-1]
         rse, timestamp, typ, ext = self.parse_filename(fn)
+        print("last_run: rse, timestamp, typ, ext:", rse, timestamp, typ, ext)
+        sys.stdout.flush()
         return self.get_run(rse, timestamp)
         
     def get_data(self, rse, run, typ):
