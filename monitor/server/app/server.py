@@ -55,21 +55,21 @@ class DataViewer(object):
         if not files:
             return None
         last_file = sorted(files)[-1]
-        print("last_run: last_file:", last_file)
+        #print("last_run: last_file:", last_file)
         fn = last_file.rsplit("/",1)[-1]
         rse, timestamp, typ, ext = self.parse_filename(fn)
-        print("last_run: rse, timestamp, typ, ext:", rse, timestamp, typ, ext)
+        #print("last_run: rse, timestamp, typ, ext:", rse, timestamp, typ, ext)
         sys.stdout.flush()
         return self.get_run(rse, timestamp)
         
     def get_data(self, rse, run, typ):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
-        print("get_data: path:", path)
+        #print("get_data: path:", path)
         try:
             f = open(path, "r")
         except:
-            print("get_data: error ")
+            #print("get_data: error ")
             return None
         if typ == "stats":
             stats = json.loads(f.read())
@@ -134,7 +134,7 @@ class Handler(WPHandler):
         for rse in rses:
             start_time, ndark, nmissing, nerrors = None, None, None, None
             info = self.App.DataViewer.last_run(rse)
-            print("index: stats:", info.get("stats"))
+            #print("index: stats:", info.get("stats"))
             errors = self.check_run(info)
             stats = info.get("stats") or {}
             dark = info.get("dark")
@@ -144,7 +144,7 @@ class Handler(WPHandler):
             nmissing = len(missing) if missing is not None else "error"
             nerrors = len(errors)
             infos.append((rse, start_time, ndark, nmissing, nerrors))
-            print("index:", rse, start_time, ndark, nmissing, nerrors)
+            #print("index:", rse, start_time, ndark, nmissing, nerrors)
             sys.stdout.flush()
             
         #print(infos)
@@ -270,12 +270,16 @@ class Handler(WPHandler):
         nmissing = len(missing)
         ndark = len(dark)
         
+        dark_truncated = len(dark) > 1000
+        missing_truncated = len(missing) > 1000
+        
         dark = dark[:1000]
         missing = missing[:1000]
         
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
             errors = errors,
+            dark_truncated = dark_truncated, missing_truncated=missing_truncated,
             dbdump_before=stats.get("dbdump_before"),
             dbdump_after=stats.get("dbdump_after"),
             scanner=stats.get("scanner"),
