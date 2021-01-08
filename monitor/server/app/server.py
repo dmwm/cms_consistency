@@ -85,6 +85,30 @@ class DataViewer(object):
         #print(out)
         return out
 
+def display_file_list(lst):
+    Indent = "    "
+    last_items = []
+    out = []
+    for path in lst:
+        items = [item for item in path.split("/") if item]
+        n_common = 0
+        for li, i in zip(items, last_items):
+            if li == i:
+                n_common += 1
+            else:
+                break
+        tail = items[n_common:]
+        indent = Indent * n_common
+        for i, item in enumerate(tail):
+            if i < len(tail)-1:
+                item += "/"
+            if not indent: item = "/" + item
+            out.append(indent + item)
+            indent += Indent
+        last_items = items
+    return out
+    
+
 class Handler(WPHandler):
     
     def index(self, request, relpath, **args):
@@ -143,6 +167,29 @@ class Handler(WPHandler):
             prev = parts
         return out
         
+    def display_file_list(self, lst):
+        Indent = "    "
+        last_items = []
+        out = []
+        for path in lst:
+            items = [item for item in path.split("/") if item]
+            n_common = 0
+            for li, i in zip(items, last_items):
+                if li == i:
+                    n_common += 1
+                else:
+                    break
+            tail = items[n_common:]
+            indent = Indent * n_common
+            for i, item in enumerate(tail):
+                if i < len(tail)-1:
+                    item += "/"
+                if not indent: item = "/" + item
+                out.append(indent + item)
+                indent += Indent
+            last_items = items
+        return out
+    
     def check_run(self, run_info):
         errors = []
         if run_info.get("stats") is None:
@@ -205,8 +252,8 @@ class Handler(WPHandler):
             cmp3=stats.get("cmp3"),
             stats=stats,
             ndark = ndark, nmissing=nmissing,
-            dark=self.common_paths(dark),
-            missing = self.common_paths(missing),
+            dark=self.display_file_list(dark),
+            missing = self.display_file_list(missing),
             stats_parts=stats_parts
         )
 
