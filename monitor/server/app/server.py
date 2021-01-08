@@ -64,6 +64,7 @@ class DataViewer(object):
     def get_data(self, rse, run, typ):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
+        print("get_data: path:", path)
         try:
             f = open(path, "r")
         except:
@@ -131,6 +132,7 @@ class Handler(WPHandler):
         for rse in rses:
             start_time, ndark, nmissing, nerrors = None, None, None, None
             info = self.App.DataViewer.last_run(rse)
+            print("index: stats:", info.get("stats"))
             errors = self.check_run(info)
             stats = info.get("stats") or {}
             dark = info.get("dark")
