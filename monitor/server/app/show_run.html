@@ -93,6 +93,7 @@
             
             <h3>Results</h3>
             
+            <p>
             <span style="font-weight:bold">Missing files ({{nmissing}}
             {%- if nmissing > missing|length %}, showing first {{missing|length}} files{% endif -%}
             )
@@ -100,6 +101,7 @@
             {%- if missing -%}
                 &nbsp;<a href="./missing/missing_list.txt?rse={{rse}}&run={{run}}">raw</a>
             {%- endif %}
+            </p>
             
             {% if not missing %}(none)
             {% else %}
@@ -110,13 +112,15 @@
                 </div>
             {% endif %}
 
+            <p>
             <span style="font-weight:bold">Dark files ({{ndark}}
             {%- if ndark > dark|length %}, showing first {{dark|length}} files{% endif -%}
             )</span>
-            {%- if missing -%}
+            {%- if dark -%}
                 &nbsp;<a href="./dark/dark_list.txt?rse={{rse}}&run={{run}}">raw</a>
             {%- endif %}
-
+            </p>
+            
             {% if ndark > dark|length %}<p color=gray>showing first {{dark|length}} files</p>{% endif %}
 
             {% if not dark %}(none)
