@@ -52,6 +52,8 @@ class DataViewer(object):
         
     def last_run(self, rse):
         files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
+        if not files:
+            return None
         last_file = sorted(files)[-1]
         fn = last_file.split("/",1)[-1]
         rse, timestamp, typ, ext = self.parse_filename(fn)
@@ -125,15 +127,18 @@ class Handler(WPHandler):
         rses = self.App.DataViewer.list_rses()
         infos = []
         for rse in rses:
+            start_time, ndark, nmissing, nerrors = None, None, None, None
             info = self.App.DataViewer.last_run(rse)
-            errors = self.check_run(info)
-            stats = info.get("stats")
-            dark = info.get("dark")
-            missing = info.get("missing")
-            start_time = stats.get("dbdump_before",{}).get("start_time")
-            ndark = len(dark) if dark is not None else "error"
-            nmissing = len(missing) if missing is not None else "error"
-            infos.append((rse, start_time, ndark, nmissing, len(errors)))
+            if info:
+                errors = self.check_run(info)
+                stats = info.get("stats")
+                dark = info.get("dark")
+                missing = info.get("missing")
+                start_time = stats.get("dbdump_before",{}).get("start_time")
+                ndark = len(dark) if dark is not None else "error"
+                nmissing = len(missing) if missing is not None else "error"
+                nerrors = len(errors)
+            infos.append((rse, start_time, ndark, nmissing, nerrors))
             
         #print(infos)
         return self.render_to_response("rses.html", infos=infos)
