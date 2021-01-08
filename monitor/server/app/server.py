@@ -248,7 +248,7 @@ class Handler(WPHandler):
             "Content-Disposition":"attachment"
         }
             
-    def mssing(self, request, relpath, rse=None, run=None, **args):
+    def missing(self, request, relpath, rse=None, run=None, **args):
         lst = self.App.DataViewer.get_data(rse, run, 'M')
         return [path+"\n" for path in lst], {
             "Content-Type":"text/plain",
