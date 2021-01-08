@@ -131,7 +131,7 @@ class Handler(WPHandler):
             info = self.App.DataViewer.last_run(rse)
             if info:
                 errors = self.check_run(info)
-                stats = info.get("stats", {})
+                stats = info.get("stats") or {}
                 dark = info.get("dark")
                 missing = info.get("missing")
                 start_time = stats.get("dbdump_before",{}).get("start_time")
