@@ -129,16 +129,16 @@ class Handler(WPHandler):
         for rse in rses:
             start_time, ndark, nmissing, nerrors = None, None, None, None
             info = self.App.DataViewer.last_run(rse)
-            if info:
-                errors = self.check_run(info)
-                stats = info.get("stats") or {}
-                dark = info.get("dark")
-                missing = info.get("missing")
-                start_time = stats.get("dbdump_before",{}).get("start_time")
-                ndark = len(dark) if dark is not None else "error"
-                nmissing = len(missing) if missing is not None else "error"
-                nerrors = len(errors)
+            errors = self.check_run(info)
+            stats = info.get("stats") or {}
+            dark = info.get("dark")
+            missing = info.get("missing")
+            start_time = stats.get("dbdump_before",{}).get("start_time")
+            ndark = len(dark) if dark is not None else "error"
+            nmissing = len(missing) if missing is not None else "error"
+            nerrors = len(errors)
             infos.append((rse, start_time, ndark, nmissing, nerrors))
+            print(rse, start_time, ndark, nmissing, nerrors)
             
         #print(infos)
         return self.render_to_response("rses.html", infos=infos)
