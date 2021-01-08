@@ -140,7 +140,8 @@ class Handler(WPHandler):
             nmissing = len(missing) if missing is not None else "error"
             nerrors = len(errors)
             infos.append((rse, start_time, ndark, nmissing, nerrors))
-            print(rse, start_time, ndark, nmissing, nerrors)
+            print("index:", rse, start_time, ndark, nmissing, nerrors)
+            sys.stdout.flush()
             
         #print(infos)
         return self.render_to_response("rses.html", infos=infos)
