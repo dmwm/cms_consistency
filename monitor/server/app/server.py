@@ -4,7 +4,7 @@ from webpie import WPApp, WPHandler
 import sys, glob, json, time, os
 from datetime import datetime
 
-Version = "0.1"
+Version = "1.0"
 
 class DataViewer(object):
     
@@ -49,7 +49,14 @@ class DataViewer(object):
             rse, timestamp, typ, ext = self.parse_filename(fn)
             runs.append(timestamp)
         return sorted(runs)
-    
+        
+    def last_run(self, rse):
+        files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
+        last_file = sorted(files)[-1]
+        fn = last_file.split("/",1)[-1]
+        rse, timestamp, typ, ext = self.parse_filename(fn)
+        return self.get_run(rse, timestamp)
+        
     def get_data(self, rse, run, typ):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
@@ -116,8 +123,20 @@ class Handler(WPHandler):
         # list available RSEs
         #
         rses = self.App.DataViewer.list_rses()
-        #print(rses)
-        return self.render_to_response("rses.html", rses=rses)
+        infos = []
+        for rse in rses:
+            info = self.App.DataViewer.last_run(rse)
+            errors = self.check_run(info)
+            stats = info.get("stats")
+            dark = info.get("dark")
+            missing = info.get("missing")
+            start_time = stats.get("dbdump_before",{}).get("start_time")
+            ndark = len(dark) if dark is not None else "error"
+            nmissing = len(missing) if missing is not None else "error"
+            infos.append((rse, start_time, ndark, nmissing, len(errors)))
+            
+        #print(infos)
+        return self.render_to_response("rses.html", infos=infos)
         
     def probe(self, request, relpath, **args):
         return self.App.DataViewer.status(), "text/plain"
@@ -137,8 +156,8 @@ class Handler(WPHandler):
             dark = info.get("dark")
             missing = info.get("missing")
             start_time = stats.get("dbdump_before",{}).get("start_time")
-            ndark = len(dark) if dark is not None else None
-            nmissing = len(missing) if missing is not None else None
+            ndark = len(dark) if dark is not None else "error"
+            nmissing = len(missing) if missing is not None else "error"
             infos.append((
                 run, 
                 {
@@ -279,6 +298,9 @@ def hms(t):
         return f"{m}m{s}s"
     else:
         return f"{h}h{m}m"
+        
+def path_type(path):
+    return "dir" if path.endswith("/") else "file"
     
 
 class App(WPApp):
@@ -293,7 +315,7 @@ class App(WPApp):
         import os
         home = os.path.dirname(__file__) or "."
         self.initJinjaEnvironment(tempdirs=[home], 
-            filters={"hms":hms , "as_dt":as_dt, "as_json":as_json}
+            filters={"hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type}
             )
         
         

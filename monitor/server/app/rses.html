@@ -2,21 +2,25 @@
 
 {% block content %}
 
+{#
     {% for r in rses %}
         <p><a href="./show_rse?rse={{r}}">{{r}}</a></p>
     {% endfor %}
-
-{#
-<table class="data">
-    
-    <tr>
-        <th>RSE</th>
-    </tr>
-    {% for r in rses %}
-        <tr><td><a href="./show_rse?rse={{r}}">{{r}}</td></tr>
-    {% endfor %}
-    
-</table>
 #}
+
+<table class="data">    
+    <tr>
+        <th>RSE</th><th>Last run</th><th>Dark</th><th>Missing</th><th>Errors
+    </tr>
+    {% for rse, start_time, ndark, nmissing, nerrors in infos %}
+        <tr>
+            <td><a href="./show_rse?rse={{rse}}">{{rse}}</td>
+            <td>{{start_time|as_dt}}</td>
+            <td>{{ndark or ''}}</td>
+            <td>{{nmissing or ''}}</td>
+            <td>{{nerrors or ''}}</td>
+        </tr>
+    {% endfor %}    
+</table>
 
 {% endblock %}

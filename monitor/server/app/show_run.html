@@ -105,10 +105,10 @@
             
             {% if not missing %}(none)
             {% else %}
-                <div id="missing_list">
-                    {% for f in missing %}
-                            <span class="lfn">{{f}}</span><br/>
-                    {% endfor %}
+                <div class="lfn_list">
+{% for f in missing %}
+<span class="lfn {{f|path_type}}">{{f}}</span><br/>
+{%- endfor %}
                 </div>
             {% endif %}
 
@@ -125,10 +125,10 @@
 
             {% if not dark %}(none)
             {% else %}
-                <div id="dark_list">
-                    {% for f in dark %}
-                        <span class="lfn">{{f}}</span><br/>
-                    {% endfor %}
+                <div class="lfn_list">
+{% for f in dark %}
+<span class="lfn {{f|path_type}}">{{f}}</span><br/>
+{%- endfor %}
                 </div>
             {% endif %}
 
