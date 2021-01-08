@@ -99,7 +99,7 @@
             )
             </span>
             {%- if missing -%}
-                &nbsp;<a href="./missing/missing_list.txt?rse={{rse}}&run={{run}}">raw</a>
+                &nbsp;<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">raw</a>
             {%- endif %}
             </p>
             
@@ -117,7 +117,7 @@
             {%- if ndark > dark|length %}, showing first {{dark|length}} files{% endif -%}
             )</span>
             {%- if dark -%}
-                &nbsp;<a href="./dark/dark_list.txt?rse={{rse}}&run={{run}}">raw</a>
+                &nbsp;<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">raw</a>
             {%- endif %}
             </p>
             
