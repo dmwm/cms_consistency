@@ -100,6 +100,9 @@
             
             {% if not missing %}(none)
             {% else %}
+            
+                <p><a href="./missing/missing_list.txt?rse={{rse}}&run={{run}}">download</a></p>
+            
                 <div id="missing_list">
                     {% for f in missing %}
                             <span class="lfn">{{f}}</span><br/>
@@ -115,6 +118,7 @@
 
             {% if not dark %}(none)
             {% else %}
+                <p><a href="./dark/dark_list.txt?rse={{rse}}&run={{run}}">download</a></p>
                 <div id="dark_list">
                     {% for f in dark %}
                         <span class="lfn">{{f}}</span><br/>

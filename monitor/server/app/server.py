@@ -154,6 +154,20 @@ class Handler(WPHandler):
         if run_info.get("missing") is None:
             errors.append("Missing file list not found")
         return errors
+        
+    def dark(self, request, relpath, rse=None, run=None, **args):
+        lst = self.App.DataViewer.get_data(rse, run, 'D')
+        return [path+"\n" for path in lst], {
+            "Content-Type":"text/plain",
+            "Content-Disposition":"attachment"
+        }
+            
+    def mssing(self, request, relpath, rse=None, run=None, **args):
+        lst = self.App.DataViewer.get_data(rse, run, 'M')
+        return [path+"\n" for path in lst], {
+            "Content-Type":"text/plain",
+            "Content-Disposition":"attachment"
+        }
             
     def show_run(self, request, relpath, rse=None, run=None, **args):
         run_info = self.App.DataViewer.get_run(rse, run)
