@@ -1,5 +1,7 @@
+print("server.py: importing")
+
 from webpie import WPApp, WPHandler
-import sys, glob, json, time
+import sys, glob, json, time, os
 from datetime import datetime
 
 Version = "0.1"
@@ -24,6 +26,11 @@ class DataViewer(object):
         
     def is_mounted(self):
         return os.path.isdir(self.Path)
+
+    def status(self):
+        if not os.path.isdir(self.Path):
+            return "Data volume %s does not exist" % (self.Path,)
+        return "OK"
         
     def list_rses(self):
         files = glob.glob(f"{self.Path}/*_stats.json")
@@ -88,9 +95,10 @@ class Handler(WPHandler):
         #print(rses)
         return self.render_to_response("rses.html", rses=rses)
         
-    def probe(elf, request, relpath, **args):
+    def probe(self, request, relpath, **args):
+        return self.App.DataViewer.status(), "text/plain"
         return "OK" if self.App.DataViewer.is_mounted() else ("Data directory unreachable", 500)
-        
+
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
         runs = sorted(runs, reverse=True)
@@ -249,7 +257,9 @@ python server.py [-r <url prefix to remove>] <port> <data path>
 if __name__ == "__main__":
     import sys, getopt
 
-    opts, args = getopt.getopt(sys.argv[1:], "r:")
+    print("server.py: sys.argv:", sys.argv)
+
+    opts, args = getopt.getopt(sys.argv[1:], "r:ld")
     opts = dict(opts)
 
     if not args:
@@ -260,8 +270,14 @@ if __name__ == "__main__":
     path = args[1]
     
     prefix = opts.get("-r")
+    logging="-l" in opts
+    debug=sys.stdout if "-d" in opts else None
+
+    print("Starting server on port %s with path %s" % (port, path))
+
+    sys.stdout.flush()
     
-    App(Handler, path, prefix).run_server(port)
+    App(Handler, path, prefix).run_server(port, logging=logging, debug=debug)
 
         
         

@@ -1,4 +1,13 @@
 #!/bin/bash
 
+echo start.sh: version 1
+
+DATA=/reports
+
 cd ~
-python app/server.py 8400 ./samples
+echo "--- starting ---"
+ls -l
+ls -l app
+ls -ld $DATA
+python -V
+python app/server.py "$@" 8400 $DATA
