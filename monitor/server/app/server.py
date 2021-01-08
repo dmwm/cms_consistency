@@ -55,7 +55,8 @@ class DataViewer(object):
         if not files:
             return None
         last_file = sorted(files)[-1]
-        fn = last_file.split("/",1)[-1]
+        print("last_run: last_file:", last_file)
+        fn = last_file.rsplit("/",1)[-1]
         rse, timestamp, typ, ext = self.parse_filename(fn)
         print("last_run: rse, timestamp, typ, ext:", rse, timestamp, typ, ext)
         sys.stdout.flush()
@@ -68,6 +69,7 @@ class DataViewer(object):
         try:
             f = open(path, "r")
         except:
+            print("get_data: error ")
             return None
         if typ == "stats":
             stats = json.loads(f.read())
