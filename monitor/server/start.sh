@@ -9,6 +9,6 @@ echo "--- starting ---"
 ls -l
 ls -l app
 ls -ld $DATA
-ls -l $DATA
 python -V
+echo "--- starting server with: " python app/server.py "$@" 8400 $DATA
 python app/server.py "$@" 8400 $DATA

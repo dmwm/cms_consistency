@@ -1,5 +1,3 @@
-print("server.py: importing")
-
 from webpie import WPApp, WPHandler
 import sys, glob, json, time, os
 from datetime import datetime
@@ -342,7 +340,7 @@ python server.py [-r <url prefix to remove>] <port> <data path>
 if __name__ == "__main__":
     import sys, getopt
 
-    print("server.py: sys.argv:", sys.argv)
+    #print("server.py: sys.argv:", sys.argv)
 
     opts, args = getopt.getopt(sys.argv[1:], "r:ld")
     opts = dict(opts)
