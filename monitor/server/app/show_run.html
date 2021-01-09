@@ -110,17 +110,13 @@
             <table class="data">
                 <tr>
                     <th>Missing files</th><td>{{nmissing}}</td>
-                    {% if missing %}
-                        <td><a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a></td>
-                        <td><a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a></td>
-                    {% endif %}
+                    <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
+                    <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
                 </tr>
                 <tr>
                     <th>Dark files</th><td>{{ndark}}</td>
-                    {% if dark %}
-                        <td><a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a></td>
-                        <td><a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a></td>
-                    {% endif %}
+                    <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
+                    <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
                 </tr>
             </table>
             
