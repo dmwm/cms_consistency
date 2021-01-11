@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - image: ivmfnal/rucio_consistency_monitor:1
-        name: monitor
+        name:  monitor
         livenessProbe:
           httpGet:
             path: /rucioconmon/probe
