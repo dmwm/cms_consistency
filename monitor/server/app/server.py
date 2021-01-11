@@ -1,5 +1,3 @@
-print("server.py: importing")
-
 from webpie import WPApp, WPHandler
 import sys, glob, json, time, os
 from datetime import datetime
@@ -52,17 +50,24 @@ class DataViewer(object):
         
     def last_run(self, rse):
         files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
+        if not files:
+            return None
         last_file = sorted(files)[-1]
-        fn = last_file.split("/",1)[-1]
+        #print("last_run: last_file:", last_file)
+        fn = last_file.rsplit("/",1)[-1]
         rse, timestamp, typ, ext = self.parse_filename(fn)
+        #print("last_run: rse, timestamp, typ, ext:", rse, timestamp, typ, ext)
+        sys.stdout.flush()
         return self.get_run(rse, timestamp)
         
     def get_data(self, rse, run, typ):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
+        #print("get_data: path:", path)
         try:
             f = open(path, "r")
         except:
+            #print("get_data: error ")
             return None
         if typ == "stats":
             stats = json.loads(f.read())
@@ -125,15 +130,20 @@ class Handler(WPHandler):
         rses = self.App.DataViewer.list_rses()
         infos = []
         for rse in rses:
+            start_time, ndark, nmissing, nerrors = None, None, None, None
             info = self.App.DataViewer.last_run(rse)
+            #print("index: stats:", info.get("stats"))
             errors = self.check_run(info)
-            stats = info.get("stats")
+            stats = info.get("stats") or {}
             dark = info.get("dark")
             missing = info.get("missing")
             start_time = stats.get("dbdump_before",{}).get("start_time")
             ndark = len(dark) if dark is not None else "error"
             nmissing = len(missing) if missing is not None else "error"
-            infos.append((rse, start_time, ndark, nmissing, len(errors)))
+            nerrors = len(errors)
+            infos.append((rse, start_time, ndark, nmissing, nerrors))
+            #print("index:", rse, start_time, ndark, nmissing, nerrors)
+            sys.stdout.flush()
             
         #print(infos)
         return self.render_to_response("rses.html", infos=infos)
@@ -190,7 +200,7 @@ class Handler(WPHandler):
         Indent = "    "
         last_items = []
         out = []
-        for path in lst:
+        for path in sorted(lst):
             items = [item for item in path.split("/") if item]
             n_common = 0
             for li, i in zip(items, last_items):
@@ -236,7 +246,7 @@ class Handler(WPHandler):
             "Content-Disposition":"attachment"
         }
             
-    def mssing(self, request, relpath, rse=None, run=None, **args):
+    def missing(self, request, relpath, rse=None, run=None, **args):
         lst = self.App.DataViewer.get_data(rse, run, 'M')
         return [path+"\n" for path in lst], {
             "Content-Type":"text/plain",
@@ -258,12 +268,16 @@ class Handler(WPHandler):
         nmissing = len(missing)
         ndark = len(dark)
         
+        dark_truncated = len(dark) > 1000
+        missing_truncated = len(missing) > 1000
+        
         dark = dark[:1000]
         missing = missing[:1000]
         
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
             errors = errors,
+            dark_truncated = dark_truncated, missing_truncated=missing_truncated,
             dbdump_before=stats.get("dbdump_before"),
             dbdump_after=stats.get("dbdump_after"),
             scanner=stats.get("scanner"),
@@ -326,7 +340,7 @@ python server.py [-r <url prefix to remove>] <port> <data path>
 if __name__ == "__main__":
     import sys, getopt
 
-    print("server.py: sys.argv:", sys.argv)
+    #print("server.py: sys.argv:", sys.argv)
 
     opts, args = getopt.getopt(sys.argv[1:], "r:ld")
     opts = dict(opts)

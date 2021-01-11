@@ -15,7 +15,7 @@
     {% for rse, start_time, ndark, nmissing, nerrors in infos %}
         <tr>
             <td><a href="./show_rse?rse={{rse}}">{{rse}}</td>
-            <td>{{start_time|as_dt}}</td>
+            <td>{% if start_time is none %}{% else %}{{start_time|as_dt}}{% endif %}</td>
             <td>{{ndark or ''}}</td>
             <td>{{nmissing or ''}}</td>
             <td>{{nerrors or ''}}</td>
