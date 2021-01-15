@@ -292,6 +292,8 @@ class Handler(WPHandler):
 
 def as_dt(t):
     # datetim in UTC
+    if t is None:
+        return None
     dt = datetime.utcfromtimestamp(t)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
     
