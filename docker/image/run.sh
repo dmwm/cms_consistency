@@ -15,7 +15,7 @@ cp $cert /tmp/my_cert
 chmod go-rwx /tmp/my_key /tmp/my_cert
 
 cd ~rucio/cms_consistency
-git pull				# make sure to pick up the latest version
+#git pull				# make sure to pick up the latest version
 
 cd site_cmp3
 
