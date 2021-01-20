@@ -80,9 +80,9 @@ def main():
                 "b_files": b_list.FileNames,
                 "r_files": r_list.FileNames,
 
-                "a_nfiles": a_list.NFiles,
-                "b_nfiles": b_list.NFiles,
-                "r_nfiles": r_list.NFiles
+                "a_nfiles": a_list.NParts,
+                "b_nfiles": b_list.NParts,
+                "r_nfiles": r_list.NParts
             }
                 
 
