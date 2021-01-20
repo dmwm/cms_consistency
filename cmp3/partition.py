@@ -9,7 +9,7 @@ except:
 
 
 Usage = """
-python partition.py -o <output prefix> (<file>|<url>) ...
+python partition.py -o <output prefix> <file> ...
 
 Optional:    
             -q - quiet
@@ -17,12 +17,11 @@ Optional:
             -r <rse> - RSE name - to use RSE-specific configuration, ignored if -c is not used
             -n <nparts> - override the value from the <config file>
             -z - use gzip compression for output
-            -f - input file compression format (xz, gz, plain. default:plain)
 """
 
 
 def main():
-    opts, args = getopt.getopt(sys.argv[1:], "n:o:c:qr:zf:")
+    opts, args = getopt.getopt(sys.argv[1:], "n:o:c:qr:z")
     opts = dict(opts)
     if not args or not ("-o" in opts):
         print(Usage)
@@ -54,34 +53,22 @@ def main():
     zout = "-z" in opts
     nparts = int(opts.get("-n", nparts))
     
-    in_compression = opts.get("-f", "plain")
-    
     if nparts is None:
         print("N parts must be specified either with -n or via the -c <config> and -r <rse>")
         print(Usage)
         sys.exit(2)
     
-    in_lst = PartitionedList.open(files=args, compression=in_compression)
+    in_lst = PartitionedList.open(files=args)
     out_lst = PartitionedList.create(nparts, out_prefix, zout)
     
-    lines_in = lines_out = 0
-    
     for path in in_lst:
-        if lines_in and lines_in % 100000 == 0:
-            print("lines out/in:", lines_out, lines_in)
-        lines_in += 1
-        #print("path:", path)
         if starts_with and not path.startswith(starts_with):    continue
-        #print("starts with passed")
         if filter_in is not None and not filter_in.search(path): continue
-        #print("filter passed")
-        
         if remove_prefix is not None:
             if not path.startswith(remove_prefix):
                 sys.stderr.write(f"Path {path} does not begin with prefix {remove_prefix}\n")
                 sys.exit(1)
             path = path[len(remove_prefix):]
-        #print("prefix removed:", path)
         if add_prefix:
             path = add_prefix + path
         if rewrite_match is not None:
@@ -91,7 +78,6 @@ def main():
             path = rewrite_match.sub(rewrite_out, path)
         #print("path:", type(path), path)
         out_lst.add(path)
-        lines_out += 1
     out_lst.close()
     
    
