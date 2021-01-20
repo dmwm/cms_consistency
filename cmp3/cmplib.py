@@ -29,10 +29,7 @@ def lines(f):
         yield l
         l = f.readline()
 
-def cmp3_parts(a_prefix, r_prefix, b_prefix):
-    a_list = PartitionedList.open(a_prefix)
-    r_list = PartitionedList.open(r_prefix)
-    b_list = PartitionedList.open(b_prefix)
+def cmp3_lists(a_list, r_list, b_list):
 
     assert a_list.NParts == r_list.NParts and r_list.NParts == b_list.NParts, "Inconsistent number of parts: B:%d, R:%d, A:%d" % (
         b_list.NParts, r_list.NParts, a_list.NParts)
@@ -45,3 +42,10 @@ def cmp3_parts(a_prefix, r_prefix, b_prefix):
             m_list += m
             print("Partition %d compared: dark:%d missing:%d" % (i, len(d), len(m))) 
     return d_list, m_list
+
+def cmp3_parts(a_prefix, r_prefix, b_prefix):
+    a_list = PartitionedList.open(a_prefix)
+    r_list = PartitionedList.open(r_prefix)
+    b_list = PartitionedList.open(b_prefix)
+    return cmp3_lists(a_list, r_list, b_list)
+    

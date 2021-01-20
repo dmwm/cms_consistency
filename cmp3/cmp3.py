@@ -1,5 +1,5 @@
 import random, string, sys, glob, time
-from cmplib import cmp3_parts
+from cmplib import cmp3_lists
 
 from part import PartitionedList
 
@@ -47,7 +47,11 @@ def main():
 
         b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
-        d, m = cmp3_parts(b_prefix, r_prefix, a_prefix)
+        a_list = PartitionedList.open(a_prefix)
+        r_list = PartitionedList.open(r_prefix)
+        b_list = PartitionedList.open(b_prefix)
+
+        d, m = cmp3_lists(a_list, r_list, b_list)
 
         fd = open(out_dark, "w")
         fm = open(out_missing, "w")
@@ -70,7 +74,15 @@ def main():
                 "dark": len(d),
                 "b_prefix": b_prefix,
                 "a_prefix": a_prefix,
-                "r_prefix": r_prefix
+                "r_prefix": r_prefix,
+
+                "a_files": a_list.FileNames,
+                "b_files": b_list.FileNames,
+                "r_files": r_list.FileNames,
+
+                "a_nfiles": a_list.NFiles,
+                "b_nfiles": b_list.NFiles,
+                "r_nfiles": r_list.NFiles
             }
                 
 
