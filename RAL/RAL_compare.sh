@@ -45,6 +45,8 @@ echo
 echo Downloading tape dump ...
 echo
 
+downloaded="no"
+
 for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${tape_dump_tmp}
@@ -56,9 +58,14 @@ for attempt in $attempts; do
         echo succeeded
         python partition.py -c $config -r $RSE -q -o ${r_prefix} ${tape_dump_tmp}
         rm -f ${tape_dump_tmp}
+        downloaded="yes"
         break
     fi
 done
+
+if [ "$downloaded" == "no" ]; then
+    exit 1
+fi
 
 rucio_cfg=""
 if [ "$rucio_config_file" != "-" ]; then
