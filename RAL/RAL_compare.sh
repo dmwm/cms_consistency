@@ -1,84 +1,80 @@
 #!/bin/bash
 
-site="RAL"
-rse="RAL"
 
-cd ~/$site
+#
+# Usage:
+#   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> [<cert file> [<key file>]]
+#
 
-scratch_dir="..."
-dbdump_top_dir="..."
-config="config.yaml"
-dbconfig="..."
+cd ~/RAL
 
-last_scan=`cat last_scan`
-d0=`date "+%Y%m%d"`                 # today
-d1=`date -v -1d "+%Y%m%d"`          # yesterday
-d2=`date -v -2d "+%Y%m%d"`          # the day before yesterday
+config=$1
+rucio_config_file=$2
+RSE=$3
+scratch=$4
+out=$5
+cert=$6
+key=$7
 
-function download()
-{
-    d=$1
-    src="root://xrootd.echo.stfc.ac.uk//store/accounting/dump_$d"
-    xrdcp $src ${scratch_dir}/${rse}_dump_$d_dump
+today=`date +%Y_%m_%d_00_00`
+
+b_prefix=${scratch}/${RSE}_${today}_B.list
+a_prefix=${scratch}/${RSE}_${today}_A.list
+r_prefix=${scratch}/${RSE}_${today}_R.list
+stats=${out}/${RSE}_${today}_stats.json
+
+d_out=${out}/${RSE}_${today}_D.list
+m_out=${out}/${RSE}_${today}_M.list
+
+tape_dump_tmp=${scratch}/${RSE}_${today}_tape_dump.gz
+
+# X509 proxy
+if [ "$cert" != "" ]; then
+        if [ "$key" == "" ]; then
+            export X509_USER_PROXY=$cert
+        else
+            voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
+        fi
+fi
+
+echo
+echo Downloading tape dump ...
+echo
+
+for attempt in 1 2 3 4 5; do
+    echo Attempt $attempt ...
+    rm -f ${tape_dump_tmp}
+    xrdcp root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/tape/dump_16012022.gz ${tape_dump_tmp}
     if [ "$?" != "0" ]; then
-        return $?
+        echo sleeping ...
+        sleep 600
+    else
+        echo succeeded
+        python partition.py -c $config -r $RSE -q -o ${r_prefix} ${tape_dump_tmp}
+        rm -f ${tape_dump_tmp}
+        break
     fi
-    mkdir -p ${scratch_dir}/${rse}_$d
-    python partition.py -c $config -r $rse -q -o ${scratch_dir}/${rse}_$d/site
-    rm -f ${scratch_dir}/${rse}_${d}_dump
-    return $?
-}
+done
 
-function download_latest()
-{
-    for d in $d0 $d1; do
-        if [ "$d" <= "$last_scan" ]; then
-            echo ""
-            return 0
-        fi
-        download $d
-        status="$?"
-        if [ "$status" == "0" ]; then
-            echo $d
-            return 0
-        fi
-    done
-}
-
-downloaded="$(download_latest)"
-if [ "$downloaded" == "" ]; then
-    echo "No new site dump found"
-    exit 0
+rucio_cfg=""
+if [ "$rucio_config_file" != "-" ]; then
+    rucio_cfg="-d $rucio_config_file"
 fi
 
-site_dump_prefix=${scratch_dir}/${rse}_$d/site
+echo
+echo DB dump after ...
+echo
 
-dbdump_date="$d1"
-if [ "$downloaded" == "$d1" ]; then
-    dbdump_date="$d2"
-fi
+$python db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+                
+echo
+echo Comparing ...
+echo
 
-dbdump_dir_b=${dbdump_top_dir}/${rse}_${dbdump_date}
+python cmp3.py -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
 
-if [ ! -d "$dbdump_dir_b" ];
-    echo "DB dump $dbdump_dir_b for date $dbdump_date not found"
-    exit 0
-fi
-
-dbdump_b_prefix=${dbdump_dir_b}/dbdump
-
-dbdump_dir_a=${dbdump_top_dir}/${rse}_${d0}
-mkdir -p $dbdump_dir_a
-
-dbdump_a_prefix=${dbdump_dir_a}/dbdump
-
-python db_dump.py -c $config -d $dbconfig -o $dbdump_a_prefix
-
-d_out=${scratch_dir}/${rse}_D.list
-m_out=${scratch_dir}/${rse}_M.list
-
-$python cmp3.py $dbdump_b_prefix ${site_dump_prefix} ${dbdump_a_prefix} ${d_out} ${m_out}
-
+echo Dark list:    `wc -l ${d_out}`
+echo Missing list: `wc -l ${m_out}`
 
     
 
