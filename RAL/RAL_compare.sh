@@ -16,6 +16,10 @@ out=$5
 cert=$6
 key=$7
 
+sleep_interval=1000      # 10 minutes
+attempts="1 2 3 4 5 6"
+
+
 today=`date +%Y_%m_%d_00_00`
 
 b_prefix=${scratch}/${RSE}_${today}_B.list
@@ -41,13 +45,13 @@ echo
 echo Downloading tape dump ...
 echo
 
-for attempt in 1 2 3 4 5; do
+for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${tape_dump_tmp}
     xrdcp root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/tape/dump_16012022.gz ${tape_dump_tmp}
     if [ "$?" != "0" ]; then
         echo sleeping ...
-        sleep 600
+        sleep $sleep_interval
     else
         echo succeeded
         python partition.py -c $config -r $RSE -q -o ${r_prefix} ${tape_dump_tmp}
