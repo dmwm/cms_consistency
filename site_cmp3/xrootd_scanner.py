@@ -76,7 +76,7 @@ class Scanner(Task):
 
     def message(self, status, stats):
         if self.Master is not None:
-            self.Master.message("%-8s %-25s %s" % (status, stats, truncated_path(self.Master.Root, self.Location)))
+            self.Master.message("%s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
         
 
     @synchronized
@@ -139,6 +139,8 @@ class Scanner(Task):
                         path = l
                         path = path if path.startswith(location) else location + "/" + path
                         dirs.append(path)
+        if not recursive:
+            print("scan(%s): %d dirs" % (location, len(dirs)))
         return status, reason, dirs, files
 
     def run(self):
@@ -160,7 +162,7 @@ class Scanner(Task):
 
         else:
             counts = "%sf+%sd" % (len(files), len(dirs))
-            stats += "%10s" % (counts,)
+            stats += "%15s" % (counts,)
             self.message("done", stats)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
@@ -184,7 +186,7 @@ class ScannerMaster(PyThread):
         self.Server = server
         self.Root = self.canonic(root)
         self.MaxScanners = max_scanners
-        self.Results = DEQueue(100)
+        self.Results = DEQueue()
         self.ScannerQueue = TaskQueue(max_scanners)
         self.Timeout = timeout
         self.Done = False
@@ -523,6 +525,8 @@ if __name__ == "__main__":
                 sys.stderr.write(p+"\n")
 
         print("Files:                %d" % (n,))
+        print("Directories found:    %d" % (master.NToScan,))
+        print("Directories scanned:  %d" % (master.NScanned,))
         print("Directories:          %d" % (len(master.Directories,)))
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
         print("Failed directories:   %d" % (len(master.GaveUp),))
