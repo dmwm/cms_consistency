@@ -148,7 +148,7 @@ class Scanner(Task):
         location = self.Location
         self.WasRecursive = recursive = self.Recursive and not self.Master.recursionVeto(location)
         stats = "r" if recursive else " "
-        self.message("start", stats)
+        #self.message("start", stats)
 
         status, reason, dirs, files = self.scan(recursive)
         self.Elapsed = time.time() - self.Started
