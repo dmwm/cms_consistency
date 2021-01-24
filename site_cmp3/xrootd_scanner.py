@@ -59,7 +59,7 @@ class Killer(PyThread):
 class Scanner(Task):
     
     MAX_ATTEMPTS_REC = 2
-    MAX_ATTEMPTS = 5
+    MAX_ATTEMPTS_FLAT = 5
 
     def __init__(self, master, server, location, recursive, timeout):
         Task.__init__(self)
@@ -74,8 +74,8 @@ class Scanner(Task):
         self.Started = None
         self.Elapsed = None
         self.Attempts = self.MAX_ATTEMPTS_REC if recursive else self.MAX_ATTEMPTS
-        self.RecAttempted = 0
-        self.Attempted = 0
+        self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
+        self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
 
     def __str__(self):
         return "Scanner(%s)" % (self.Location,)
@@ -152,7 +152,13 @@ class Scanner(Task):
     def run(self):
         self.Started = t0 = time.time()
         location = self.Location
-        self.WasRecursive = recursive = self.Recursive and not self.Master.recursionVeto(location)
+        if self.RecAttempts > 0:
+            recursive = True
+            self.RecAttempts -= 1
+        else:
+            recursive = False
+            self.FlatAttempts -= 1
+        self.WasRecursive = recursive
         stats = "r" if recursive else " "
         #self.message("start", stats)
 
@@ -260,14 +266,6 @@ class ScannerMaster(PyThread):
         else:
             return parts[0]
             
-    @synchronized
-    def recursionVeto(self, path):
-        # check if "many" subdirectories under this path's parent fail to scan recursively
-        # if so, tell the scanner not to bother and run in non-recursive way
-        parent = self.parent(path)
-        n = self.RecursiveFailed.get(parent, 0)
-        return n >= self.MAX_RECURSION_FAILED_COUNT
-      
     def addDirectory(self, path, scan):
         if not self.Failed:
             path = self.canonic(path)
@@ -318,21 +316,19 @@ class ScannerMaster(PyThread):
                 nfailed = self.RecursiveFailed.get(parent, 0)
                 self.RecursiveFailed[parent] = nfailed + 1
                 
-        retry = True
         if not scanner.WasRecursive:
             with self:
                 nerrors = self.Errors.setdefault(path, 0)
                 nerrors = self.Errors[path] = nerrors + 1
-                retry = nerrors < self.MAX_ERRORS
+                
+        retry = (scanner.RecAttempts > 0) or (scanner.FlatAttempts > 0)
         if retry:
-            self.ScannerQueue.addTask(
-                Scanner(self, self.Server, path, False, self.Timeout)
-            )
+            self.ScannerQueue.addTask(scanner)
         else:
             self.GaveUp.add(path)
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
-        self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
+            self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
         
     def scanner_succeeded(self, location, recursive, files, dirs):
         with self:
