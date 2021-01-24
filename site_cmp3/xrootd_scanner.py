@@ -139,8 +139,8 @@ class Scanner(Task):
                         path = l
                         path = path if path.startswith(location) else location + "/" + path
                         dirs.append(path)
-        if not recursive:
-            print("scan(%s): %d dirs" % (location, len(dirs)))
+        #if not recursive:
+        #    print("scan(%s): %d dirs" % (location, len(dirs)))
         return status, reason, dirs, files
 
     def run(self):
@@ -152,7 +152,8 @@ class Scanner(Task):
 
         status, reason, dirs, files = self.scan(recursive)
         self.Elapsed = time.time() - self.Started
-        stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
+        #stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
+        stats = "r" if recursive else " "
         
         if status != "OK":
             stats += " " + reason
@@ -161,9 +162,8 @@ class Scanner(Task):
                 self.Master.scanner_failed(self)
 
         else:
-            counts = "%sf+%sd" % (len(files), len(dirs))
-            stats += "%15s" % (counts,)
-            self.message("done", stats)
+            counts = " %s %s" % (len(files), len(dirs))
+            self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
         
@@ -173,12 +173,7 @@ class Scanner(Task):
         s = Scanner(None, server, location, recursive, timeout)
         return s.scan(recursive)
         
-    @staticmethod
-    def location_exists(server, location, timeout):
-        s = Scanner(None, server, location, False, timeout)
-        status, reason, dirs, files = s.scan(recursive)
-        return status == "OK"
-        
+                
 class ScannerMaster(PyThread):
     
     MAX_RECURSION_FAILED_COUNT = 5
