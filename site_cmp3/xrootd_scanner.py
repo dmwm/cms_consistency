@@ -73,7 +73,6 @@ class Scanner(Task):
         self.Killed = False
         self.Started = None
         self.Elapsed = None
-        self.Attempts = self.MAX_ATTEMPTS_REC if recursive else self.MAX_ATTEMPTS
         self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
         self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
 
@@ -462,6 +461,8 @@ if __name__ == "__main__":
         
         timeout = override_timeout or config.scanner_timeout(rse)
         top_path = root if root.startswith("/") else server_root + "/" + root
+        recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
+        max_scanners = override_max_scanners or config.scanner_workers(rse)
 
         t0 = time.time()
         root_stats = {
@@ -488,8 +489,6 @@ if __name__ == "__main__":
             })
             my_stats["roots"].append(root_stats)
         else:
-            recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
-            max_scanners = override_max_scanners or config.scanner_workers(rse)
             remove_prefix = config.scanner_remove_prefix(rse)
             add_prefix = config.scanner_add_prefix(rse)
             path_filter = config.scanner_filter(rse)
