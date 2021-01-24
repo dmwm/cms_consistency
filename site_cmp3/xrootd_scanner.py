@@ -230,7 +230,7 @@ class ScannerMaster(PyThread):
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        scanner_task = Scanner(self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout, self.MAX_ATTEMPTS)
+        scanner_task = Scanner(self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout)
         self.ScannerQueue.addTask(scanner_task)
         self.NToScan += 1
         
