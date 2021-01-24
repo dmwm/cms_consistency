@@ -141,6 +141,7 @@ class Scanner(Task):
                         dirs.append(path)
         #if not recursive:
         #    print("scan(%s): %d dirs" % (location, len(dirs)))
+
         return status, reason, dirs, files
 
     def run(self):
