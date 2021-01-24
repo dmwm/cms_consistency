@@ -173,6 +173,11 @@ class Scanner(Task):
         s = Scanner(None, server, location, recursive, timeout)
         return s.scan(recursive)
         
+    @staticmethod
+    def location_exists(server, location, timeout):
+        s = Scanner(None, server, location, False, timeout)
+        status, reason, dirs, files = s.scan(recursive)
+        return status == "OK"
                 
 class ScannerMaster(PyThread):
     
