@@ -173,7 +173,12 @@ class Scanner(Task):
         s = Scanner(None, server, location, recursive, timeout)
         return s.scan(recursive)
         
-                
+    @staticmethod
+    def location_exists(server, location, timeout):
+        s = Scanner(None, server, location, False, timeout)
+        status, reason, dirs, files = s.scan(recursive)
+        return status == "OK"
+        
 class ScannerMaster(PyThread):
     
     MAX_RECURSION_FAILED_COUNT = 5
@@ -215,7 +220,7 @@ class ScannerMaster(PyThread):
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        status, reason, dirs, files = Scanner.scan_location(self.Server, self.Root, False, self.Timeout)
+        status, reason, dirs, files = Scanner.scan_location(self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout)
         if status != "OK":
             self.Failed = self.RootFailed = True
             self.Error = f"Root scan failed: {reason}"
