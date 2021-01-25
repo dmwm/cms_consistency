@@ -1,5 +1,5 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
-import re, json, os, os.path
+import re, json, os, os.path, traceback
 import subprocess, time
 from part import PartitionedList
 from py3 import to_str
@@ -81,7 +81,7 @@ class Scanner(Task):
 
     def message(self, status, stats):
         if self.Master is not None:
-            self.Master.message("%s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
+            self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
         
 
     @synchronized
@@ -97,6 +97,7 @@ class Scanner(Task):
         lscommand = "xrdfs %s ls %s %s" % (server, "-R" if recursive else "", location)
         #print("lscommand:", lscommand)
 
+        self.Killed = False
         killer = Killer(self, timeout)
 
         with self:
@@ -149,6 +150,7 @@ class Scanner(Task):
         return status, reason, dirs, files
 
     def run(self):
+        #print("Scanner.run():", self.Master)
         self.Started = t0 = time.time()
         location = self.Location
         if self.RecAttempts > 0:
@@ -170,11 +172,10 @@ class Scanner(Task):
             stats += " " + reason
             self.message(status, stats)
             if self.Master is not None:
-                self.Attempts -= 1
                 self.Master.scanner_failed(self)
 
         else:
-            counts = " %s %s" % (len(files), len(dirs))
+            counts = " %8d %-8d" % (len(files), len(dirs))
             self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
@@ -216,7 +217,7 @@ class ScannerMaster(PyThread):
         self.LastReport = time.time()
         self.EmptyDirs = set()
         self.NScanned = 0
-        self.NToScan = 1                # scan root at least
+        self.NToScan = 1 
         self.Quiet = quiet
         self.DisplayProgress = display_progress and Use_tqdm and not quiet
         if self.DisplayProgress:
@@ -232,7 +233,6 @@ class ScannerMaster(PyThread):
         #server, location, recursive, timeout
         scanner_task = Scanner(self, self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout)
         self.ScannerQueue.addTask(scanner_task)
-        self.NToScan += 1
         
         """
         status, reason, dirs, files = Scanner.scan_location(self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout)
@@ -305,9 +305,8 @@ class ScannerMaster(PyThread):
             #sys.stderr.write("--- Locations to scan: %d\n" % (len(active)+len(waiting),))
             self.LastReport = time.time()
 
+    @synchronized
     def scanner_failed(self, scanner):
-        if scanner.Attempts > 0:
-            self.ScannerQueue.addTask(scanner)
         path = scanner.Location
         if scanner.WasRecursive:
             with self:
@@ -322,6 +321,7 @@ class ScannerMaster(PyThread):
                 
         retry = (scanner.RecAttempts > 0) or (scanner.FlatAttempts > 0)
         if retry:
+            print("resubmitted:", scanner.Location, scanner.RecAttempts, scanner.FlatAttempts)
             self.ScannerQueue.addTask(scanner)
         else:
             self.GaveUp.add(path)
@@ -329,6 +329,7 @@ class ScannerMaster(PyThread):
             #sys.stderr.write("Gave up on: %s\n" % (path,))
             self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
         
+    @synchronized
     def scanner_succeeded(self, location, recursive, files, dirs):
         with self:
             if len(files) == 0 and (recursive or len(dirs) == 0):
