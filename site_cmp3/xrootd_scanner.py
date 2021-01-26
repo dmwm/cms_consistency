@@ -204,7 +204,7 @@ class ScannerMaster(PyThread):
         self.Root = self.canonic(root)
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
-        self.ScannerQueue = TaskQueue(max_scanners, delegate = self)
+        self.ScannerQueue = TaskQueue(max_scanners)
         self.Timeout = timeout
         self.Done = False
         self.Error = None
