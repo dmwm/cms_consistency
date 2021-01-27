@@ -465,6 +465,9 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         
+        my_stats["scanning_root"] = root
+        write_stats(my_stats, stats_file, stats_key)
+
         timeout = override_timeout or config.scanner_timeout(rse)
         top_path = root if root.startswith("/") else server_root + "/" + root
         recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
@@ -592,6 +595,10 @@ if __name__ == "__main__":
 
            
     out_list.close()
+
+
+    if "scanning_root" in my_stats:
+        del my_stats["scanning_root"]
 
 
     if failed:
