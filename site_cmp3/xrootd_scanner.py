@@ -434,7 +434,6 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
             "end_time":t1,
             "elapsed_time": t1-t0
         })
-        my_stats["roots"].append(root_stats)
     else:
         remove_prefix = config.scanner_remove_prefix(rse)
         add_prefix = config.scanner_add_prefix(rse)
@@ -524,13 +523,13 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
             "elapsed_time": t1-t0
         })
 
-        del my_stats["scanning"]
-        my_stats["roots"].append(root_stats)
-        write_stats(my_stats, stats_file, stats_key)
         
         if master.GaveUp:
             failed = True
-
+            
+    del my_stats["scanning"]
+    my_stats["roots"].append(root_stats)
+    write_stats(my_stats, stats_file, stats_key)
     return failed
     
 
