@@ -193,6 +193,7 @@ class Scanner(Task):
         return status == "OK", reason
                 
 class ScannerMaster(PyThread):
+
     
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
