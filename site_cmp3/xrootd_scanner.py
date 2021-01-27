@@ -599,15 +599,20 @@ if __name__ == "__main__":
     failed = False
         
     for root in config.scanner_roots(rse):
-        failed = scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners)
+        try:
+            failed = scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners)
+        except:
+            exc = traceback.format_exc()
+            lines = exc.split("\n")
+            scanning = my_stats.get("scanning", {"root":root})
+            scanning["exception"] = lines
+            scanning["exception_time"] = time.time()
+            failed = True
+    
         if failed:
             break
            
     out_list.close()
-
-    if "scanning" in my_stats:
-        del my_stats["scanning"]
-
 
     if failed:
         my_stats["status"] = "failed"
