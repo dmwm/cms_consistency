@@ -465,8 +465,6 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         
-        my_stats["scanning"] = dict(root=root, start_time=time.time())
-        write_stats(my_stats, stats_file, stats_key)
 
         timeout = override_timeout or config.scanner_timeout(rse)
         top_path = root if root.startswith("/") else server_root + "/" + root
@@ -481,6 +479,9 @@ if __name__ == "__main__":
            "recursive_threshold":recursive_threshold,
            "max_scanners":max_scanners
         }
+
+        my_stats["scanning"] = root_stats
+        write_stats(my_stats, stats_file, stats_key)
 
         exists, reason = Scanner.location_exists(server, top_path, timeout)
         t1 = time.time()
@@ -586,6 +587,7 @@ if __name__ == "__main__":
                 "elapsed_time": t1-t0
             })
 
+            del my_stats["scanning"]
             my_stats["roots"].append(root_stats)
             write_stats(my_stats, stats_file, stats_key)
             
