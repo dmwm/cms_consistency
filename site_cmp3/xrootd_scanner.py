@@ -465,7 +465,7 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         
-        my_stats["scanning_root"] = root
+        my_stats["scanning"] = dict(root=root, start_time=time.time())
         write_stats(my_stats, stats_file, stats_key)
 
         timeout = override_timeout or config.scanner_timeout(rse)
@@ -597,8 +597,8 @@ if __name__ == "__main__":
     out_list.close()
 
 
-    if "scanning_root" in my_stats:
-        del my_stats["scanning_root"]
+    if "scanning" in my_stats:
+        del my_stats["scanning"]
 
 
     if failed:
