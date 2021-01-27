@@ -5,7 +5,7 @@ from part import PartitionedList
 from py3 import to_str
 from stats import write_stats
 
-Version = "1.0"
+Version = "1.1"
 
 try:
     import tqdm
@@ -193,7 +193,6 @@ class Scanner(Task):
         return status == "OK", reason
                 
 class ScannerMaster(PyThread):
-
     
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
@@ -455,8 +454,13 @@ if __name__ == "__main__":
         "server_root":server_root,
         "server":server,
         "roots":[], 
-        "start_time":time.time()
+        "start_time":time.time(),
+        "end_time": None,
+        "status":   "started"
     }
+    
+    write_stats(my_stats, stats_file, stats_key)
+    
     failed = False
         
     for root in config.scanner_roots(rse):
@@ -501,8 +505,6 @@ if __name__ == "__main__":
                 assert rewrite_out is not None
                 rewrite_path = re.compile(rewrite_path)
     
-
-
             print("Starting scan of %s:%s with:" % (server, top_path))
             print("  Recursive threshold = %d" % (recursive_threshold,))
             print("  Max scanner threads = %d" % max_scanners)
@@ -582,6 +584,7 @@ if __name__ == "__main__":
             })
 
             my_stats["roots"].append(root_stats)
+            write_stats(my_stats, stats_file, stats_key)
             
             if master.GaveUp:
                 failed = True
