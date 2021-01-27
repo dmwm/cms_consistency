@@ -401,6 +401,8 @@ python xrootd_scanner.py [options] <rse>
 
 def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners):
     
+    failed = False
+    
     timeout = override_timeout or config.scanner_timeout(rse)
     top_path = root if root.startswith("/") else server_root + "/" + root
     recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
@@ -528,7 +530,6 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
         
         if master.GaveUp:
             failed = True
-            break
 
     return failed
     
