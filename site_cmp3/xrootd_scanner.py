@@ -406,7 +406,7 @@ python xrootd_scanner.py [options] <rse>
     -s <stats_file>              - write final statistics to JSON file
 """
 
-def rewrite_path(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
+def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
     
     assert path.startswith(path_prefix)
 
@@ -616,6 +616,7 @@ if __name__ == "__main__":
             failed = scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
         except:
             exc = traceback.format_exc()
+            print(exc)
             lines = exc.split("\n")
             scanning = my_stats.get("scanning", {"root":root})
             scanning["exception"] = lines
