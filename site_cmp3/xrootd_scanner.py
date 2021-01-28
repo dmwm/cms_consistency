@@ -250,7 +250,7 @@ class ScannerMaster(PyThread):
         
     def addFiles(self, files):
         if not self.Failed:
-            self.Results.append(files)
+            self.Results.append(('f', files))
             self.NFiles += len(files)
 
     def canonic(self, path):
@@ -293,6 +293,7 @@ class ScannerMaster(PyThread):
                     self.NToScan += 1
         
     def addDirectories(self, dirs, scan=True):
+        self.Results.append(('d', dirs))
         for d in dirs:
             self.addDirectory(d, scan)
         self.show_progress()
@@ -349,10 +350,16 @@ class ScannerMaster(PyThread):
         self.show_progress()
 
     def files(self):
+        yield from self.paths('f')
+                        
+    def paths(self, type=None):
         while not (self.Done and len(self.Results) == 0):
-            lst = self.Results.pop()
-            if lst:
-                    for path in lst:
+            t, lst = self.Results.pop()
+            if lst and (type is None or type == t):
+                for path in lst:
+                    if type is None:
+                        yield t, self.canonic(path)
+                    else:
                         yield self.canonic(path)
                         
     @synchronized
@@ -399,7 +406,7 @@ python xrootd_scanner.py [options] <rse>
     -s <stats_file>              - write final statistics to JSON file
 """
 
-def rewrite_path(path, path_prefix, remove_prefix, add_prefix, rewrite_path, rewrite_out):
+def rewrite_path(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
     
     assert path.startswith(path_prefix)
 
@@ -483,14 +490,13 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
         if not path_prefix.endswith("/"):
             path_prefix += "/"
             
-        for path in master.files():
-            
-            path = rewrite_path(path, path_prefix, remove_prefix, add_prefix, rewrite_path, rewrite_out)
-            if path:    out_list.add(path)             
-            
-        if dir_list is not None:
-            for path in master.Directories:
-                path = rewrite_path(path)
+        for t, path in master.paths():
+            if t == 'f':
+                path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
+                if path:    
+                    file_list.add(path)             
+            elif t == 'd' and dir_list is not None:
+                path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
                 if path:
                     dir_list.add(path) 
 
