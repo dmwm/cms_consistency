@@ -223,7 +223,7 @@ class ScannerMaster(PyThread):
         if self.DisplayProgress:
             self.TQ = tqdm.tqdm(total=self.NToScan, unit="dir")
             self.LastV = 0
-        self.NFiles = 0
+        self.NFiles = self.NDirectories = 0
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
 
     def run(self):
