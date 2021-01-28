@@ -268,7 +268,6 @@ class ScannerMaster(PyThread):
     def addDirectory(self, path, scan):
         if not self.Failed:
             path = self.canonic(path)
-            self.Directories.add(path)
             if scan:
                 assert path.startswith(self.Root)
                 relpath = path[len(self.Root):]
@@ -293,11 +292,13 @@ class ScannerMaster(PyThread):
                     self.NToScan += 1
         
     def addDirectories(self, dirs, scan=True):
-        self.Results.append(('d', dirs))
-        for d in dirs:
-            self.addDirectory(d, scan)
-        self.show_progress()
-        self.report()
+        if not self.Failed:
+            self.Results.append(('d', dirs))
+            self.NDirectories += len(dirs)
+            for d in dirs:
+                self.addDirectory(d, scan)
+            self.show_progress()
+            self.report()
             
     @synchronized
     def report(self):
@@ -372,7 +373,7 @@ class ScannerMaster(PyThread):
             enf = 0
             if self.NScanned > 0:
                 enf = int(self.NFiles * self.NToScan/self.NScanned)
-            self.TQ.set_postfix(f=self.NFiles, ed=len(self.EmptyDirs), d=len(self.Directories), enf=enf)
+            self.TQ.set_postfix(f=self.NFiles, ed=len(self.EmptyDirs), d=self.NDirectories, enf=enf)
             if message:
                 self.TQ.write(message)   
                 
@@ -511,10 +512,10 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
             for p in sorted(list(master.GaveUp)):
                 sys.stderr.write(p+"\n")
 
-        print("Files:                %d" % (n,))
+        print("Files:                %d" % (master.NFiles,))
         print("Directories found:    %d" % (master.NToScan,))
         print("Directories scanned:  %d" % (master.NScanned,))
-        print("Directories:          %d" % (len(master.Directories,)))
+        print("Directories:          %d" % (master.NDirectories,))
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
         print("Failed directories:   %d" % (len(master.GaveUp),))
         t1 = time.time()
@@ -528,7 +529,7 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
             "error": master.Error,
             "failed_subdirectories": list(master.GaveUp),
             "files": master.NFiles,
-            "directories": len(master.Directories),
+            "directories": master.NDirectories,
             "empty_directories":len(master.EmptyDirs),
             "end_time":t1,
             "elapsed_time": t1-t0
