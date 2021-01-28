@@ -413,7 +413,7 @@ def rewrite_path(path, path_prefix, remove_prefix, add_prefix, rewrite_path, rew
 
     if path_filter:
         if not path_filter.search(path):
-            continue
+            return None
 
     if rewrite_path is not None:
         if not rewrite_path.search(path):
@@ -482,14 +482,17 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
         path_prefix = server_root
         if not path_prefix.endswith("/"):
             path_prefix += "/"
+            
         for path in master.files():
             
             path = rewrite_path(path, path_prefix, remove_prefix, add_prefix, rewrite_path, rewrite_out)
-            out_list.add(path)             
+            if path:    out_list.add(path)             
             
         if dir_list is not None:
             for path in master.Directories:
-                dir_list.add(rewrite_path(path)) 
+                path = rewrite_path(path)
+                if path:
+                    dir_list.add(path) 
 
         if display_progress:
             master.close_progress()
