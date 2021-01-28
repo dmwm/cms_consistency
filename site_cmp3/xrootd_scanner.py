@@ -399,7 +399,31 @@ python xrootd_scanner.py [options] <rse>
     -s <stats_file>              - write final statistics to JSON file
 """
 
-def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners):
+def rewrite_path(path, path_prefix, remove_prefix, add_prefix, rewrite_path, rewrite_out):
+    
+    assert path.startswith(path_prefix)
+
+    path = "/" + path[len(path_prefix):]
+
+    if remove_prefix and path.startswith(remove_prefix):
+        path = path[len(remove_prefix):]
+
+    if add_prefix:
+        path = add_prefix + path
+
+    if path_filter:
+        if not path_filter.search(path):
+            continue
+
+    if rewrite_path is not None:
+        if not rewrite_path.search(path):
+            sys.stderr.write(f"Path rewrite pattern for root {root} did not find a match in path {path}\n")
+            sys.exit(1)
+        path = rewrite_path.sub(rewrite_out, path)   
+    return path
+    
+
+def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list):
     
     failed = False
     
@@ -454,40 +478,18 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files)
         master.start()
-        n = 0
+
         path_prefix = server_root
         if not path_prefix.endswith("/"):
             path_prefix += "/"
         for path in master.files():
-
-            assert path.startswith(path_prefix)
-        
-            path = "/" + path[len(path_prefix):]
-        
-            if remove_prefix and path.startswith(remove_prefix):
-                path = path[len(remove_prefix):]
-        
-            if add_prefix:
-                path = add_prefix + path
-        
-            if path_filter:
-                if not path_filter.search(path):
-                    continue
-        
-            if rewrite_path is not None:
-                if not rewrite_path.search(path):
-                    sys.stderr.write(f"Path rewrite pattern for root {root} did not find a match in path {path}\n")
-                    sys.exit(1)
-                path = rewrite_path.sub(rewrite_out, path)   
-        
+            
+            path = rewrite_path(path, path_prefix, remove_prefix, add_prefix, rewrite_path, rewrite_out)
             out_list.add(path)             
-        
-            n += 1
-            if False and (n % 100 == 0):
-                scanners = list(master.ScannerQueue.activeTasks())
-                print ("[Active scanners: %d]" % (len(scanners),))
-                for s in scanners:
-                    print ("    %s" % (s,))
+            
+        if dir_list is not None:
+            for path in master.Directories:
+                dir_list.add(rewrite_path(path)) 
 
         if display_progress:
             master.close_progress()
@@ -523,7 +525,6 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
             "elapsed_time": t1-t0
         })
 
-        
         if master.GaveUp:
             failed = True
             
@@ -538,7 +539,7 @@ if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:dqM:s:S:z")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:vqM:s:S:zd:")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -549,7 +550,7 @@ if __name__ == "__main__":
     config = Config(opts.get("-c"))
 
     quiet = "-q" in opts
-    display_progress = not quiet and "-d" in opts
+    display_progress = not quiet and "-v" in opts
     override_recursive_threshold = int(opts.get("-R", 0))
     override_timeout = int(opts.get("-t", 0))
     override_max_scanners = int(opts.get("-m", 0))
@@ -564,15 +565,18 @@ if __name__ == "__main__":
     else:
         nparts = config.nparts(rse)
 
-    output = opts.get("-o")
     if nparts > 1:
-        if not output:
+        if not "-o" in opts:
             print ("Output prefix is required for partitioned output")
             print (Usage)
             sys.exit(2)
+
     output = opts.get("-o","out.list")
 
     out_list = PartitionedList.create(nparts, output, zout)
+
+    dir_output = opts.get("-d")
+    dir_list = PartitionedList.create(nparts, dir_output, zout) if dir_output else None
 
     server = config.scanner_server(rse)
     server_root = config.scanner_server_root(rse)
@@ -600,7 +604,7 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         try:
-            failed = scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners)
+            failed = scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
         except:
             exc = traceback.format_exc()
             lines = exc.split("\n")
