@@ -1,1 +1,1 @@
-../site_cmp3/xrootd_scanner.py
+../../xrootd/xrootd_scanner.py

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -vx
 
 cfg=$1
 rse=$2

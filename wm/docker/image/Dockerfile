@@ -68,6 +68,7 @@ RUN ls -l /home
 WORKDIR /home/rucio
 
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
+RUN cd cms_consistency; git checkout wm-scanner
 
 COPY run.sh .
 
