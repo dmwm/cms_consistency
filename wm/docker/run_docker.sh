@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$1" == "" ]; then
-	echo 'Usage: run_site_cmp3.sh [--shell] <config file> <RSE name> <output dir> [<cert> <key>]'
+	echo 'Usage: run_docker.sh [--shell] <config file> <RSE name> <output dir> [<cert> <key>]'
 	exit 2
 fi
 
