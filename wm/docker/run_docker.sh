@@ -35,11 +35,11 @@ cp $key ${cfg_dir}/key
 chmod go-rwx ${cfg_dir}/*
 
 if [ "$shell" == "--shell" ]; then
-        echo would run: ./run.sh $shell /config ${RSE} /output /config/cert /config/key
+        echo would run: ./run.sh $shell /config/config.yaml ${RSE} /output /config/cert /config/key
 	docker run -ti --rm -v ${cfg_dir}:/config -v ${output}:/output $image /bin/bash
 else
 	docker run --rm -v ${cfg_dir}:/config -v ${output}:/output $image \
-		   ./run.sh $shell /config ${RSE} /output /config/cert /config/key
+		   ./run.sh $shell /config/config.yaml ${RSE} /output /config/cert /config/key
 fi
 
 
