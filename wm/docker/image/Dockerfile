@@ -66,7 +66,7 @@ RUN useradd -ms /bin/bash rucio
 RUN ls -l /home
 
 WORKDIR /home/rucio
-
+RUN echo 1
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
 RUN cd cms_consistency; git checkout wm-scanner
 

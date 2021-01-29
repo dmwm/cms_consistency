@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$1" == "" ]; then
-	echo 'Usage: run_site_cmp3.sh [--shell] <config file> <rucio.cfg> <RSE name> <output dir> <cert> <key>'
+	echo 'Usage: run_docker.sh [--shell] <config file> <rucio.cfg> <RSE name> <output dir> <cert> <key>'
 	exit 2
 fi
 
@@ -25,7 +25,7 @@ if [ ! -d ${output} ]; then
 	exit 1
 fi
 
-scratch=/tmp/${USER}/cms_recon
+scratch=/tmp/${USER}/scratch
 mkdir -p $scratch
 if [ ! -d ${scratch} ]; then
         echo Scartch must be a directory
