@@ -1,6 +1,7 @@
 from webpie import WPApp, WPHandler
 import sys, glob, json, time, os
 from datetime import datetime
+from wm_handler import WMHandler, WMDataSource
 
 Version = "1.0"
 
@@ -122,6 +123,10 @@ def display_file_list(lst):
     
 
 class Handler(WPHandler):
+    
+    def __init__(self, *params, **args):
+        WPHandler.__init__(self, *params, **args)
+        self.WM = WMHandler(*params, **args)
     
     def index(self, request, relpath, **args):
         #
@@ -323,9 +328,11 @@ class App(WPApp):
 
     Version = Version
     
-    def __init__(self, handler, path, prefix):
+    def __init__(self, handler, path, prefix, wm_path):
         WPApp.__init__(self, handler, prefix=prefix)
         self.DataViewer = DataViewer(path)
+        self.WMDataSource = WMDataSource(wm_path)
+        
 
     def init(self):
         import os
@@ -336,7 +343,7 @@ class App(WPApp):
         
         
 Usage = """
-python server.py [-r <url prefix to remove>] <port> <data path>
+python server.py [-r <url prefix to remove>] <port> <cc data path> <wm data path>
 """
 
 if __name__ == "__main__":
@@ -352,17 +359,17 @@ if __name__ == "__main__":
         sys.exit(2) 
     
     port = int(args[0])
-    path = args[1]
+    cc_path, wm_path = args[1:]
     
     prefix = opts.get("-r")
     logging="-l" in opts
     debug=sys.stdout if "-d" in opts else None
 
-    print("Starting server on port %s with path %s" % (port, path))
+    print("Starting server:\n  port %s\n  CC path %s\n  WM path %s" % (port, cc_path, wm_path))
 
     sys.stdout.flush()
     
-    App(Handler, path, prefix).run_server(port, logging=logging, debug=debug)
+    App(Handler, cc_path, prefix, wm_path).run_server(port, logging=logging, debug=debug)
 
         
         
