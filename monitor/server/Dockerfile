@@ -16,7 +16,7 @@ ADD samples ./samples
 
 EXPOSE 8400
 
-ENTRYPOINT ["/root/start.sh"]
+#ENTRYPOINT ["/root/start.sh"]
 
 
 
