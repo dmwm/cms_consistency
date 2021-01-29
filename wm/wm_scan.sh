@@ -22,7 +22,7 @@ echo "out:                       $out"
 echo "cert:                      $cert"
 echo "key:                       $key"
 
-python=${PYTHON:-python}
+python=${PYTHON:-python3}
 
 echo will use python: $python
 
