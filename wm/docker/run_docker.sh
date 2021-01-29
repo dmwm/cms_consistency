@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$1" == "" ]; then
-	echo 'Usage: run_site_cmp3.sh [--shell] <config file> <RSE name> <output dir> <cert> <key>'
+	echo 'Usage: run_site_cmp3.sh [--shell] <config file> <RSE name> <output dir> [<cert> <key>]'
 	exit 2
 fi
 
@@ -30,16 +30,22 @@ cfg_dir=/tmp/wm_config
 mkdir -p $cfg_dir
 chmod go-rwx $cfg_dir
 cp $config_file ${cfg_dir}/config.yaml
-cp $cert ${cfg_dir}/cert
-cp $key ${cfg_dir}/key
+
+if [ "$cert" != "" ]; then
+	cp $cert ${cfg_dir}/cert
+	cp $key ${cfg_dir}/key
+	cert=/config/cert
+	key=/config/key
+fi
+
 chmod go-rwx ${cfg_dir}/*
 
 if [ "$shell" == "--shell" ]; then
-        echo would run: ./run.sh $shell /config/config.yaml ${RSE} /output /config/cert /config/key
+        echo would run: ./run.sh $shell /config/config.yaml ${RSE} /output $cert $key
 	docker run -ti --rm -v ${cfg_dir}:/config -v ${output}:/output $image /bin/bash
 else
 	docker run --rm -v ${cfg_dir}:/config -v ${output}:/output $image \
-		   ./run.sh $shell /config/config.yaml ${RSE} /output /config/cert /config/key
+		   ./run.sh $shell /config/config.yaml ${RSE} /output $cert $key
 fi
 
 
