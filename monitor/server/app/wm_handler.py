@@ -19,15 +19,15 @@ class WMDataSource(object):
 
     def list_rses(self):
         files = glob.glob(f"{self.Path}/*_stats.json")
-        rses = set()
+        rses = []
         for path in files:
             try:
                 data = json.loads(open(path, "r").read())
-                rse = data["scanner"]["rse"]
-                rses.add(rse)
+                data = data["scanner"]
+                if "rse" in data: rses.append(data)
             except:
                 pass
-        return sorted(list(rses))
+        return sorted(rses, key=lambda d: d["rse"])
         
     def stats_for_rse(self, rse):
         path = f"{self.Path}/{rse}_stats.json"
@@ -40,7 +40,7 @@ class WMDataSource(object):
             f = open(path, "rb")
             type = "text/plain"
         elif os.path.isfile(path + ".gz"):
-            f = gzip.open(path, "rt")
+            f = open(path + ".gz", "rb")
             type = "application/x-gzip"
         return f, type
         
@@ -48,9 +48,7 @@ class WMHandler(WPHandler):
     
     def rses(self, request, replapth, **args):
         ds = self.App.WMDataSource
-        data = {}
-        for rse in ds.list_rses():
-            data[rse] = ds.stats_for_rse(rse)
+        data = ds.list_rses()
         return json.dumps(data), "text/json" 
     
     def read_file(self, f):
