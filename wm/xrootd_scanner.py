@@ -1,1 +1,1 @@
-../../xrootd/xrootd_scanner.py
+../xrootd/xrootd_scanner.py

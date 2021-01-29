@@ -40,7 +40,7 @@ fi
 
 export PYTHONPATH=`pwd`/cmp3
 
-$python scanner/xrootd_scanner.py -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
+$python xrootd_scanner.py -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
 if [ "$?" != "0" ]; then
 	rm -f ${stats} ${file_list_prefix}* 
         echo "Site scan failed. Exiting"
