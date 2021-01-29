@@ -31,11 +31,11 @@ stats=${out}/${RSE}_stats.json
 
 # X509 proxy
 if [ "$cert" != "" ]; then
-        if [ "$key" == "" ]; then
-            export X509_USER_PROXY=$cert
-        else
-            voms-proxy-init -voms cms -rfc -valid 192:00 --cert $cert --key $key
-        fi
+        cp $cert /tmp/cert
+        cp $key /tmp/key
+        chmod go-rwx /tmp/cert /tmp/key
+        chmod go-rwx /tmp/key
+        voms-proxy-init -voms cms -rfc -valid 192:00 --cert /tmp/cert --key /tmp/key
 fi
 
 export PYTHONPATH=`pwd`/cmp3
