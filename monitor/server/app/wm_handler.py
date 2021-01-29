@@ -36,7 +36,7 @@ class WMDataSource(object):
         if os.path.isfile(path):
             f = open(path, "rb")
             type = "text/plain"
-        elif os.path.isfile(path + ".gz")
+        elif os.path.isfile(path + ".gz"):
             f = gzip.open(path, "rt")
             type = "application/x-gzip"
         return f, type
