@@ -16,14 +16,17 @@ class WMDataSource(object):
         if not os.path.isdir(self.Path):
             return "Data volume %s does not exist" % (self.Path,)
         return "OK"
-        
+
     def list_rses(self):
         files = glob.glob(f"{self.Path}/*_stats.json")
         rses = set()
         for path in files:
-            fn = path.rsplit("/",1)[-1]
-            rse, timestamp, typ, ext = self.parse_filename(fn)
-            rses.add(rse)
+            try:
+                data = json.loads(open(path, "r").read())
+                rse = data["scanner"]["rse"]
+                rses.add(rse)
+            except:
+                pass
         return sorted(list(rses))
         
     def stats_for_rse(self, rse):
