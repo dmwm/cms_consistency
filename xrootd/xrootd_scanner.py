@@ -69,7 +69,6 @@ class Scanner(Task):
         self.Timeout = timeout
         self.WasRecursive = self.Recursive = recursive
         self.Subprocess = None
-        self.Done = False
         self.Killed = False
         self.Started = None
         self.Elapsed = None
@@ -101,7 +100,6 @@ class Scanner(Task):
         killer = Killer(self, timeout)
 
         with self:
-                # the killer process will wait for self.Subprocess to become not None or Done to become True
                 self.Subprocess = subprocess.Popen(lscommand, shell=True, 
                         stderr=subprocess.PIPE,
                         stdout=subprocess.PIPE)
@@ -244,7 +242,6 @@ class ScannerMaster(PyThread):
         """    
         self.ScannerQueue.waitUntilEmpty()
         self.Results.close()
-        self.Done = True
         self.ScannerQueue.Delegate = None       # detach for garbage collection
         self.ScannerQueue = None
         
@@ -354,8 +351,7 @@ class ScannerMaster(PyThread):
         yield from self.paths('f')
                         
     def paths(self, type=None):
-        while not (self.Done and len(self.Results) == 0):
-            t, lst = self.Results.pop()
+        for t, lst in self.Results:
             if lst and (type is None or type == t):
                 for path in lst:
                     if type is None:
