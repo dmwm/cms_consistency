@@ -28,6 +28,8 @@ echo "key:                       $key"
 
 python=${PYTHON:-python}
 
+export PYTHONPATH=`pwd`/cmp3:`pwd`
+
 echo will use python: $python
 
 mkdir -p ${scratch}
