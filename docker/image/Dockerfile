@@ -68,9 +68,9 @@ RUN ls -l /home
 
 WORKDIR /home/rucio
 
-RUN echo 5 > /dev/null		# to make sure git repo is re-cloned
+RUN echo 6 > /dev/null		# to make sure git repo is re-cloned
 RUN git clone https://github.com/ivmfnal/cms_consistency.git
-RUN cd cms_consistency; git checkout wm-scanner
+RUN cd cms_consistency
 
 COPY run.sh .
 
