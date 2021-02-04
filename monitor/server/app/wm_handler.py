@@ -2,7 +2,7 @@ from webpie import WPApp, WPHandler
 import sys, glob, json, time, os, gzip
 from datetime import datetime
 
-Version = "1.0"
+Version = "1.1"
 
 class WMDataSource(object):
     
@@ -44,7 +44,30 @@ class WMDataSource(object):
             type = "application/x-gzip"
         return f, type
         
+    def stats(self):
+        data = self.list_rses()
+        stats = {}
+        for rse_info in data:
+            rse_stats = {
+                k: rse_info.get(k) for k in ["scanner", "server_root", "server", "start_time", "end_time", "status"]
+            }
+            rse_stats.update(rse_info)
+            del rse_stats["rse"]
+            if "roots" in rse_stats:
+                roots = rse_stats.pop("roots")
+                for r in roots:
+                    if r["root"] == "unmerged":
+                        for k in ["error", "root_failed", "failed_subdirectories", "files", "directories", "empty_directories"]:
+                            rse_stats[k] = r.get(k)
+                        break
+            stats[rse_info["rse"]] = rse_stats
+        return stats
+        
+        
 class WMHandler(WPHandler):
+    
+    def version(self, request, replapth, **args):
+        return json.dumps(Version), "text/json"
     
     def rses(self, request, replapth, **args):
         ds = self.App.WMDataSource
@@ -62,3 +85,13 @@ class WMHandler(WPHandler):
         ds = self.App.WMDataSource
         f, type = ds.file_list(rse)
         return self.read_file(f), type
+        
+    def index(self, request, relpath, **args):
+        data = self.App.WMDataSource.stats()
+        rses = sorted(list(data.keys()))
+        return self.render_to_response("wm_index.html", rses = rses, data=data)
+            
+        
+        
+        
+        

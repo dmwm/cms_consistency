@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<table class="data">    
+    <tr>
+        <th>RSE</th><th>Last run</th><th>Status</th><th>Files</th><th>Directories</th><th>Empty directories</th>
+    </tr>
+    {% for rse in rses %}
+        {% set info = data[rse] %}
+        <tr>
+            <td><a href="./show_rse?rse={{rse}}">{{rse}}</td>
+            <td>{% if info["start_time"]|as_dt}}{% endif %}</td>
+            <td>{{info["status"] or ''}}</td>
+            <td>{{info["files"] or ''}}</td>
+            <td>{{info["directories"] or ''}}</td>
+            <td>{{info["empty_directories"] or ''}}</td>
+        </tr>
+    {% endfor %}    
+</table>
+
+{% endblock %}
