@@ -13,8 +13,11 @@
     <tr>    <th>Server root</th><td>{{data["server_root"]}}</td>  </tr>
     <tr>    <th>Start time</th><td>{{data["start_time"]|as_dt}}</td>  </tr>
     <tr>    <th>End time</th><td>{{data["end_time"]|as_dt}}</td>  </tr>
+    <tr>    <th>Elapsed time</th>
+            <td>{% if data["end_time"] and data["start_time"] -%} {{(data["end_time"]-data["start_time"])|hms}} {%- endif -%}</td>  
+    </tr>
     <tr>    <th>Status</th><td>{{data["status"]}}</td>  </tr>
-    <tr>    <th>Error</th><td>{{data["error"]}}</td>  </tr>
+    <tr>    <th>Error</th><td>{{data["error"] or ''}}</td>  </tr>
     <tr>    <th>Files</th><td><a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}">{{data["files"]}}</a></td>  </tr>
     <tr>    <th>Directories</th><td>{{data["directories"]}}</td>  </tr>
     <tr>    <th>Empty directories</th><td>{{data["empty_directories"]}}</td>  </tr>
