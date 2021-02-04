@@ -58,8 +58,8 @@ class Killer(PyThread):
     
 class Scanner(Task):
     
-    MAX_ATTEMPTS_REC = 2
-    MAX_ATTEMPTS_FLAT = 5
+    MAX_ATTEMPTS_REC = 1
+    MAX_ATTEMPTS_FLAT = 3
 
     def __init__(self, master, server, location, recursive, timeout):
         Task.__init__(self)
