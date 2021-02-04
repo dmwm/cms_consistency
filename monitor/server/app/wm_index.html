@@ -4,17 +4,21 @@
 
 <table class="data">    
     <tr>
-        <th>RSE</th><th>Last run</th><th>Status</th><th>Files</th><th>Directories</th><th>Empty directories</th>
+        <th>RSE</th><th>Last run</th><th>Elapsed time</th><th>Status</th><th>Error</th><th>Files</th><th>Directories</th><th>Empty directories</th>
     </tr>
     {% for rse in rses %}
         {% set info = data[rse] %}
         <tr>
-            <td><a href="./show_rse?rse={{rse}}">{{rse}}</td>
-            <td>{{info["start_time"]|as_dt}}</td>
+            <td>{{rse}}</td>
+            <td>{{info["start_time"]|as_dt}} - {{info["end_time"]|as_dt}} 
+                    {%- if info["end_time"] and info["start_time"] %}{{(info["end_time"]-info["start_time"])|hms}}
+                    {%- endif -%}
+            </td>
             <td>{{info["status"] or ''}}</td>
-            <td>{{info["files"] or ''}}</td>
-            <td>{{info["directories"] or ''}}</td>
-            <td>{{info["empty_directories"] or ''}}</td>
+            <td>{{info["error"] or ''}}</td>
+            <td>{{info["files"]}}</td>
+            <td>{{info["directories"]}}</td>
+            <td>{{info["empty_directories"]}}</td>
         </tr>
     {% endfor %}    
 </table>
