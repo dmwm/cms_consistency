@@ -64,7 +64,7 @@
         for( d of data )
         {
             tr = document.createElement("tr");
-            tr.innerHTML = "<td>" + d["rse"] + "</td>"
+            tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
                 + "<td>" + d["start_time"] + "</td>"
                 + "<td>" + d["ndark"] + "</td>"
                 + "<td>" + d["nmissing"] + "</td>"
