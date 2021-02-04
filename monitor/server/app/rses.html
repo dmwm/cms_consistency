@@ -8,7 +8,79 @@
     {% endfor %}
 #}
 
-<table class="data">    
+<p><span style="color:gray">sort by:</span>&nbsp;&nbsp;&nbsp;<a href="javascript:populate_table('data', data, 'rse')">RSE</a>&nbsp;&nbsp;&nbsp;<a href="javascript:populate_table('data', data, 'start_time')">time (+)</a>&nbsp;&nbsp;&nbsp;<a href="javascript:populate_table('data', data, '-start_time')">time (-)</a>
+</p>
+
+<table class="data" id="data"></table>
+
+
+<script type="text/javascript">
+    var data = [];
+    
+    {% for rse, start_time, ndark, nmissing, nerrors in infos %}
+        data.push({
+            "rse":"{{rse}}",
+            "start_time":"{{start_time|as_dt if start_time else ''}}",
+            "ndark":"{{ndark or ''}}",
+            "nmissing":"{{nmissing or ''}}",
+            "nerrors":"{{nerrors or ''}}"
+        });
+    {% endfor %}
+    
+    function sort_by_rse(a, b)
+    {
+        if( a["rse"] < b["rse"] )
+            return -1;
+        else if( b["rse"] < a["rse"] )
+            return 1;
+        else
+            return 0;
+    }
+    
+    function sort_by_time(a, b)
+    {
+        if( a["start_time"] > b["start_time"] )
+            return -1;
+        else if( b["start_time"] > a["start_time"] )
+            return 1;
+        else
+            return 0;
+    }
+
+    function populate_table(table_id, data, sort_order)
+    {
+        var t = document.getElementById(table_id);
+        while( t.firstChild )
+            t.removeChild(t.firstChild);
+        if( sort_order == "start_time" )
+            data.sort(sort_by_time);
+        else if( sort_order == "-start_time" )
+            data.sort(function(a,b){ return -sort_by_time(a,b)});
+        else
+            data.sort(sort_by_rse);
+        var tr = document.createElement("tr");
+        tr.innerHTML = "<th>RSE</th><th>Last run</th><th>Dark</th><th>Missing</th><th>Errors</th>";
+        t.appendChild(tr);
+        for( d of data )
+        {
+            tr = document.createElement("tr");
+            tr.innerHTML = "<td>" + d["rse"] + "</td>"
+                + "<td>" + d["start_time"] + "</td>"
+                + "<td>" + d["ndark"] + "</td>"
+                + "<td>" + d["nmissing"] + "</td>"
+                + "<td>" + d["nerrors"] + "</td>";
+            t.appendChild(tr);
+        }
+    };
+    
+    populate_table("data", data, "rse");
+
+</script>
+
+
+
+{#
+
     <tr>
         <th>RSE</th><th>Last run</th><th>Dark</th><th>Missing</th><th>Errors</th>
     </tr>
@@ -22,5 +94,6 @@
         </tr>
     {% endfor %}    
 </table>
+#}
 
 {% endblock %}
