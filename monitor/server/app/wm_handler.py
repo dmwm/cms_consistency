@@ -73,6 +73,11 @@ class WMHandler(WPHandler):
         ds = self.App.WMDataSource
         data = ds.list_rses()
         return json.dumps(data), "text/json" 
+
+    def stats(self, request, replapth, **args):
+        ds = self.App.WMDataSource
+        data = ds.stats()
+        return json.dumps(data), "text/json" 
     
     def read_file(self, f):
         while True:
