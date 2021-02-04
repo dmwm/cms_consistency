@@ -29,11 +29,6 @@ class WMDataSource(object):
                 pass
         return sorted(rses, key=lambda d: d["rse"])
         
-    def stats_for_rse(self, rse):
-        path = f"{self.Path}/{rse}_stats.json"
-        data = json.loads(open(path, "r").read())
-        return data
-        
     def file_list(self, rse):
         path = f"{self.Path}/{rse}_files.list.00000"
         if os.path.isfile(path):
@@ -44,25 +39,29 @@ class WMDataSource(object):
             type = "application/x-gzip"
         return f, type
         
+    def convert_rse_item(self, rse_info):
+        rse_stats = {
+            k: rse_info.get(k) for k in ["scanner", "server_root", "server", "start_time", "end_time", "status"]
+        }
+        if "roots" in rse_info:
+            for r in rse_info["roots"]:
+                if r["root"] == "unmerged":
+                    for k in ["error", "root_failed", "failed_subdirectories", "files", "directories", "empty_directories"]:
+                        rse_stats[k] = r.get(k)
+                    break
+        return rse_stats
+        
     def stats(self):
         data = self.list_rses()
-        stats = {}
-        for rse_info in data:
-            rse_stats = {
-                k: rse_info.get(k) for k in ["scanner", "server_root", "server", "start_time", "end_time", "status"]
-            }
-            rse_stats.update(rse_info)
-            del rse_stats["rse"]
-            if "roots" in rse_stats:
-                roots = rse_stats.pop("roots")
-                for r in roots:
-                    if r["root"] == "unmerged":
-                        for k in ["error", "root_failed", "failed_subdirectories", "files", "directories", "empty_directories"]:
-                            rse_stats[k] = r.get(k)
-                        break
-            stats[rse_info["rse"]] = rse_stats
+        stats = { rse_info["rse"]:self.convert_rse_item(rse_info) for rse_info in data }
         return stats
         
+    def stats_for_rse(self, rse):
+        path = f"{self.Path}/{rse}_stats.json"
+        data = json.loads(open(path, "r").read())
+        return self.convert_rse_item(data)
+        
+    
         
 class WMHandler(WPHandler):
     
@@ -89,12 +88,26 @@ class WMHandler(WPHandler):
     def files(self, request, replapth, rse=None, **args):
         ds = self.App.WMDataSource
         f, type = ds.file_list(rse)
-        return self.read_file(f), type
+        headers = {
+            "Content-Type":type,
+            "Content-Disposition":"attachment"
+        }
+        return self.read_file(f), headers
+        
+    #
+    # GUI
+    #
         
     def index(self, request, relpath, **args):
         data = self.App.WMDataSource.stats()
         rses = sorted(list(data.keys()))
         return self.render_to_response("wm_index.html", rses = rses, data=data)
+        
+    def rse(self, request, relpath, rse=None, **args):
+        data = self.App.WMDataSource.stats_for_rse(rse)
+        return self.render_to_response("wm_rse.html", rse=rse, data=data)
+        
+        
             
         
         
