@@ -13,7 +13,7 @@
     {% for rse in rses %}
         {% set info = data[rse] %}
         <tr>
-            <td>{{rse}}</td>
+            <td><a href="./rse?rse={{rse}}">{{rse}}</a></td>
             <td>{{info["start_time"]|as_dt}} - {{info["end_time"]|as_dt}}</td>
             <td>{% if info["end_time"] and info["start_time"] %}{{(info["end_time"]-info["start_time"])|hms}}
                     {%- endif -%}
