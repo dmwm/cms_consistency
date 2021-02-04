@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block title %}WM File Monitor{% endblock %}
+
+{% block link_menu %}<a href="./rses">JSON data</a>{% endblock %}
+
 {% block content %}
 
 <table class="data">    
@@ -10,8 +14,8 @@
         {% set info = data[rse] %}
         <tr>
             <td>{{rse}}</td>
-            <td>{{info["start_time"]|as_dt}} - {{info["end_time"]|as_dt}} 
-                    {%- if info["end_time"] and info["start_time"] %}{{(info["end_time"]-info["start_time"])|hms}}
+            <td>{{info["start_time"]|as_dt}} - {{info["end_time"]|as_dt}}</td>
+            <td>{% if info["end_time"] and info["start_time"] %}{{(info["end_time"]-info["start_time"])|hms}}
                     {%- endif -%}
             </td>
             <td>{{info["status"] or ''}}</td>
