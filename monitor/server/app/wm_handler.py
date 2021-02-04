@@ -58,7 +58,7 @@ class WMDataSource(object):
         
     def stats_for_rse(self, rse):
         path = f"{self.Path}/{rse}_stats.json"
-        data = json.loads(open(path, "r").read())
+        data = json.loads(open(path, "r").read())["scanner"]
         return self.convert_rse_item(data)
         
     
