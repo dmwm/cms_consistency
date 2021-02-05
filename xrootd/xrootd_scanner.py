@@ -5,7 +5,7 @@ from part import PartitionedList
 from py3 import to_str
 from stats import write_stats
 
-Version = "1.1"
+Version = "1.2"
 
 try:
     import tqdm
