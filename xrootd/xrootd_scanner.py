@@ -167,8 +167,8 @@ class Scanner(Task):
 
 
         # debug
-        if location.split("/")[-1].startswith("Run"):
-            return "OK", "", [], []
+        #if location.split("/")[-1].startswith("Run"):
+        #    return "OK", "", [], []
             
 
 
