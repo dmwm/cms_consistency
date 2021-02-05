@@ -120,7 +120,7 @@ class Config:
                 except:
                     p = re.compile(p)
                 dir_patterns.append(p)
-            file_pattenrs = []
+            file_patterns = []
             for p in lst:
                 p = re.compile("%s/.+" % (p,))
                 file_patterns.append(p)
