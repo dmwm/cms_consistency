@@ -224,7 +224,7 @@ class Scanner(Task):
                     line = line.strip()
                     if line.startswith("Flags:"):
                         if not ("IsDir" in line):
-                            files = [path]
+                            files = [location]
                             status = "OK"
                             reason = ""
                         break
