@@ -406,7 +406,7 @@ class ScannerMaster(PyThread):
             self.NDirectories += len(dirs)
             for d in dirs:
                 d = self.canonic(d)
-                if not self.dir_ignored(d)
+                if not self.dir_ignored(d):
                     self.addDirectory(d, scan)
             self.show_progress()
             self.report()
