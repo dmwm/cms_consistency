@@ -114,7 +114,7 @@ class ReScanner(Task):
                         self.message("is a directory")
                         self.Master.rescanner_failed(self)
                     else:
-                        self.Master.add_files([path])
+                        self.Master.addFiles([path])
                     break
             
             
