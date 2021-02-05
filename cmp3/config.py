@@ -75,7 +75,7 @@ class Config:
                 if d["path"] == root:
                     return d
             return {}
-
+            
         def scanner_param(self, rse_name, param, default=None, root=None):
             #
             # Param lookup order if root is specified:
@@ -112,6 +112,19 @@ class Config:
         def nparts(self, rse_name):
             return self.general_param(rse_name, "partitions", 10)
 
+        def ignore_lists(self, rse_name):
+            lst = self.general_param(rse_name, "ignore_list", [])       # list of absolute paths or regexp patterns, used by scanner and cmp3
+            for p in lst:
+                try:    p = re.compile("%s(/.*)?$" % (p,))
+                except:
+                    p = re.compile(p)
+                dir_patterns.append(p)
+            file_pattenrs = []
+            for p in lst:
+                p = re.compile("%s/.+" % (p,))
+                file_patterns.append(p)
+            return dir_patterns, file_pattenrs
+            
         def scanner_server_root(self, rse_name):
             return self.scanner_param(rse_name, "server_root")
 

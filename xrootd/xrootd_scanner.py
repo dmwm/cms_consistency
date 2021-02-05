@@ -298,7 +298,7 @@ class ScannerMaster(PyThread):
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None):
+    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, ignore_lists=([],[]), max_files = None):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Server = server
@@ -326,6 +326,7 @@ class ScannerMaster(PyThread):
             self.LastV = 0
         self.NFiles = self.NDirectories = 0
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
+        self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_lists
 
     def run(self):
         #
@@ -347,6 +348,14 @@ class ScannerMaster(PyThread):
         self.Results.close()
         self.ScannerQueue.Delegate = None       # detach for garbage collection
         self.ScannerQueue = None
+        
+    def dir_ignored(self, path):
+        # path is expected to be canonic here
+        return any(p.match(path) is not None for p in self.IgnoreDirPatterns)
+
+    def file_ignored(self, path):
+        # path is expected to be canonic here
+        return any(p.match(path) is not None for p in self.IgnoreFilePatterns)
 
     @synchronized
     def addFiles(self, files):
@@ -368,7 +377,6 @@ class ScannerMaster(PyThread):
             
     def addDirectory(self, path, scan):
         if not self.Failed:
-            path = self.canonic(path)
             if scan:
                 assert path.startswith(self.Root)
                 relpath = path[len(self.Root):]
@@ -397,7 +405,9 @@ class ScannerMaster(PyThread):
             self.Results.append(('d', dirs))
             self.NDirectories += len(dirs)
             for d in dirs:
-                self.addDirectory(d, scan)
+                d = self.canonic(d)
+                if not self.dir_ignored(d)
+                    self.addDirectory(d, scan)
             self.show_progress()
             self.report()
             
@@ -459,10 +469,12 @@ class ScannerMaster(PyThread):
         for t, lst in self.Results:
             if lst and (type is None or type == t):
                 for path in lst:
-                    if type is None:
-                        yield t, self.canonic(path)
-                    else:
-                        yield self.canonic(path)
+                    path = self.canonic(path)
+                    if not self.file_ignored(path):
+                        if type is None:
+                            yield t, path
+                        else:
+                            yield path
                         
     @synchronized
     def show_progress(self, message=None):

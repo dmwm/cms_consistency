@@ -145,6 +145,8 @@ if out_prefix is not None:
 subdir = config.dbdump_root(rse_name) or "/"
 if not subdir.endswith("/"):    subdir = subdir + "/"
 
+_, ignore_file_patterns = config.ignore_lists(rse_name)
+
 engine = create_engine(dbconfig.DBURL,  echo=verbose)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -183,6 +185,9 @@ for r in replicas:
                 if filter_re is not None:
                     if not filter_re.search(path):
                         continue
+                        
+                if any(p.match(path) for p in ignore_file_patterns):
+                    continue
 
                 words = path.rsplit("/", 1)
                 if len(words) == 1:
