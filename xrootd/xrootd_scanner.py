@@ -597,7 +597,7 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
 
 
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
-            max_files = max_files)
+            max_files = max_files, ignore_lists = config.ignore_lists(rse))
         master.start()
 
         path_prefix = server_root
