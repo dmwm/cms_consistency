@@ -209,7 +209,7 @@ class Scanner(Task):
             if retcode:
                 status = "stat failed"
                 reason = "status: %d" % (retcode,)
-                if err: reason += " " + subp_err.strip()
+                if subp_err: reason += " " + subp_err.strip()
             else:
                 for line in out.split("\n"):
                     line = line.strip()
