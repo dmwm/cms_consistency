@@ -191,9 +191,34 @@ class Scanner(Task):
         elif retcode:
             if "not a directory" in err.lower():
                 return "OK", "", [], [location]
-            status = "failed"
+
+            status = "ls failed"
             reason = "status: %d" % (retcode,)
             if err: reason += " " + err.strip()
+
+            command = "xrdfs %s stat %s %s" % (server, location)
+            subp = subprocess.Popen(command, shell=True, 
+                            stderr=subprocess.PIPE,
+                            stdout=subprocess.PIPE)
+
+            subp_out, subp_err = subp.communicate()
+            subp_out = to_str(subp_out)
+            subp_err = to_str(subp_err)
+            retcode = subp.returncode
+
+            if retcode:
+                status = "stat failed"
+                reason = "status: %d" % (retcode,)
+                if err: reason += " " + subp_err.strip()
+            else:
+                for line in out.split("\n"):
+                    line = line.strip()
+                    if line.startswith("Flags:"):
+                        if not ("IsDir" in line):
+                            files = [path]
+                            status = "OK"
+                            reason = ""
+                        break
         else:
             lines = [x.strip() for x in out.split("\n")]
             for l in lines:
@@ -393,13 +418,8 @@ class ScannerMaster(PyThread):
             print("resubmitted:", scanner.Location, scanner.RecAttempts, scanner.FlatAttempts)
             self.ScannerQueue.addTask(scanner)
         else:
-            rescanner = ReScanner(self, self.Server, scanner.Location, self.Timeout)
-            print("rescan:", scanner.Location)
-            self.ScannerQueue.addTask(rescanner)
-    
-    @synchronized
-    def rescanner_failed(self, rescanner):
-            self.GaveUp.add(rescanner.Path)
+            print("Gave up:", scanner.Location)
+            self.GaveUp.add(scanner.Location)
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
             self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
