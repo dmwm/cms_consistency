@@ -114,6 +114,7 @@ class Config:
 
         def ignore_lists(self, rse_name):
             lst = self.general_param(rse_name, "ignore_list", [])       # list of absolute paths or regexp patterns, used by scanner and cmp3
+            dir_patterns = []
             for p in lst:
                 try:    p = re.compile("%s(/.*)?$" % (p,))
                 except:
