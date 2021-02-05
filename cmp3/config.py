@@ -124,7 +124,7 @@ class Config:
             for p in lst:
                 p = re.compile("%s/.+" % (p,))
                 file_patterns.append(p)
-            return dir_patterns, file_pattenrs
+            return dir_patterns, file_patterns
             
         def scanner_server_root(self, rse_name):
             return self.scanner_param(rse_name, "server_root")
