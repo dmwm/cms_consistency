@@ -55,7 +55,74 @@ class Killer(PyThread):
         if not self.Stop:
                 self.Scanner.killme()
                 self.Scanner = None
-    
+                
+class ReScanner(Task):
+
+    def __init__(self, master, server, path, timeout):
+        Task.__init__(self)
+        self.Server = server
+        self.Master = master
+        self.Path = path
+        self.Timeout = timeout
+        self.Subprocess = None
+        self.Killed = False
+        self.Started = None
+        self.Elapsed = None
+        
+    @synchronized
+    def killme(self):
+        if self.Subprocess is not None:
+                self.Killed = True
+                self.Subprocess.terminate()
+
+    def run(self):
+        server = self.Server
+        path = self.Path
+        timeout = self.Timeout
+        lscommand = "xrdfs %s stat %s" % (server, path)
+
+        self.Killed = False
+        killer = Killer(self, timeout)
+
+        with self:
+                self.Subprocess = subprocess.Popen(lscommand, shell=True, 
+                        stderr=subprocess.PIPE,
+                        stdout=subprocess.PIPE)
+                killer.start()          # do not start killer until self.Subprocess is set
+
+        out, err = self.Subprocess.communicate()
+        out = to_str(out)
+        err = to_str(err)
+
+        with self:
+                # make this a critical section so the killer process does not intercept us
+                killer.stop()
+                retcode = self.Subprocess.returncode
+                self.Subprocess = None
+                
+        if retcode:
+            reason = "status: %d" % (retcode,)
+            if err: reason += " " + err.strip()
+            self.message("failed: " + reason)
+            if self.Master is not None:
+                self.Master.rescanner_failed(self)
+        else:
+            for line in out.split("\n"):
+                line = line.strip()
+                if line.startswith("Flags:"):
+                    if "IsDir" in line:
+                        self.message("is a directory")
+                        self.Master.rescanner_failed(self)
+                    else:
+                        self.Master.add_files([path])
+                    break
+            
+            
+    def message(self, status):
+        if self.Master is not None:
+            self.Master.message("%-100s\t%s" % (truncated_path(self.Master.Root, self.Path), status))
+            
+     
 class Scanner(Task):
     
     MAX_ATTEMPTS_REC = 1
@@ -122,6 +189,8 @@ class Scanner(Task):
         if self.Killed:
             status = "timeout"
         elif retcode:
+            if "not a directory" in err.lower():
+                return "OK", "", [], [location]
             status = "failed"
             reason = "status: %d" % (retcode,)
             if err: reason += " " + err.strip()
@@ -244,7 +313,8 @@ class ScannerMaster(PyThread):
         self.Results.close()
         self.ScannerQueue.Delegate = None       # detach for garbage collection
         self.ScannerQueue = None
-        
+
+    @synchronized
     def addFiles(self, files):
         if not self.Failed:
             self.Results.append(('f', files))
@@ -323,7 +393,13 @@ class ScannerMaster(PyThread):
             print("resubmitted:", scanner.Location, scanner.RecAttempts, scanner.FlatAttempts)
             self.ScannerQueue.addTask(scanner)
         else:
-            self.GaveUp.add(path)
+            rescanner = ReScanner(self, self.Server, scanner.Location, self.Timeout)
+            print("rescan:", scanner.Location)
+            self.ScannerQueue.addTask(rescanner)
+    
+    @synchronized
+    def rescanner_failed(self, rescanner):
+            self.GaveUp.add(rescanner.Path)
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
             self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
