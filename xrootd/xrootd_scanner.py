@@ -196,7 +196,7 @@ class Scanner(Task):
             reason = "status: %d" % (retcode,)
             if err: reason += " " + err.strip()
 
-            command = "xrdfs %s stat %s %s" % (server, location)
+            command = "xrdfs %s stat %s" % (server, location)
             subp = subprocess.Popen(command, shell=True, 
                             stderr=subprocess.PIPE,
                             stdout=subprocess.PIPE)
