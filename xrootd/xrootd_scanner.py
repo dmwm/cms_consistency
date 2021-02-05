@@ -157,11 +157,20 @@ class Scanner(Task):
                 self.Subprocess.terminate()
 
     def scan(self, recursive):
+        
+        
         server = self.Server
         location = self.Location
         timeout = self.Timeout
         lscommand = "xrdfs %s ls %s %s" % (server, "-R" if recursive else "", location)
         #print("lscommand:", lscommand)
+
+
+        # debug
+        if location.split("/")[-1].startswith("Run"):
+            return "OK", "", [], []
+            
+
 
         self.Killed = False
         killer = Killer(self, timeout)
@@ -205,13 +214,13 @@ class Scanner(Task):
             subp_out = to_str(subp_out)
             subp_err = to_str(subp_err)
             retcode = subp.returncode
-
+            
             if retcode:
                 status = "stat failed"
                 reason = "status: %d" % (retcode,)
                 if subp_err: reason += " " + subp_err.strip()
             else:
-                for line in out.split("\n"):
+                for line in subp_out.split("\n"):
                     line = line.strip()
                     if line.startswith("Flags:"):
                         if not ("IsDir" in line):
