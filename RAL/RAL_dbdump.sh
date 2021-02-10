@@ -28,10 +28,10 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 rm -rf ${b_prefix}*
-python db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
+python3 db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
 
 exit=$?
-if [ "$exit" != "0"]; then
+if [ "$exit" != "0" ]; then
     rm -rf ${b_prefix}*
     exit $exit
 fi
