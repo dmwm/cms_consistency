@@ -544,7 +544,7 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
     return path
     
 
-def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list):
+def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list):
     
     failed = False
     
@@ -563,7 +563,8 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
     }
 
     my_stats["scanning"] = root_stats
-    write_stats(my_stats, stats_file, stats_key)
+    if stats is not None:
+        stats[stats_key] = my_stats
 
     exists, reason = Scanner.location_exists(server, top_path, timeout)
     t1 = time.time()
@@ -653,7 +654,8 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
             
     del my_stats["scanning"]
     my_stats["roots"].append(root_stats)
-    write_stats(my_stats, stats_file, stats_key)
+    if stats is not None:
+        stats[stats_key] = my_stats
     return failed
     
 
