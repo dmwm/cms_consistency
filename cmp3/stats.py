@@ -25,7 +25,7 @@ class Stats(object):
             with open(self.Path, "r") as f:
                 data = f.read()
         except:
-            traceback.print_exc()
+            #traceback.print_exc()
             data = ""
         print("data:", data)
         data = json.loads(data or "{}")
