@@ -1,4 +1,4 @@
-import getopt, os, time, re, gzip, json, trceback
+import getopt, os, time, re, gzip, json, traceback
 import sys, uuid
 
 from config import DBConfig, Config
