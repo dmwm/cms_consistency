@@ -27,7 +27,7 @@ class Stats(object):
         except:
             #traceback.print_exc()
             data = ""
-        print("data:", data)
+        #print("data:", data)
         data = json.loads(data or "{}")
         data.update(self.Data)
         open(self.Path, "w").write(json.dumps(data, indent=4))
