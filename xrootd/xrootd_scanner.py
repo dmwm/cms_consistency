@@ -3,7 +3,7 @@ import re, json, os, os.path, traceback
 import subprocess, time
 from part import PartitionedList
 from py3 import to_str
-from stats import write_stats
+from stats import Stats
 
 Version = "1.2"
 
@@ -681,6 +681,9 @@ if __name__ == "__main__":
     if max_files is not None: max_files = int(max_files)
     stats_file = opts.get("-s")
     stats_key = opts.get("-S", "scanner")
+    
+    stats = None if not stats_file else Stats(stats_file)
+    
     zout = "-z" in opts
     
     if "-n" in opts:
@@ -721,7 +724,8 @@ if __name__ == "__main__":
         "status":   "started"
     }
     
-    write_stats(my_stats, stats_file, stats_key)
+    if stats is not None:
+        stats[stats_key] = my_stats
     
     failed = False
         
@@ -732,7 +736,7 @@ if __name__ == "__main__":
             exc = traceback.format_exc()
             print(exc)
             lines = exc.split("\n")
-            scanning = my_stats.get("scanning", {"root":root})
+            scanning = my_stats.setdefault("scanning", {"root":root})
             scanning["exception"] = lines
             scanning["exception_time"] = time.time()
             failed = True
@@ -748,7 +752,8 @@ if __name__ == "__main__":
         my_stats["status"] = "done"
         
     my_stats["end_time"] = time.time()
-    write_stats(my_stats, stats_file, stats_key)
+    if stats is not None:
+        stats[stats_key] = my_stats
 
     if failed:
         sys.exit(1)
