@@ -723,7 +723,6 @@ if __name__ == "__main__":
         "roots":[], 
         "start_time":time.time(),
         "end_time": None,
-        "ignore_list": config.ignore_lists(rse),
         "status":   "started"
     }
     
