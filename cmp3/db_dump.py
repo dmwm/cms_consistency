@@ -118,6 +118,7 @@ if stats:
         "status":"started",
         "version":Version,
         "rse":rse_name,
+        "ignore_list": config.ignore_lists(rse_name),
         "start_time":t0,
         "end_time":None,
         "files":None,
