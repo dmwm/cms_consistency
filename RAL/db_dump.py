@@ -1,1 +1,0 @@
-../cmp3/db_dump.py
