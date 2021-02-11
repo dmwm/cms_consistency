@@ -733,7 +733,7 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         try:
-            failed = scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
+            failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
         except:
             exc = traceback.format_exc()
             print(exc)
