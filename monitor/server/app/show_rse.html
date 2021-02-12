@@ -22,8 +22,8 @@
             <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
             <td>{{info["start_time"]|as_dt}}</td>
             <td>{{info["status"] or ""}}</td>
-            <td>{{info["nmissing"]|default("")}}</td>
-            <td>{{info["ndark"]|default("")}}</td>
+            <td>{{info["nmissing"] if info["nmissing"] is not none}}</td>
+            <td>{{info["ndark"] if info["ndark"] is not none}}</td>
         </tr>
     {% endfor %}
     
