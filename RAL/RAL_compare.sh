@@ -50,15 +50,34 @@ downloaded="no"
 for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${tape_dump_tmp}
-    xrdcp root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/tape/dump_16012022.gz ${tape_dump_tmp}
-    if [ "$?" != "0" ]; then
+	timestamp=`date +%Y%m%d`
+	t0=`date +%s`
+    xrdcp root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/tape/dump_${timestamp}.gz ${tape_dump_tmp}
+    if [ "$?" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
+	    rm -f ${tape_dump_tmp}
         echo sleeping ...
         sleep $sleep_interval
     else
         echo succeeded
-        python partition.py -c $config -r $RSE -q -o ${r_prefix} ${tape_dump_tmp}
-        rm -f ${tape_dump_tmp}
+        python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${tape_dump_tmp}
+		t1=`date +%s`
+	    rm -f ${tape_dump_tmp}
         downloaded="yes"
+		python3 cmp3/stats.py -k scanner ${stats} <<_EOF_
+		    {
+		        "rse":"$RSE",
+		        "scanner":{
+		            "type":"site_dump",
+		            "version":null
+		        },
+		        "server":"ceph-gw1.gridpp.rl.ac.uk",
+		        "roots":[], 
+		        "start_time":$t0,
+		        "end_time":$t1,
+		        "status":   "done"
+		    }
+_EOF_
+    
         break
     fi
 done
@@ -76,13 +95,13 @@ echo
 echo DB dump after ...
 echo
 
-$python db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+python3 cmp3/db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
                 
 echo
 echo Comparing ...
 echo
 
-python cmp3.py -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
+python3 cmp3/cmp3.py -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
 
 echo Dark list:    `wc -l ${d_out}`
 echo Missing list: `wc -l ${m_out}`
