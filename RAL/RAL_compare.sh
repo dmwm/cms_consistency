@@ -6,8 +6,6 @@
 #   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> [<cert file> [<key file>]]
 #
 
-cd ~/RAL
-
 config=$1
 rucio_config_file=$2
 RSE=$3
