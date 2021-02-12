@@ -74,7 +74,7 @@ if [ "$rucio_config_file" != "-" ]; then
     rucio_cfg="-d $rucio_config_file"
 fi
 
-$python db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
+$python cmp3/db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
 
 sleep 10
 
@@ -98,7 +98,7 @@ echo
 echo DB dump after ...
 echo
 
-$python db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+$python cmp3/db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
 
 # 4. cmp3
 
@@ -106,7 +106,7 @@ echo
 echo Comparing ...
 echo
 
-$python cmp3.py -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
+$python cmp3/cmp3.py -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
 
 echo Dark list:    `wc -l ${d_out}`
 echo Missing list: `wc -l ${m_out}`

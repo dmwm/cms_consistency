@@ -6,8 +6,6 @@
 #   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> [<cert file> [<key file>]]
 #
 
-cd ~/RAL
-
 config=$1
 rucio_config_file=$2
 RSE=$3
@@ -15,6 +13,9 @@ scratch=$4
 out=$5
 cert=$6
 key=$7
+
+export PYTHONPATH=`pwd`/cmp3:`pwd`
+
 
 sleep_interval=1000      # 10 minutes
 attempts="1 2 3 4 5 6"
