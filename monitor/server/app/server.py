@@ -90,7 +90,7 @@ class DataViewer(object):
         for k, d in stats.items():
             if not "elapsed" in d:
                 d["elapsed"] = None
-                if "end_time" in d and "start_time" in d:
+                if "end_time" in d and d["end_time"] is not None:
                     d["elapsed"] = d["end_time"] - d["start_time"]
         return stats, ndark, nmissing
         
