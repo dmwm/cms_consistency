@@ -150,11 +150,13 @@ class Handler(WPHandler):
                 comp_stats = stats[comp]
                 comp_status = comp_stats.get("status")
                 tend = comp_stats.get("end_time")
-                if comp_status != "done":
+                comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
+                comp_done = comp_status == "done" or comp_stats.get("end_time") is not None
+                if not comp_done:
                     all_done = False
                 if "start_time" in comp_stats and tstart is None:
                     tstart = comp_stats["start_time"]
-                if comp_status == "started" and status is None:
+                if comp_started and status is None:
                     status = "started"
                 if comp_status == "failed":
                     status = "failed"
@@ -341,7 +343,7 @@ class Handler(WPHandler):
 def as_dt(t):
     # datetim in UTC
     if t is None:
-        return None
+        return ""
     dt = datetime.utcfromtimestamp(t)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
     
