@@ -5,8 +5,6 @@
 #   RAL_dbdump.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir>
 #
 
-cd ~/RAL
-
 config_file=$1
 rucio_config_file=$2
 RSE=$3
