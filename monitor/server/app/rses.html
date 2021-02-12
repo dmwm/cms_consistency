@@ -17,13 +17,18 @@
 <script type="text/javascript">
     var data = [];
     
-    {% for rse, start_time, ndark, nmissing, nerrors in infos %}
+    {% for rse, summary, ndark, nmissing in infos %}
         data.push({
             "rse":"{{rse}}",
-            "start_time":"{{start_time|as_dt if start_time else ''}}",
+			"status":
+				{%- if summary['status'] == "failed" -%}
+					"{{- summary['failed'] or ''}} failed"
+				{%- else -%}
+					"{{summary['status']}}"
+				{%- endif %},
+            "start_time":"{{summary['start_time']|as_dt if summary['start_time'] else ''}}",
             "ndark":"{{ndark or ''}}",
-            "nmissing":"{{nmissing or ''}}",
-            "nerrors":"{{nerrors or ''}}"
+            "nmissing":"{{nmissing or ''}}"
         });
     {% endfor %}
     
@@ -59,16 +64,16 @@
         else
             data.sort(sort_by_rse);
         var tr = document.createElement("tr");
-        tr.innerHTML = "<th>RSE</th><th>Last run</th><th>Dark</th><th>Missing</th><th>Errors</th>";
+        tr.innerHTML = "<th>RSE</th><th>Last run</th><th>Status</th><th>Dark</th><th>Missing</th>";
         t.appendChild(tr);
         for( d of data )
         {
             tr = document.createElement("tr");
             tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
                 + "<td>" + d["start_time"] + "</td>"
+                + "<td>" + d["status"] + "</td>"
                 + "<td>" + d["ndark"] + "</td>"
                 + "<td>" + d["nmissing"] + "</td>"
-                + "<td>" + d["nerrors"] + "</td>";
             t.appendChild(tr);
         }
     };

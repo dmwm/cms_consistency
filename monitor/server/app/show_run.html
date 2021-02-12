@@ -16,172 +16,134 @@
         </p>
 
     {% else %}
-            <h3>Run statistics</h3>
+            <h3>Steps statistics</h3>
             
             <p style="color:gray">Start/end times in UTC</p>
             
             <table class="data">
-                <tr>
-                    <td></td><th>DB dump before site scan</th><th>Site scan</th><th>DB dump after site scan</th><th>Comparison</th>
-                </tr>
-                <tr>
-                    <th>Start time</th>
-                    <td>{{dbdump_before["start_time"]|as_dt}}</td>
-                    <td>{{scanner["start_time"]|as_dt}}
-                    <td>{{dbdump_after["start_time"]|as_dt}}</td>
-                    <td>{{cmp3["start_time"]|as_dt}}
-                </tr>
-                <tr>
-                    <th>End time</th>
-                    <td>{{dbdump_before["end_time"]|as_dt}}</td>
-                    <td>{{scanner["end_time"]|as_dt}}
-                    <td>{{dbdump_after["end_time"]|as_dt}}</td>
-                    <td>{{cmp3["end_time"]|as_dt}}
-                </tr>
-                <tr>
-                    <th>Elapsed time</th>
-                    <td>{{dbdump_before["elapsed"]|hms}}</td>
-                    <td>{{(scanner["end_time"]-scanner["start_time"])|hms}}</td>
-                    <td>{{dbdump_after["elapsed"]|hms}}</td>
-                    <td>{{cmp3["elapsed"]|hms}}</td>
-                </tr>
-                <tr>
-                    <th>Files</th>
-                    <td>{{dbdump_before["files"]}}</td>
-                    <td>{{scanner["total_files"]}}</td>
-                    <td>{{dbdump_after["files"]}}</td>
-                    <td>{% if nmissing %}missing:{{nmissing}}{% endif %} 
-                        {% if ndark %}dark:{{ndark}}{% endif %} </td>
-                </tr>
-                <tr>
-                    <th>Directories</th>
-                    <td>{{dbdump_before["directories"]}}</td>
-                    <td>{{scanner["total_directories"]}}</td>
-                    <td>{{dbdump_after["directories"]}}</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <th>Version</th>
-                    <td>{{dbdump_before["version"]}}</td>
-                    <td>{{scanner["scanner"]["type"]}} {{scanner["scanner"]["version"]}}</td>
-                    <td>{{dbdump_after["version"]}}</td>
-                    <td>{{cmp3["version"]}}</td>
-                </tr>
+				<tr>
+					<th>Step</th>
+					<th>Version</th>
+					<th>Start time</th>
+					<th>Status</th>
+					<th>End time</th>
+					<th>Elapsed time</th>
+					<th>Files</th>
+					<th>Directories</th>
+				</tr>
+				
+				{% for step, step_name, stats in stats_parts %}
+					<tr>
+						<td>{{step_name}}</td>
+						<td>{% if step == "scanner" %}
+								{{stats["scanner"]["type"]}}&nbsp;{{stats["scanner"]["version"]}}
+							{% else %}
+								{{stats["version"]}}
+							{% endif %}
+						</td>
+						<td>{{stats["start_time"]|as_dt}}</td>
+						<td>{{stats["status"]}}</td>
+						<td>{{stats["end_time"]|as_dt}}</td>
+						<td>{{stats["elapsed"]|hms or ""}}</td>
+						<td>
+							{%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["files"]|default("")}}
+							{%- elif step == "scanner" %}{{stats["total_files"]|default("")}}
+							{%- elif step == "cmp3" -%}
+								{%- if stats["dark"] is not none %}&nbsp;dark: {{stats["dark"]}}{% endif -%}
+								{%- if stats["missing"] is not none %}&nbsp;missing: {{stats["missing"]}}{% endif -%}
+							{%- endif -%}
+						</td>
+						<td>
+							{%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["directories"]|default("")}}
+							{%- elif step == "scanner" %}{{stats["total_directories"]|default("")}}
+							{%- endif -%}
+						</td>
+					</tr>
+				{% endfor %}
             </table>
             
-            <h3>Site scan details</h3>
-            <table class="data">
-                <tr><th>Server address</th><td>{{scanner["server"]}}</td></tr>
-                <tr><th>Server root</th><td>{{scanner["server_root"]}}</td></tr>
-            </table>
+			{% if scanner is not none %}
+			
+	            <h3>Site scan details</h3>
+	            <table class="data">
+	                <tr><th>Server address</th><td>{{scanner["server"]}}</td></tr>
+	                <tr><th>Server root</th><td>{{scanner["server_root"]}}</td></tr>
+	            </table>
 
-            <p></p>
+	            <p></p>
 
-            <table class="data">
-                <tr>
-                    <th>Location</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Elapsed time</th>
-                        <th>Error</th>
-                </tr>
-                {% for d in scanner_roots %}
-                    <tr>
-                        <td>{{d["root"]}}</td><td>{{d["files"]}}</td><td>{{d["directories"]}}</td><td>{{d["empty_directories"]}}</td>
-                            <td>{{d["elapsed_time"]|hms}}</td>
-                            <td style="text-align:left">{{d["error"] or ""}}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-            
-            <h3>Comparison results</h3>
-            
-            <script type="text/javascript">
-                function show(lst)
-                {
-                    var o = document.getElementById(lst+"_list");
-                    if( o )
-                        o.classList.toggle("shown");
-                    o = document.getElementById(lst+"_list_toggle");
-                    if( o.innerHTML == "hide" )
-                        o.innerHTML = "show";
-                    else
-                        o.innerHTML = "hide";
-                };
-            </script>
+	            <table class="data">
+	                <tr>
+	                    <th>Location</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Elapsed time</th>
+	                        <th>Error</th>
+	                </tr>
+	                {% for d in scanner_roots %}
+	                    <tr>
+	                        <td>{{d["root"]}}</td><td>{{d["files"]}}</td><td>{{d["directories"]}}</td><td>{{d["empty_directories"]}}</td>
+	                            <td>{{d["elapsed_time"]|hms}}</td>
+	                            <td style="text-align:left">{{d["error"] or ""}}</td>
+	                    </tr>
+	                {% endfor %}
+	            </table>
 
-            <table class="data">
-                <tr>
-                    <th>Missing files</th><td>{{nmissing}}</td>
-                    <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
-                    <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
-                </tr>
-                <tr>
-                    <th>Dark files</th><td>{{ndark}}</td>
-                    <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
-                    <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
-                </tr>
-            </table>
+			{% endif %}
+			
+			{% if cmp3 is not none %}
             
-            {% if missing %}
+	            <h3>Comparison results</h3>
             
-            <div id="missing_list" class="hidden">
-                <a id="missing_list_ref"></a>
-                <h4>Missing files {% if missing_truncated %} (truncated){% endif %}</h4>
-                {% for f in missing %}
-                    <span class="lfn {{f|path_type}}">{{f}}</span><br/>
-                {%- endfor %}
-            </div>
-            
-            {% endif %}
-            
-            {% if dark %}
+	            <script type="text/javascript">
+	                function show(lst)
+	                {
+	                    var o = document.getElementById(lst+"_list");
+	                    if( o )
+	                        o.classList.toggle("shown");
+	                    o = document.getElementById(lst+"_list_toggle");
+	                    if( o.innerHTML == "hide" )
+	                        o.innerHTML = "show";
+	                    else
+	                        o.innerHTML = "hide";
+	                };
+	            </script>
 
-            <div id="dark_list" class="hidden">
-                <a id="dark_list_ref"></a>
-                <h4>Dark files{% if dark_truncated %} (truncated){% endif %}</h4>
-                {% for f in dark %}
-                    <span class="lfn {{f|path_type}}">{{f}}</span><br/>
-                {%- endfor %}
-            </div>
+	            <table class="data">
+	                <tr>
+	                    <th>Missing files</th><td>{{nmissing}}</td>
+	                    <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
+	                    <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+	                </tr>
+	                <tr>
+	                    <th>Dark files</th><td>{{ndark}}</td>
+	                    <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
+	                    <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+	                </tr>
+	            </table>
             
-            {% endif %}
+	            {% if missing %}
             
-            {# --------
+	            <div id="missing_list" class="hidden">
+	                <a id="missing_list_ref"></a>
+	                <h4>Missing files {% if missing_truncated %} (truncated){% endif %}</h4>
+	                {% for f in missing %}
+	                    <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+	                {%- endfor %}
+	            </div>
             
-            <p>
-            <span style="font-weight:bold">Missing files ({{nmissing}}{% if missing_truncated %}, truncated{% endif %})</span>
-            {%- if missing -%}
-                &nbsp;<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">raw</a>
-            {%- endif %}
-            </p>
+	            {% endif %}
             
-            {% if not missing %}(none)
-            {% else %}
-                <div id="missing_list">
-{% for f in missing %}
-<span class="lfn {{f|path_type}}">{{f}}</span><br/>
-{%- endfor %}
-                </div>
-            {% endif %}
+	            {% if dark %}
 
-            <p>
-            <span style="font-weight:bold">Dark files ({{ndark}}{% if dark_truncated %}, truncated{% endif %})</span>
-            {%- if dark -%}
-                &nbsp;<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">raw</a>
-            {%- endif %}
-            </p>
+	            <div id="dark_list" class="hidden">
+	                <a id="dark_list_ref"></a>
+	                <h4>Dark files{% if dark_truncated %} (truncated){% endif %}</h4>
+	                {% for f in dark %}
+	                    <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+	                {%- endfor %}
+	            </div>
             
-            {% if ndark > dark|length %}<p color=gray>showing first {{dark|length}} files</p>{% endif %}
-
-            {% if not dark %}(none)
-            {% else %}
-                <div id="dark_list">
-{% for f in dark %}
-<span class="lfn {{f|path_type}}">{{f}}</span><br/>
-{%- endfor %}
-                </div>
-            {% endif %}
-
-            ------- #}
-
+	            {% endif %}
+            
+	{% endif %}	{# if cmp3 is not none #}
 
     {% endif %} {# errors #}
 

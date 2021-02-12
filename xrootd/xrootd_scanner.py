@@ -656,6 +656,8 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
     my_stats["roots"].append(root_stats)
     if stats is not None:
         stats[stats_key] = my_stats
+    if failed:
+        stats["error"] = root_stats.get("error")
     return failed
     
 
@@ -753,7 +755,8 @@ if __name__ == "__main__":
     else:
         my_stats["status"] = "done"
         
-    my_stats["end_time"] = time.time()
+    my_stats["end_time"] = t1 = time.time()
+    my_stats["elapsed"] = t1 - my_stats["start_time"]
     if stats is not None:
         stats[stats_key] = my_stats
 
