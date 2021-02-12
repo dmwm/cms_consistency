@@ -96,7 +96,7 @@ def main():
                 "missing": len(m),
                 "dark": len(d),
                 "status": "done"
-            }}
+            })
                 
         if stats is not None:
             stats[stats_key] = my_stats
