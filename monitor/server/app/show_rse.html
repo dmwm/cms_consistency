@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 
-
+{% block html_head %}
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+{% endblock %}
 
 {% block headline %}RSE {{rse}}{% endblock %}
 
@@ -11,22 +13,62 @@
 
 {% block content %}
 
-<table class="data">
+<table class="placement">
+	<tr>
+		<td>
+			<table class="data">
     
     
-    <tr>
-        <th></th><th>Start time</th><th>Status</th><th>Missing</th><th>Dark</th>
-    </tr>
-    {% for t, info in runs %}
-        <tr>
-            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
-            <td>{{info["start_time"]|as_dt}}</td>
-            <td class="{{info['status'] or ''}}">{{info["status"] or ""}}</td>
-            <td>{{info["nmissing"] if info["nmissing"] is not none}}</td>
-            <td>{{info["ndark"] if info["ndark"] is not none}}</td>
-        </tr>
-    {% endfor %}
+			    <tr>
+			        <th></th><th>Start time</th><th>Status</th><th>Missing</th><th>Dark</th>
+			    </tr>
+			    {% for t, info in runs %}
+			        <tr>
+			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
+			            <td>{{info["start_time"]|as_dt}}</td>
+			            <td class="{{info['status'] or ''}}">{{info["status"] or ""}}</td>
+			            <td>{{info["nmissing"] if info["nmissing"] is not none}}</td>
+			            <td>{{info["ndark"] if info["ndark"] is not none}}</td>
+			        </tr>
+			    {% endfor %}
     
+			</table>
+		</td>
+		<td style="padding:1px 50px">
+			<div id="chart"></div>
+			<script type="text/javascript">
+		        google.charts.load('current', {'packages':['bar']});
+		        google.charts.setOnLoadCallback(drawChart);
+				
+				var data = [
+					['Time', 'Dark', 'Missing']
+					{% for t, info in runs %}
+						,[	"{{info['start_time']|as_dt}}", 
+							{{info["ndark"] if info["ndark"] is not none else "null"}},
+							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
+						]
+						{% endfor %}
+				];
+				
+				var options = {
+						  colors: ["#888", "FA8"],
+						  bar: {
+							  groupWidth: "90%"
+						  },
+				          chart: {
+				            //title: 'Run history'
+				          }
+				        };
+						
+				function drawChart()
+				{
+					var dataTable = google.visualization.arrayToDataTable(data);
+					var chart = new google.charts.Bar(document.getElementById('chart'));
+					chart.draw(dataTable, google.charts.Bar.convertOptions(options));
+				}
+			</script>
+		</td>
+	</tr>
 </table>
 
 {% endblock %}
