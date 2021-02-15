@@ -42,7 +42,7 @@
 							{% endif %}
 						</td>
 						<td>{{stats["start_time"]|as_dt}}</td>
-						<td>{{stats["status"]}}</td>
+						<td class="{{stats['status'] or ''}}">{{stats["status"]}}</td>
 						<td>{{stats["end_time"]|as_dt}}</td>
 						<td>{{stats["elapsed"]|hms or ""}}</td>
 						<td>
