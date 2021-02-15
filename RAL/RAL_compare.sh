@@ -14,6 +14,9 @@ out=$5
 cert=$6
 key=$7
 
+export PYTHONPATH=`pwd`/cmp3:`pwd`
+
+
 sleep_interval=1000      # 10 minutes
 attempts="1 2 3 4 5 6"
 

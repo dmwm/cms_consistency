@@ -3,9 +3,9 @@ import re, json, os, os.path, traceback
 import subprocess, time
 from part import PartitionedList
 from py3 import to_str
-from stats import write_stats
+from stats import Stats
 
-Version = "1.2"
+Version = "1.3"
 
 try:
     import tqdm
@@ -544,7 +544,7 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
     return path
     
 
-def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list):
+def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list):
     
     failed = False
     
@@ -563,7 +563,8 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
     }
 
     my_stats["scanning"] = root_stats
-    write_stats(my_stats, stats_file, stats_key)
+    if stats is not None:
+        stats[stats_key] = my_stats
 
     exists, reason = Scanner.location_exists(server, top_path, timeout)
     t1 = time.time()
@@ -653,7 +654,10 @@ def scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recur
             
     del my_stats["scanning"]
     my_stats["roots"].append(root_stats)
-    write_stats(my_stats, stats_file, stats_key)
+    if stats is not None:
+        stats[stats_key] = my_stats
+    if failed:
+        stats["error"] = root_stats.get("error")
     return failed
     
 
@@ -681,6 +685,9 @@ if __name__ == "__main__":
     if max_files is not None: max_files = int(max_files)
     stats_file = opts.get("-s")
     stats_key = opts.get("-S", "scanner")
+    
+    stats = None if not stats_file else Stats(stats_file)
+    
     zout = "-z" in opts
     
     if "-n" in opts:
@@ -721,18 +728,19 @@ if __name__ == "__main__":
         "status":   "started"
     }
     
-    write_stats(my_stats, stats_file, stats_key)
+    if stats is not None:
+        stats[stats_key] = my_stats
     
     failed = False
         
     for root in config.scanner_roots(rse):
         try:
-            failed = scan_root(rse, root, config, my_stats, stats_file, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
+            failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
         except:
             exc = traceback.format_exc()
             print(exc)
             lines = exc.split("\n")
-            scanning = my_stats.get("scanning", {"root":root})
+            scanning = my_stats.setdefault("scanning", {"root":root})
             scanning["exception"] = lines
             scanning["exception_time"] = time.time()
             failed = True
@@ -747,8 +755,10 @@ if __name__ == "__main__":
     else:
         my_stats["status"] = "done"
         
-    my_stats["end_time"] = time.time()
-    write_stats(my_stats, stats_file, stats_key)
+    my_stats["end_time"] = t1 = time.time()
+    my_stats["elapsed"] = t1 - my_stats["start_time"]
+    if stats is not None:
+        stats[stats_key] = my_stats
 
     if failed:
         sys.exit(1)

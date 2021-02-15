@@ -5,9 +5,9 @@ from part import PartitionedList
 
 
 import os
-from stats import write_stats
+from stats import Stats
 
-Version = "1.0"
+Version = "1.1"
 
 
 
@@ -41,15 +41,40 @@ def main():
                 print (Usage)
                 sys.exit(2)
 
-        stats = None
         stats_file = opts.get("-s")
         stats_key = opts.get("-S", "cmp3")
+        stats = Stats(stats_file) if stats_file else None
 
         b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
         a_list = PartitionedList.open(a_prefix)
         r_list = PartitionedList.open(r_prefix)
         b_list = PartitionedList.open(b_prefix)
+
+        my_stats= {
+                "version": Version,
+                "elapsed": None,
+                "start_time": t0,
+                "end_time": None,
+                "missing": None,
+                "dark": None,
+                "b_prefix": b_prefix,
+                "a_prefix": a_prefix,
+                "r_prefix": r_prefix,
+
+                "a_files": a_list.FileNames,
+                "b_files": b_list.FileNames,
+                "r_files": r_list.FileNames,
+
+                "a_nfiles": a_list.NParts,
+                "b_nfiles": b_list.NParts,
+                "r_nfiles": r_list.NParts,
+
+                "status": "started"
+            }
+        
+        if stats is not None:
+            stats[stats_key] = my_stats
 
         d, m = cmp3_lists(a_list, r_list, b_list)
 
@@ -65,35 +90,22 @@ def main():
         print("Found %d dark and %d missing replicas" % (len(d), len(m)))
         t1 = time.time()
         
-        my_stats= {
-                "version": Version,
+        my_stats.update({
                 "elapsed": t1-t0,
-                "start_time": t0,
                 "end_time": t1,
                 "missing": len(m),
                 "dark": len(d),
-                "b_prefix": b_prefix,
-                "a_prefix": a_prefix,
-                "r_prefix": r_prefix,
-
-                "a_files": a_list.FileNames,
-                "b_files": b_list.FileNames,
-                "r_files": r_list.FileNames,
-
-                "a_nfiles": a_list.NParts,
-                "b_nfiles": b_list.NParts,
-                "r_nfiles": r_list.NParts
-            }
+                "status": "done"
+            })
                 
+        if stats is not None:
+            stats[stats_key] = my_stats
 
         t = int(t1 - t0)
         s = t % 60
         m = t // 60
         print("Elapsed time: %dm%02ds" % (m, s))
         
-        write_stats(my_stats, stats_file, stats_key)
-                
-
 if __name__ == "__main__":
         main()
                 

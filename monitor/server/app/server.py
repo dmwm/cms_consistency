@@ -3,7 +3,7 @@ import sys, glob, json, time, os
 from datetime import datetime
 from wm_handler import WMHandler, WMDataSource
 
-Version = "1.0"
+Version = "1.1"
 
 class DataViewer(object):
     
@@ -49,19 +49,7 @@ class DataViewer(object):
             runs.append(timestamp)
         return sorted(runs)
         
-    def last_run(self, rse):
-        files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
-        if not files:
-            return None
-        last_file = sorted(files)[-1]
-        #print("last_run: last_file:", last_file)
-        fn = last_file.rsplit("/",1)[-1]
-        rse, timestamp, typ, ext = self.parse_filename(fn)
-        #print("last_run: rse, timestamp, typ, ext:", rse, timestamp, typ, ext)
-        sys.stdout.flush()
-        return self.get_run(rse, timestamp)
-        
-    def get_data(self, rse, run, typ):
+    def get_data(self, rse, run, typ, limit=None):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
         #print("get_data: path:", path)
@@ -81,22 +69,46 @@ class DataViewer(object):
                 stats["scanner"]["total_directories"] = ndirectories
             out = stats
         else:
-            out = [l.strip() for l in f.readlines() if l.strip()]
+            out = []
+            while limit is None or len(out) < limit:
+                l = f.readline()
+                if not l:
+                    break
+                l = l.strip()
+                if l:
+                    out.append(l)
+            return out
         f.close()
         return out
                 
-    def get_run(self, rse, run):
-        dark = self.get_data(rse, run, "D")
-        missing = self.get_data(rse, run, "M")
+    def get_stats(self, rse, run):
         stats = self.get_data(rse, run, "stats")
+        ndark = nmissing = None
+        if "cmp3" in stats:
+            ndark = stats["cmp3"].get("dark")
+            nmissing = stats["cmp3"].get("missing")
+        for k, d in stats.items():
+            if not "elapsed" in d:
+                d["elapsed"] = None
+                if "end_time" in d and d["end_time"] is not None:
+                    d["elapsed"] = d["end_time"] - d["start_time"]
+        return stats, ndark, nmissing
         
-        out = {
-            "stats":stats,
-            "dark":dark,
-            "missing":missing
-        }
-        #print(out)
-        return out
+    def get_dark(self, rse, run, limit=None):
+        return self.get_data(rse, run, "D", limit)
+
+    def get_missing(self, rse, run, limit=None):
+        return self.get_data(rse, run, "M", limit)
+        
+    def last_stats(self, rse):
+        files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
+        if not files:
+            return None
+        last_file = sorted(files)[-1]
+        fn = last_file.rsplit("/",1)[-1]
+        rse, timestamp, typ, ext = self.parse_filename(fn)
+        return self.get_stats(rse, timestamp)
+        
 
 def display_file_list(lst):
     Indent = "    "
@@ -127,6 +139,42 @@ class Handler(WPHandler):
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
         self.WM = WMHandler(*params, **args)
+        
+    def run_summary(self, stats):
+        status = None
+        tstart, tend = None, None
+        failed_comp = None
+        all_done = True
+        for comp in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]:
+            if comp in stats:
+                comp_stats = stats[comp]
+                comp_status = comp_stats.get("status")
+                tend = comp_stats.get("end_time")
+                comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
+                comp_done = comp_status == "done" or comp_stats.get("end_time") is not None
+                if not comp_done:
+                    all_done = False
+                if "start_time" in comp_stats and tstart is None:
+                    tstart = comp_stats["start_time"]
+                if comp_started and status is None:
+                    status = "started"
+                if comp_status == "failed":
+                    status = "failed"
+                    failed_comp = comp
+                    break
+            else:
+                all_done = False
+        if all_done:
+            status = "done"
+        else:
+            tend = None
+        return {
+            "status": status,
+            "start_time": tstart,
+            "end_time": tend,
+            "failed": failed_comp
+        }
+        
     
     def index(self, request, relpath, **args):
         #
@@ -136,17 +184,10 @@ class Handler(WPHandler):
         infos = []
         for rse in rses:
             start_time, ndark, nmissing, nerrors = None, None, None, None
-            info = self.App.DataViewer.last_run(rse)
+            stats, ndark, nmissing = self.App.DataViewer.last_stats(rse)
             #print("index: stats:", info.get("stats"))
-            errors = self.check_run(info)
-            stats = info.get("stats") or {}
-            dark = info.get("dark")
-            missing = info.get("missing")
-            start_time = stats.get("dbdump_before",{}).get("start_time")
-            ndark = len(dark) if dark is not None else "error"
-            nmissing = len(missing) if missing is not None else "error"
-            nerrors = len(errors)
-            infos.append((rse, start_time, ndark, nmissing, nerrors))
+            summary = self.run_summary(stats)
+            infos.append((rse, summary, ndark, nmissing))
             #print("index:", rse, start_time, ndark, nmissing, nerrors)
             sys.stdout.flush()
             
@@ -160,24 +201,21 @@ class Handler(WPHandler):
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
         runs = sorted(runs, reverse=True)
-        runs_with_stats = [(run, self.App.DataViewer.get_run(rse, run)["stats"]) for run in runs]
+        runs_with_stats = [(run, self.App.DataViewer.get_stats(rse, run)) for run in runs]
         #print("runs_with_stats:", runs_with_stats)
         
         infos = []
         for run in runs:
-            info = self.App.DataViewer.get_run(rse, run)
-            errors = self.check_run(info)
-            stats = info.get("stats")
-            dark = info.get("dark")
-            missing = info.get("missing")
-            start_time = stats.get("dbdump_before",{}).get("start_time")
-            ndark = len(dark) if dark is not None else "error"
-            nmissing = len(missing) if missing is not None else "error"
+            stats, ndark, nmissing = self.App.DataViewer.get_stats(rse, run)
+            summary = self.run_summary(stats)
+            start_time = summary["start_time"]
+            status = summary["status"]
+            if status == "failed":
+                status += " " + summary["failed"]
             infos.append((
                 run, 
                 {
-                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing,
-                    "errors":len(errors)
+                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status
                 }
             ))
         #print(infos)
@@ -205,7 +243,7 @@ class Handler(WPHandler):
         Indent = "    "
         last_items = []
         out = []
-        for path in sorted(lst):
+        for path in sorted(lst or []):
             items = [item for item in path.split("/") if item]
             n_common = 0
             for li, i in zip(items, last_items):
@@ -224,20 +262,16 @@ class Handler(WPHandler):
             last_items = items
         return out
     
-    def check_run(self, run_info):
+    def check_run(self, stats):
         errors = []
-        if run_info.get("stats") is None:
-            errors.append("run statistics are missing")
-        else:
-            stats = run_info["stats"]
-            if not "scanner" in stats or stats["scanner"] is None:
-                errors.append("Site scanner statistics missing")
-            if not "dbdump_before" in stats or stats["dbdump_before"] is None:
-                errors.append("DB dump before site scan statistics missing")
-            if not "dbdump_after" in stats or stats["dbdump_after"] is None:
-                errors.append("DB dump after site scan statistics missing")
-            if not "cmp3" in stats or stats["cmp3"] is None:
-                errors.append("Comparison statistics missing")
+        if not "scanner" in stats or stats["scanner"] is None:
+            errors.append("Site scanner statistics missing")
+        if not "dbdump_before" in stats or stats["dbdump_before"] is None:
+            errors.append("DB dump before site scan statistics missing")
+        if not "dbdump_after" in stats or stats["dbdump_after"] is None:
+            errors.append("DB dump after site scan statistics missing")
+        if not "cmp3" in stats or stats["cmp3"] is None:
+            errors.append("Comparison statistics missing")
         if run_info.get("dark") is None:
             errors.append("Dark file list not found")
         if run_info.get("missing") is None:
@@ -257,27 +291,38 @@ class Handler(WPHandler):
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
         }
-            
+    
+    LIMIT = 1000
+    
     def show_run(self, request, relpath, rse=None, run=None, **args):
-        run_info = self.App.DataViewer.get_run(rse, run)
-        errors = self.check_run(run_info)
-        stats = run_info.get("stats", {}) 
+        stats, ndark, nmissing = self.App.DataViewer.get_stats(rse, run)
+        summary = self.run_summary(stats)
+        errors = []
+        if summary["status"] == "failed":
+            failed_comp = summary["failed"]
+            errors = ["%s failed:" % failed_comp]
+            failed_stats = stats[failed_comp]
+            if failed_stats.get("error"):
+                errors.append("error: %s", failed_stats["error"])
 
-        stats_parts = [(part, stats.get(part)) for part in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]]
+        stats_parts = [(part, part_name, stats.get(part)) for part, part_name in 
+            [
+                ("dbdump_before", "DB dump before scan"),
+                ("scanner", "Site scanner"),
+                ("dbdump_after", "DB dump after scan"),
+                ("cmp3", "Comparison")
+            ]
+            if stats.get(part)
+        ]
         scanner_roots = []
         if "scanner" in stats and "roots" in stats["scanner"]:
             scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"])
         
-        dark = run_info.get("dark") or []
-        missing = run_info.get("missing") or []
-        nmissing = len(missing)
-        ndark = len(dark)
+        dark_truncated = (ndark or 0)  > self.LIMIT
+        missing_truncated = (nmissing or 0) > self.LIMIT
         
-        dark_truncated = len(dark) > 1000
-        missing_truncated = len(missing) > 1000
-        
-        dark = dark[:1000]
-        missing = missing[:1000]
+        dark = self.App.DataViewer.get_dark(rse, run, self.LIMIT)
+        missing = self.App.DataViewer.get_missing(rse, run, self.LIMIT)
         
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
@@ -298,7 +343,7 @@ class Handler(WPHandler):
 def as_dt(t):
     # datetim in UTC
     if t is None:
-        return None
+        return ""
     dt = datetime.utcfromtimestamp(t)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
     
@@ -306,6 +351,9 @@ def as_json(d):
     return "\n"+json.dumps(d, indent=4)
     
 def hms(t):
+    
+    if t is None:
+        return ""
     if t < 100:
         return "%.2fs" % (t)
     

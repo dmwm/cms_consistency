@@ -11,6 +11,9 @@ RSE=$3
 scratch=$4
 out=$5
 
+export PYTHONPATH=`pwd`/cmp3:`pwd`
+
+
 today=`date +%Y_%m_%d_00_00`
 
 b_prefix=${scratch}/${RSE}_${today}_B.list
@@ -26,7 +29,7 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 rm -rf ${b_prefix}*
-python3 db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
+python3 cmp3/db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
 
 exit=$?
 if [ "$exit" != "0" ]; then
