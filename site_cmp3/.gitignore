@@ -1,5 +1,7 @@
 *.list
 *.list.*
+*.json
+*.yaml*
 config.yaml
 .*
 !.gitignore
