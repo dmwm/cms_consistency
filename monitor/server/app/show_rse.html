@@ -39,15 +39,15 @@
 			<script type="text/javascript">
 		        google.charts.load('current', {'packages':['bar']});
 		        google.charts.setOnLoadCallback(drawChart);
-				
+				// runs is in reversed order
 				var data = [
 					['Time', 'Dark', 'Missing']
-					{% for t, info in runs %}
+					{% for t, info in runs|reverse %}
 						,[	"{{info['start_time']|as_dt}}", 
 							{{info["ndark"] if info["ndark"] is not none else "null"}},
 							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
 						]
-						{% endfor %}
+					{% endfor %}
 				];
 				
 				var options = {
