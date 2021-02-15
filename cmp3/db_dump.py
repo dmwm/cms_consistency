@@ -16,7 +16,7 @@ from sqlalchemy.types import TypeDecorator, CHAR, String
 
 from stats import Stats
 
-Version = "1.0a"
+Version = "1.1"
 
 t0 = time.time()
 
