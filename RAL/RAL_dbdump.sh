@@ -14,7 +14,7 @@ out=$5
 export PYTHONPATH=`pwd`/cmp3:`pwd`
 
 
-today=`date +%Y_%m_%d_00_00`
+today=`date -u +%Y_%m_%d_00_00`
 
 b_prefix=${scratch}/${RSE}_${today}_B.list
 stats=${out}/${RSE}_${today}_stats.json

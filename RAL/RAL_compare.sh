@@ -21,7 +21,7 @@ sleep_interval=1000      # 10 minutes
 attempts="1 2 3 4 5 6"
 
 
-today=`date +%Y_%m_%d_00_00`
+today=`date -u +%Y_%m_%d_00_00`
 
 b_prefix=${scratch}/${RSE}_${today}_B.list
 a_prefix=${scratch}/${RSE}_${today}_A.list
@@ -51,7 +51,7 @@ downloaded="no"
 for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${tape_dump_tmp}
-	timestamp=`date +%Y%m%d`
+	timestamp=`date -u +%Y%m%d`
 	t0=`date +%s`
     xrdcp root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/tape/dump_${timestamp}.gz ${tape_dump_tmp}
     if [ "$?" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
