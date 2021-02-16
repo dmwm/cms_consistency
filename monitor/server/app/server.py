@@ -140,12 +140,15 @@ class Handler(WPHandler):
         WPHandler.__init__(self, *params, **args)
         self.WM = WMHandler(*params, **args)
         
+    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
+
     def run_summary(self, stats):
         status = None
         tstart, tend = None, None
         failed_comp = None
+        running_comp = None
         all_done = True
-        for comp in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]:
+        for comp in self.COMPONENTS:
             if comp in stats:
                 comp_stats = stats[comp]
                 comp_status = comp_stats.get("status")
@@ -158,12 +161,19 @@ class Handler(WPHandler):
                     tstart = comp_stats["start_time"]
                 if comp_started and status is None:
                     status = "started"
+                if comp_started and not comp_status == "failed":
+                    running_comp = comp
                 if comp_status == "failed":
                     status = "failed"
                     failed_comp = comp
                     break
             else:
                 all_done = False
+        
+        last_comp = stats.get(self.COMPONENTS[-1])
+        if last_comp:
+            all_done = last_comp.get("status") == "done"
+        
         if all_done:
             status = "done"
         else:
@@ -172,7 +182,8 @@ class Handler(WPHandler):
             "status": status,
             "start_time": tstart,
             "end_time": tend,
-            "failed": failed_comp
+            "failed": failed_comp,
+            "running": running_comp
         }
         
     
