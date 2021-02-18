@@ -61,12 +61,14 @@ class DataViewer(object):
         if typ == "stats":
             stats = json.loads(f.read())
             if "scanner" in stats:
-                nfiles = ndirectories = 0
-                for root_info in stats["scanner"]["roots"]:
-                    nfiles += root_info["files"]
-                    ndirectories += root_info["directories"]
-                stats["scanner"]["total_files"] = nfiles
-                stats["scanner"]["total_directories"] = ndirectories
+                scanner_stats = stats["scanner"]
+                if not "total_files" in scanner_stats:
+                    nfiles = ndirectories = 0
+                    for root_info in scanner_stats["roots"]:
+                        nfiles += root_info["files"]
+                        ndirectories += root_info["directories"]
+                    scanner_stats["total_files"] = nfiles
+                    scanner_stats["total_directories"] = ndirectories
             out = stats
         else:
             out = []

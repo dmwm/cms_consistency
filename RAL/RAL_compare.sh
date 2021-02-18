@@ -14,6 +14,21 @@ out=$5
 cert=$6
 key=$7
 
+server=ceph-gw1.gridpp.rl.ac.uk
+
+case $RSE in
+	T1_UK_RAL_Tape)
+		dump_path="/store/accounting/tape"
+		;;
+	T1_UK_RAL_Disk)
+		dump_path="/store/accounting"
+		;;
+	*)
+		echo Unknown RSE $RSE
+		exit 1
+		;;
+esac
+	
 export PYTHONPATH=`pwd`/cmp3:`pwd`
 
 
@@ -53,7 +68,9 @@ for attempt in $attempts; do
     rm -f ${tape_dump_tmp}
 	timestamp=`date -u +%Y%m%d`
 	t0=`date +%s`
-    xrdcp root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/tape/dump_${timestamp}.gz ${tape_dump_tmp}
+	dump_file=${dump_path}/dump_${timestamp}.gz
+	dump_url=root://${server}/cms:${dump_file}
+    xrdcp ${dump_url} ${tape_dump_tmp}
     if [ "$?" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
 	    rm -f ${tape_dump_tmp}
         echo sleeping ...
@@ -64,21 +81,27 @@ for attempt in $attempts; do
 		t1=`date +%s`
 	    rm -f ${tape_dump_tmp}
         downloaded="yes"
+
+		# count files in the dump
+		n=`wc -l ${r_prefix}.* | egrep  '^[ ]*[0-9]+[ ]+total' | awk -e '{ print $1 }'`
+		n=${n:-0}
+		
 		python3 cmp3/stats.py -k scanner ${stats} <<_EOF_
 		    {
 		        "rse":"$RSE",
 		        "scanner":{
 		            "type":"site_dump",
+					"url":"${dump_url}",
 		            "version":null
 		        },
-		        "server":"ceph-gw1.gridpp.rl.ac.uk",
-		        "roots":[], 
+		        "server":"${server}",
 		        "start_time":$t0,
 		        "end_time":$t1,
-		        "status":   "done"
+		        "status":   "done",
+				"total_files":$n
 		    }
 _EOF_
-    
+
         break
     fi
 done
