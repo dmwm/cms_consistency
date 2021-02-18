@@ -96,7 +96,7 @@ echo
 echo DB dump after ...
 echo
 
-python3 cmp3/db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+python3 cmp3/db_dump.py -o ${a_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
                 
 echo
 echo Comparing ...
