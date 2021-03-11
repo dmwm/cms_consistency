@@ -18,7 +18,7 @@
     var data = [];
     
     {% for rse, summary, ndark, nmissing, error in infos %}
-        {% if error %}
+        {% if error is none %}
             data.push({
                 "rse":"{{rse}}",
     			"status":
@@ -26,7 +26,7 @@
     					"{{- summary['failed'] or ''}} failed"
     				{%- else -%}
     					"{{summary['status']}}"
-    				{%- endif %},
+    				{%- endif -%},
                 "start_time":"{{summary['start_time']|as_dt if summary['start_time'] else ''}}",
                 "ndark":"{{ndark or ''}}",
                 "nmissing":"{{nmissing or ''}}",
