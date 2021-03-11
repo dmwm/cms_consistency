@@ -196,11 +196,14 @@ class Handler(WPHandler):
         #
         rses = self.App.DataViewer.list_rses()
         infos = []
-        for rse in rses:
+        for i, rse in enumerate(rses):
             start_time, ndark, nmissing, nerrors, error = None, None, None, None, None
-            try:    
+            try:
+                if i % 5 == 1:
+                    raise ValueError('debug "debug"')    
                 stats, ndark, nmissing = self.App.DataViewer.last_stats(rse)
                 summary = self.run_summary(stats)
+                
             except Exception as e:
                 error = "Data parsing error: %s" % (e,)
             #print("index: stats:", info.get("stats"))

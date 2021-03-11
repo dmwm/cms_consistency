@@ -85,7 +85,7 @@
                     + "<td>" + d["nmissing"] + "</td>";
             else
                 tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
-                    + '<td colspan=4 class="failed">error: ' + d.error '</td>';
+                    + '<td colspan=4 class="failed">error: ' + d.error + '</td>';
             t.appendChild(tr);
         }
     };
