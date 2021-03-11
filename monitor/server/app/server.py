@@ -199,8 +199,8 @@ class Handler(WPHandler):
         for i, rse in enumerate(rses):
             start_time, ndark, nmissing, nerrors, error = None, None, None, None, None
             try:
-                if i % 5 == 1:
-                    raise ValueError('debug "debug"')    
+                #if i % 5 == 1:
+                #    raise ValueError('debug "debug"')    
                 stats, ndark, nmissing = self.App.DataViewer.last_stats(rse)
                 summary = self.run_summary(stats)
                 
