@@ -205,7 +205,8 @@ class Handler(WPHandler):
                 summary = self.run_summary(stats)
                 
             except Exception as e:
-                error = "Data parsing error: %s" % (e,)
+                exc = str(e).replace('"', '\"')
+                error = "Data parsing error: %s" % (exc,)
             #print("index: stats:", info.get("stats"))
             infos.append((rse, summary, ndark, nmissing, repr(error) if error else None))
             #print("index:", rse, start_time, ndark, nmissing, nerrors)
