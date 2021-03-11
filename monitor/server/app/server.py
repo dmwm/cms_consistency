@@ -368,6 +368,13 @@ def as_dt(t):
     dt = datetime.utcfromtimestamp(t)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
     
+def as_JSON_Date(t):
+    # datetim in UTC
+    if t is None:
+        return "null"
+    dt = datetime.utcfromtimestamp(t)
+    return dt.strftime("new Date(%d, %d, %d)" % (dt.year, dt.month, dt.day))
+    
 def as_json(d):
     return "\n"+json.dumps(d, indent=4)
     
