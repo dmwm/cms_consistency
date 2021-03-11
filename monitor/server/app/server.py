@@ -3,7 +3,7 @@ import sys, glob, json, time, os
 from datetime import datetime
 from wm_handler import WMHandler, WMDataSource
 
-Version = "1.2"
+Version = "1.2a"
 
 class DataViewer(object):
     
@@ -197,7 +197,7 @@ class Handler(WPHandler):
         rses = self.App.DataViewer.list_rses()
         infos = []
         for rse in rses:
-            start_time, ndark, nmissing, nerrors, error = None, None, None, None
+            start_time, ndark, nmissing, nerrors, error = None, None, None, None, None
             try:    
                 stats, ndark, nmissing = self.App.DataViewer.last_stats(rse)
                 summary = self.run_summary(stats)
