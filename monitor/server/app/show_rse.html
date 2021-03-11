@@ -35,13 +35,13 @@
 			</table>
 		</td>
 		<td style="padding:1px 50px">
-			<div id="chart" style="width:400px"></div>
+			<div id="chart"></div>
 			<script type="text/javascript">
 		        google.charts.load('current', {'packages':['bar']});
 		        google.charts.setOnLoadCallback(drawChart);
 				// runs is in reversed order
 				var data = [
-					['Time', 'Dark', 'Missing']
+					['Date', 'Dark', 'Missing']
 					{% for t, info in runs|reverse %}
 						,[	{{info['start_time']|as_JSON_Date}}, 
 							{{info["ndark"] if info["ndark"] is not none else "null"}},
@@ -56,6 +56,9 @@
 							  groupWidth: "90%"
 						  },
                           hAxis: {
+                              gridlines: {
+                                  count: data.length - 1
+                              },
                               format:"MMM d, y"
                           },
 				          chart: {
