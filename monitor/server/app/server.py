@@ -157,13 +157,14 @@ class Handler(WPHandler):
                 tend = comp_stats.get("end_time")
                 comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
                 comp_done = comp_status == "done" or comp_stats.get("end_time") is not None
+                comp_running = comp_started and not (comp_status in ("done", "failed"))
                 if not comp_done:
                     all_done = False
                 if "start_time" in comp_stats and tstart is None:
                     tstart = comp_stats["start_time"]
                 if comp_started and status is None:
                     status = "started"
-                if comp_started and not comp_status == "failed":
+                if comp_running:
                     running_comp = comp
                 if comp_status == "failed":
                     status = "failed"
