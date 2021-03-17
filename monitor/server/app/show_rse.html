@@ -26,7 +26,13 @@
 			        <tr>
 			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
 			            <td>{{info["start_time"]|as_dt}}</td>
-			            <td class="{{info['status'] or ''}}">{{info["status"] or ""}}</td>
+			            <td class="{{info['status'] or ''}}">
+                            {%- if info["status"] == "started" and "running" in info -%}
+                                running {{info["running"]}}
+                            {%- else -%}
+                                {{info["status"] or ""}}
+                            {%- endif -%}
+                        </td>
 			            <td>{{info["nmissing"] if info["nmissing"] is not none}}</td>
 			            <td>{{info["ndark"] if info["ndark"] is not none}}</td>
 			        </tr>

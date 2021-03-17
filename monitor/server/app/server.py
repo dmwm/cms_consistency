@@ -181,6 +181,7 @@ class Handler(WPHandler):
             status = "done"
         else:
             tend = None
+            
         return {
             "status": status,
             "start_time": tstart,
@@ -233,10 +234,11 @@ class Handler(WPHandler):
             status = summary["status"]
             if status == "failed":
                 status += " " + summary["failed"]
+            running = summary.get("running_comp")
             infos.append((
                 run, 
                 {
-                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status
+                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running
                 }
             ))
         #print(infos)
