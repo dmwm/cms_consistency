@@ -18,8 +18,6 @@
     {% else %}
             <h3>Steps statistics</h3>
             
-            <p style="color:gray">Start/end times in UTC</p>
-            
             <table class="data">
 				<tr>
 					<th>Step</th>
@@ -42,7 +40,13 @@
 							{% endif %}
 						</td>
 						<td>{{stats["start_time"]|as_dt}}</td>
-						<td class="{{stats['status'] or ''}}">{{stats["status"]}}</td>
+						<td class="{{stats['status'] or ''}}">
+                            {%- if step == "scanner" and "scanning" in stats -%}
+                                scanning {{stats["scanning"]["root"]}}
+                            {%- else -%}
+                                {{stats["status"]}}
+                            {%- endif -%}
+                        </td>
 						<td>{{stats["end_time"]|as_dt}}</td>
 						<td>{{stats["elapsed"]|hms or ""}}</td>
 						<td>
