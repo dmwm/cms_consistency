@@ -234,7 +234,7 @@ class Handler(WPHandler):
             status = summary["status"]
             if status == "failed":
                 status += " " + summary["failed"]
-            running = summary.get("running_comp")
+            running = summary.get("running")
             infos.append((
                 run, 
                 {
