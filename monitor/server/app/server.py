@@ -416,6 +416,7 @@ class App(WPApp):
         import os
         home = os.path.dirname(__file__) or "."
         self.initJinjaEnvironment(tempdirs=[home], 
+            globals = {"time_now": time.time()},
             filters={
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
                 "as_JSON_Date":as_JSON_Date
