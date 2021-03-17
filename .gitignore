@@ -2,6 +2,7 @@ scratch
 *-saved
 .*
 !.gitignore
+!purdue.yaml
 *.yaml
 *.cfg
 Untitled.ipynb

@@ -1,6 +1,7 @@
 *.list
 *.list.*
 *.json
+!purdue.yaml
 *.yaml*
 config.yaml
 .*
