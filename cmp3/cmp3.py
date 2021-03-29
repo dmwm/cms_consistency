@@ -1,5 +1,5 @@
 import random, string, sys, glob, time
-from cmplib import cmp3_lists
+from cmplib import cmp3_generator
 
 from part import PartitionedList
 
@@ -58,6 +58,10 @@ def main():
                 "end_time": None,
                 "missing": None,
                 "dark": None,
+                
+                "missing_list_file": None,
+                "dark_list_file": None,
+                
                 "b_prefix": b_prefix,
                 "a_prefix": a_prefix,
                 "r_prefix": r_prefix,
@@ -76,26 +80,32 @@ def main():
         if stats is not None:
             stats[stats_key] = my_stats
 
-        d, m = cmp3_lists(a_list, r_list, b_list)
-
         fd = open(out_dark, "w")
         fm = open(out_missing, "w")
-        for x in d:
-                fd.write(x)                     # trailing newlines are there already
-        for x in m:
-                fm.write(x)
+
+        diffs = cmp3_generator(a_list, r_list, b_list)
+        nm = nd = 0
+        for t, path in diffs:
+            if t == 'd':
+                fd.write(path)
+                nd += 1
+            else:
+                fm.write(path)
+                nm += 1
         fd.close()
         fm.close()
 
-        print("Found %d dark and %d missing replicas" % (len(d), len(m)))
+        print("Found %d dark and %d missing replicas" % (nd, nm))
         t1 = time.time()
         
         my_stats.update({
                 "elapsed": t1-t0,
                 "end_time": t1,
-                "missing": len(m),
-                "dark": len(d),
-                "status": "done"
+                "missing": nm,
+                "dark": nd,
+                "status": "done",
+                "missing_list_file": out_missing,
+                "dark_list_file": out_dark
             })
                 
         if stats is not None:
