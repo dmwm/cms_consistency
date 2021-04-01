@@ -1,5 +1,4 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized, ShellCommand
-from Threader import Timer
 import re, json, os, os.path, traceback
 import subprocess, time
 from part import PartitionedList
@@ -611,6 +610,7 @@ if __name__ == "__main__":
 
     server = config.scanner_server(rse)
     server_root = config.scanner_server_root(rse)
+    purge_empty_dirs = config.scanner_param(rse, "purge_empty_dirs", default=False)
     if not server_root:
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
         sys.exit(2)
@@ -636,7 +636,9 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         try:
-            failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
+            failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
+                    override_max_scanners, out_list, dir_list,
+                    purge_empty_dirs)
         except:
             exc = traceback.format_exc()
             print(exc)
