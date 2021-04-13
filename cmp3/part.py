@@ -54,6 +54,13 @@ class PartitionedList(object):
         files = ["%s.%05d%s" % (prefix, i, gz) for i in range(nparts)]
         return PartitionedList("w", files, compressed)
         
+    @staticmethod
+    def create_file(path, compressed=False):
+        # create a single file set
+        if compressed and not path.endswith(".gz"):
+            path = path + ".gz"
+        return PartitionedList("w", [path], compressed)
+        
     def add(self, item):
         if self.Mode != "w":    raise ValueError("The list is not open for writing")
         item = item.strip()
@@ -64,6 +71,10 @@ class PartitionedList(object):
         
     def files(self):
         return self.Files
+        
+    def parts(self):
+        for f in self.Files:
+            yield(_Partition(f))
         
     def items(self):
         assert self.Mode == "r"
