@@ -98,8 +98,9 @@ class DataViewer(object):
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
-        for k, d in stats.items():
-            if not "elapsed" in d:
+        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]:
+            d = stats.get(k)
+            if isinstance(d, dict) and not "elapsed" in d:
                 d["elapsed"] = None
                 if d.get("end_time") is not None and d.get("start_time") is not None:
                     d["elapsed"] = d["end_time"] - d["start_time"]
