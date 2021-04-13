@@ -56,7 +56,7 @@ class DataViewer(object):
     def raw_stats(self, rse, run):
         # returns unparsed JSON text
         path = self.file_path(rse, run, "stats")
-        return open(path, "r").read(), os.path.getmpath(path)
+        return open(path, "r").read(), os.path.getmtime(path)
         
     def get_data(self, rse, run, typ, limit=None):
         ext = "json" if typ == "stats" else "list"
