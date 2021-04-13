@@ -49,6 +49,15 @@ class DataViewer(object):
             runs.append(timestamp)
         return sorted(runs)
         
+    def file_path(self, rse, run, typ):
+        ext = "json" if typ == "stats" else "list"
+        return f"{self.Path}/{rse}_{run}_{typ}.{ext}"
+        
+    def raw_stats(self, rse, run):
+        # returns unparsed JSON text
+        path = self.file_path(rse, run, "stats")
+        return open(path, "r").read(), os.path.getmpath(path)
+        
     def get_data(self, rse, run, typ, limit=None):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
@@ -220,6 +229,13 @@ class Handler(WPHandler):
     def probe(self, request, relpath, **args):
         return self.App.DataViewer.status(), "text/plain"
         return "OK" if self.App.DataViewer.is_mounted() else ("Data directory unreachable", 500)
+        
+    def raw_stats(self, request, relpath, rse=None, run=None, **args):
+        runs = self.App.DataViewer.list_runs(rse)
+        raw_stats = mtime = None
+        if run:
+            raw_stats, mtime = self.App.DataViewer.raw_stats(rse, run)
+        return self.render_to_response("raw_stats.html", rse=rse, runs=runs, raw_stats=raw_stats, mtime=mtime)
 
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
