@@ -29,9 +29,7 @@
             
             {% if not raw_stats is none %}
             <h3>Raw stats for run {{run}} last modified at {{mtime|as_dt}}</h3>
-            <pre class="code">
-            {{raw_stats}}
-            </pre>
+            <pre class="code">{{raw_stats}}</pre>
             {% endif %}
             
     {% endif %} {# errors #}
