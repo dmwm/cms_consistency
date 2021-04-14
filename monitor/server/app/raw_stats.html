@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block headline %}Raw stats for {{rse}}{% endblock %}
+
+{% block link_menu %}<a href="./index">home</a>&nbsp;&nbsp;<a href="./show_rse?rse={{rse}}">{{rse}}</a>{% endblock %}
+
+{% block content %}
+
+    {% if errors %}
+    
+        <h3>Run errors</h3>
+        <p class=error>
+        {% for e in errors %}
+            {{e}}<br/>
+        {% endfor %}
+        </p>
+
+    {% else %}
+            <h3>Available runs</h3>
+            
+            <table class="data">
+				
+				{% for run in runs %}
+					<tr>
+						<td><a href="./raw_stats?rse={{rse}}&run={{run}}">{{run}}</a></td>
+					</tr>
+				{% endfor %}
+            </table>
+            
+            {% if not raw_stats is none %}
+            <h3>Raw stats for run {{run}} last modified at {{mtime|as_dt}}</h3>
+            <pre class="code">{{raw_stats}}</pre>
+            {% endif %}
+            
+    {% endif %} {# errors #}
+
+{% endblock %}

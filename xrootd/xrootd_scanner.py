@@ -1,4 +1,4 @@
-from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized
+from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized, ShellCommand
 import re, json, os, os.path, traceback
 import subprocess, time
 from part import PartitionedList
@@ -34,95 +34,26 @@ def truncated_path(root, path):
             return ("..(%d)../" % (n-N))+"/".join(parts[-N:])
         
 
-def runCommand(cmd, timeout=None, debug=None):
-    return p.returncode, out
-
-class Killer(PyThread):
-
-    def __init__(self, scanner, timeout):
-        PyThread.__init__(self)
-        self.Scanner = scanner
-        self.Timeout = timeout
-        self.Stop = False
-
-    def stop(self):
-        self.Stop = True
-
-    def run(self):
-        t1 = time.time() + self.Timeout
-        while not self.Stop and time.time() < t1:
-                time.sleep(0.5)
-        if not self.Stop:
-                self.Scanner.killme()
-                self.Scanner = None
-                
-class ReScanner(Task):
-
-    def __init__(self, master, server, path, timeout):
-        Task.__init__(self)
+class RMDir(Task):
+    
+    # a task to delete presumably empty subdirectory discovered by the scanner
+    
+    def __init__(self, server, location):
         self.Server = server
-        self.Master = master
-        self.Path = path
-        self.Timeout = timeout
-        self.Subprocess = None
-        self.Killed = False
-        self.Started = None
-        self.Elapsed = None
-        
-    @synchronized
-    def killme(self):
-        if self.Subprocess is not None:
-                self.Killed = True
-                self.Subprocess.terminate()
-
+        self.Location = location
+    
+    TIMEOUT = 5
+    
     def run(self):
-        server = self.Server
-        path = self.Path
-        timeout = self.Timeout
-        lscommand = "xrdfs %s stat %s" % (server, path)
 
-        self.Killed = False
-        killer = Killer(self, timeout)
-
-        with self:
-                self.Subprocess = subprocess.Popen(lscommand, shell=True, 
-                        stderr=subprocess.PIPE,
-                        stdout=subprocess.PIPE)
-                killer.start()          # do not start killer until self.Subprocess is set
-
-        out, err = self.Subprocess.communicate()
-        out = to_str(out)
-        err = to_str(err)
-
-        with self:
-                # make this a critical section so the killer process does not intercept us
-                killer.stop()
-                retcode = self.Subprocess.returncode
-                self.Subprocess = None
-                
-        if retcode:
-            reason = "status: %d" % (retcode,)
-            if err: reason += " " + err.strip()
-            self.message("failed: " + reason)
-            if self.Master is not None:
-                self.Master.rescanner_failed(self)
-        else:
-            for line in out.split("\n"):
-                line = line.strip()
-                if line.startswith("Flags:"):
-                    if "IsDir" in line:
-                        self.message("is a directory")
-                        self.Master.rescanner_failed(self)
-                    else:
-                        self.Master.addFiles([path])
-                    break
-            
-            
-    def message(self, status):
-        if self.Master is not None:
-            self.Master.message("%-100s\t%s" % (truncated_path(self.Master.Root, self.Path), status))
-            
-     
+        rmcommand = "xrdfs %s rmdir %s" % (self.Server, self.Location)
+        try:    
+            print(f"would delete directory {self.Location} with {rmcommand}")
+            #ShellCommand.execute(rmcommand, timeout=self.TIMEOUT)
+        except: 
+            # ignore
+            pass
+        
 class Scanner(Task):
     
     MAX_ATTEMPTS_REC = 1
@@ -157,97 +88,70 @@ class Scanner(Task):
                 self.Subprocess.terminate()
 
     def scan(self, recursive):
-        
-        
         server = self.Server
         location = self.Location
         timeout = self.Timeout
         lscommand = "xrdfs %s ls %s %s" % (server, "-R" if recursive else "", location)
-        #print("lscommand:", lscommand)
-
-
-        # debug
-        #if location.split("/")[-1].startswith("Run"):
-        #    return "OK", "", [], []
-            
-
-
-        self.Killed = False
-        killer = Killer(self, timeout)
-
-        with self:
-                self.Subprocess = subprocess.Popen(lscommand, shell=True, 
-                        stderr=subprocess.PIPE,
-                        stdout=subprocess.PIPE)
-                killer.start()          # do not start killer until self.Subprocess is set
-
-        out, err = self.Subprocess.communicate()
-        out = to_str(out)
-        err = to_str(err)
-
-        with self:
-                # make this a critical section so the killer process does not intercept us
-                killer.stop()
-                retcode = self.Subprocess.returncode
-                self.Subprocess = None
-                
+        
         files = []
         dirs = []
         status = "OK"
         reason = ""
-        if self.Killed:
+
+        try:    retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+        except RuntimeError:
             status = "timeout"
-        elif retcode:
-            if "not a directory" in err.lower():
-                return "OK", "", [], [location]
-
-            status = "ls failed"
-            reason = "status: %d" % (retcode,)
-            if err: reason += " " + err.strip()
-
-            command = "xrdfs %s stat %s" % (server, location)
-            subp = subprocess.Popen(command, shell=True, 
-                            stderr=subprocess.PIPE,
-                            stdout=subprocess.PIPE)
-
-            subp_out, subp_err = subp.communicate()
-            subp_out = to_str(subp_out)
-            subp_err = to_str(subp_err)
-            retcode = subp.returncode
-            
-            if retcode:
-                status = "stat failed"
-                reason = "status: %d" % (retcode,)
-                if subp_err: reason += " " + subp_err.strip()
-            else:
-                for line in subp_out.split("\n"):
-                    line = line.strip()
-                    if line.startswith("Flags:"):
-                        if not ("IsDir" in line):
-                            files = [location]
-                            status = "OK"
-                            reason = ""
-                        break
         else:
-            lines = [x.strip() for x in out.split("\n")]
-            for l in lines:
-                if l:
-                    if not l.startswith(location):
-                        status = "failed"
-                        reason = "Invalid line in output: %s" % (l,)
-                        break
-                    last_word = l.rsplit("/",1)[-1]
-                    if '.' in last_word:
-                        path = l
-                        path = path if path.startswith(location) else location + "/" + path
-                        if not path.endswith("/."):
-                                files.append(path)
-                    else:
-                        path = l
-                        path = path if path.startswith(location) else location + "/" + path
-                        dirs.append(path)
-        #if not recursive:
-        #    print("scan(%s): %d dirs" % (location, len(dirs)))
+            if retcode:
+                if "not a directory" in err.lower():
+                    return "OK", "", [], [location]
+
+                status = "ls failed"
+                reason = "status: %d" % (retcode,)
+                if err: reason += " " + err.strip()
+
+                command = "xrdfs %s stat %s" % (server, location)
+                subp = subprocess.Popen(command, shell=True, 
+                                stderr=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
+
+                subp_out, subp_err = subp.communicate()
+                subp_out = to_str(subp_out)
+                subp_err = to_str(subp_err)
+                retcode = subp.returncode
+            
+                if retcode:
+                    status = "stat failed"
+                    reason = "status: %d" % (retcode,)
+                    if subp_err: reason += " " + subp_err.strip()
+                else:
+                    for line in subp_out.split("\n"):
+                        line = line.strip()
+                        if line.startswith("Flags:"):
+                            if not ("IsDir" in line):
+                                files = [location]
+                                status = "OK"
+                                reason = ""
+                            break
+            else:
+                lines = [x.strip() for x in out.split("\n")]
+                for l in lines:
+                    if l:
+                        if not l.startswith(location):
+                            status = "failed"
+                            reason = "Invalid line in output: %s" % (l,)
+                            break
+                        last_word = l.rsplit("/",1)[-1]
+                        if '.' in last_word:
+                            path = l
+                            path = path if path.startswith(location) else location + "/" + path
+                            if not path.endswith("/."):
+                                    files.append(path)
+                        else:
+                            path = l
+                            path = path if path.startswith(location) else location + "/" + path
+                            dirs.append(path)
+
         return status, reason, dirs, files
 
     def run(self):
@@ -282,11 +186,6 @@ class Scanner(Task):
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
         
                 
-    @staticmethod
-    def scan_location(server, location, recursive, timeout):
-        s = Scanner(None, server, location, recursive, timeout)
-        return s.scan(recursive)
-        
     @staticmethod
     def location_exists(server, location, timeout):
         s = Scanner(None, server, location, False, timeout)
@@ -336,14 +235,6 @@ class ScannerMaster(PyThread):
         scanner_task = Scanner(self, self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout)
         self.ScannerQueue.addTask(scanner_task)
         
-        """
-        status, reason, dirs, files = Scanner.scan_location(self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout)
-        if status != "OK":
-            self.Failed = self.RootFailed = True
-            self.Error = f"Root scan failed: {reason}"
-        else:
-            self.scanner_succeeded(self.Root, False, files, dirs)    # this will start recursive scanning
-        """    
         self.ScannerQueue.waitUntilEmpty()
         self.Results.close()
         self.ScannerQueue.Delegate = None       # detach for garbage collection
@@ -503,7 +394,12 @@ class ScannerMaster(PyThread):
         if self.DisplayProgress:
             self.TQ.close()
                 
-             
+    def purgeEmptyDirs(self):
+        if self.EmptyDirs:
+            queue = TaskQueue(self.MaxScanners)
+            for path in self.EmptyDirs:
+                queue.addTask(RMDir(self.Server, path))
+            queue.waitUntilEmpty()
             
 Usage = """
 python xrootd_scanner.py [options] <rse>
@@ -544,7 +440,8 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
     return path
     
 
-def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list):
+def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list,
+    purge_empty_dirs):
     
     failed = False
     
@@ -614,6 +511,9 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
                 path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
                 if path:
                     dir_list.add(path) 
+                    
+        if purge_empty_dirs:
+            master.purgeEmptyDirs()
 
         if display_progress:
             master.close_progress()
@@ -710,6 +610,7 @@ if __name__ == "__main__":
 
     server = config.scanner_server(rse)
     server_root = config.scanner_server_root(rse)
+    purge_empty_dirs = config.scanner_param(rse, "purge_empty_dirs", default=False)
     if not server_root:
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
         sys.exit(2)
@@ -735,7 +636,9 @@ if __name__ == "__main__":
         
     for root in config.scanner_roots(rse):
         try:
-            failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, out_list, dir_list)
+            failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
+                    override_max_scanners, out_list, dir_list,
+                    purge_empty_dirs)
         except:
             exc = traceback.format_exc()
             print(exc)

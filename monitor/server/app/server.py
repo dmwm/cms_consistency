@@ -49,6 +49,15 @@ class DataViewer(object):
             runs.append(timestamp)
         return sorted(runs)
         
+    def file_path(self, rse, run, typ):
+        ext = "json" if typ == "stats" else "list"
+        return f"{self.Path}/{rse}_{run}_{typ}.{ext}"
+        
+    def raw_stats(self, rse, run):
+        # returns unparsed JSON text
+        path = self.file_path(rse, run, "stats")
+        return open(path, "r").read(), os.path.getmtime(path)
+        
     def get_data(self, rse, run, typ, limit=None):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
@@ -89,8 +98,9 @@ class DataViewer(object):
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
-        for k, d in stats.items():
-            if not "elapsed" in d:
+        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]:
+            d = stats.get(k)
+            if isinstance(d, dict) and not "elapsed" in d:
                 d["elapsed"] = None
                 if d.get("end_time") is not None and d.get("start_time") is not None:
                     d["elapsed"] = d["end_time"] - d["start_time"]
@@ -220,6 +230,13 @@ class Handler(WPHandler):
     def probe(self, request, relpath, **args):
         return self.App.DataViewer.status(), "text/plain"
         return "OK" if self.App.DataViewer.is_mounted() else ("Data directory unreachable", 500)
+        
+    def raw_stats(self, request, relpath, rse=None, run=None, **args):
+        runs = self.App.DataViewer.list_runs(rse)
+        raw_stats = mtime = None
+        if run:
+            raw_stats, mtime = self.App.DataViewer.raw_stats(rse, run)
+        return self.render_to_response("raw_stats.html", rse=rse, runs=runs, raw_stats=raw_stats, mtime=mtime)
 
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
