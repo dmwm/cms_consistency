@@ -39,15 +39,17 @@ class DataViewer(object):
             rse, timestamp, typ, ext = self.parse_filename(fn)
             rses.add(rse)
         return sorted(list(rses))
+        
+    NLAST_RUNS = 8
     
-    def list_runs(self, rse):
+    def list_runs(self, rse, nlast=NLAST_RUNS):
         files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
         runs = []
         for path in files:
             fn = path.split("/",1)[-1]
             rse, timestamp, typ, ext = self.parse_filename(fn)
             runs.append(timestamp)
-        return sorted(runs)
+        return sorted(runs)[-nlast:]
         
     def file_path(self, rse, run, typ):
         ext = "json" if typ == "stats" else "list"
@@ -106,20 +108,38 @@ class DataViewer(object):
                     d["elapsed"] = d["end_time"] - d["start_time"]
         return stats, ndark, nmissing
         
+
+    def get_dark_or_missing(self, rse, run, typ, limit):
+        path = f"{self.Path}/{rse}_{run}_{typ}.list"
+        path_gz = path + ".gz"
+        try:
+            f = gzip.open(path_gz, "rt")
+        except:
+            f = open(path, "r")
+        while limit is None or limit > 0:
+            l = f.readline()
+            if not l:
+                break
+            l = l.strip()
+            if l:
+                yield l
+                if limit is not None:
+                    limit -= 1        
+        f.close()
+
     def get_dark(self, rse, run, limit=None):
-        return self.get_data(rse, run, "D", limit)
+        return self.get_dark_or_missing(rse, run, "D", limit)
 
     def get_missing(self, rse, run, limit=None):
-        return self.get_data(rse, run, "M", limit)
+        return self.get_dark_or_missing(rse, run, "M", limit)
         
     def last_stats(self, rse):
-        files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
-        if not files:
+        last_run = self.list_runs(rse, 1)
+        if last_run:
+            last_run = last_run[0]
+            return self.get_stats(rse, last_run)
+        else:
             return None
-        last_file = sorted(files)[-1]
-        fn = last_file.rsplit("/",1)[-1]
-        rse, timestamp, typ, ext = self.parse_filename(fn)
-        return self.get_stats(rse, timestamp)
         
 
 def display_file_list(lst):
@@ -320,15 +340,15 @@ class Handler(WPHandler):
         return errors
         
     def dark(self, request, relpath, rse=None, run=None, **args):
-        lst = self.App.DataViewer.get_data(rse, run, 'D')
-        return [path+"\n" for path in lst], {
+        lst = self.App.DataViewer.get_dark(rse, run)
+        return (path+"\n" for path in lst), {
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
         }
             
     def missing(self, request, relpath, rse=None, run=None, **args):
-        lst = self.App.DataViewer.get_data(rse, run, 'M')
-        return [path+"\n" for path in lst], {
+        lst = self.App.DataViewer.get_mssing(rse, run)
+        return (path+"\n" for path in lst), {
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
         }

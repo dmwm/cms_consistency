@@ -1,4 +1,4 @@
-import random, string, sys, glob, time
+import random, string, sys, glob, time, gzip
 from cmplib import cmp3_generator
 
 from part import PartitionedList
@@ -40,7 +40,7 @@ def main():
         if len(args) < 5:
                 print (Usage)
                 sys.exit(2)
-
+        compress = "-z" in opts
         stats_file = opts.get("-s")
         stats_key = opts.get("-S", "cmp3")
         stats = Stats(stats_file) if stats_file else None
@@ -80,8 +80,14 @@ def main():
         if stats is not None:
             stats[stats_key] = my_stats
 
-        fd = open(out_dark, "w")
-        fm = open(out_missing, "w")
+        if compress:
+            if not out_dark.endswith(".gz"):    out_dark += ".gz"
+            if not out_missing.endswith(".gz"):    out_missing += ".gz"
+            fd = gzip.open(out_dark, "wt")
+            fm = gzip.open(out_missing, "wt")
+        else:
+            fd = open(out_dark, "w")
+            fm = open(out_missing, "w")
 
         diffs = cmp3_generator(a_list, r_list, b_list)
         nm = nd = 0
