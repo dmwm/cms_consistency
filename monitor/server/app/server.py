@@ -3,7 +3,7 @@ import sys, glob, json, time, os
 from datetime import datetime
 from wm_handler import WMHandler, WMDataSource
 
-Version = "1.2c"
+Version = "1.4"
 
 class DataViewer(object):
     
@@ -347,7 +347,7 @@ class Handler(WPHandler):
         }
             
     def missing(self, request, relpath, rse=None, run=None, **args):
-        lst = self.App.DataViewer.get_mssing(rse, run)
+        lst = self.App.DataViewer.get_missing(rse, run)
         return (path+"\n" for path in lst), {
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
