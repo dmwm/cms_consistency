@@ -47,8 +47,9 @@ class DataViewer(object):
         runs = []
         for path in files:
             fn = path.split("/",1)[-1]
-            rse, timestamp, typ, ext = self.parse_filename(fn)
-            runs.append(timestamp)
+            if os.stat(path).st_size > 0:
+                rse, timestamp, typ, ext = self.parse_filename(fn)
+                runs.append(timestamp)
         return sorted(runs)[-nlast:]
         
     def file_path(self, rse, run, typ):
