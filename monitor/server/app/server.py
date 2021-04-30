@@ -116,26 +116,6 @@ class DataViewer(object):
             f = gzip.open(path_gz, "rt")
         except:
             try:    f = open(path, "r")
-            except: f = None
-        if f is not None:
-            while limit is None or limit > 0:
-                l = f.readline()
-                if not l:
-                    break
-                l = l.strip()
-                if l:
-                    yield l
-                    if limit is not None:
-                        limit -= 1        
-            f.close()
-            
-    def get_dark_or_missing(self, rse, run, typ, limit):
-        path = f"{self.Path}/{rse}_{run}_{typ}.list"
-        path_gz = path + ".gz"
-        try:
-            f = gzip.open(path_gz, "rt")
-        except:
-            try:    f = open(path, "r")
             except:
                 return None
                 
@@ -147,8 +127,8 @@ class DataViewer(object):
                 l = l.strip()
                 if l:
                     yield l
-                    if limit is not None:
-                        limit -= 1        
+                    if n is not None:
+                        n -= 1        
             f.close()
             
         return limited_line_reader(f, limit)
