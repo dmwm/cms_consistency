@@ -109,7 +109,6 @@ class DataViewer(object):
                     d["elapsed"] = d["end_time"] - d["start_time"]
         return stats, ndark, nmissing
         
-
     def get_dark_or_missing(self, rse, run, typ, limit):
         path = f"{self.Path}/{rse}_{run}_{typ}.list"
         path_gz = path + ".gz"
@@ -129,7 +128,31 @@ class DataViewer(object):
                     if limit is not None:
                         limit -= 1        
             f.close()
-
+            
+    def get_dark_or_missing(self, rse, run, typ, limit):
+        path = f"{self.Path}/{rse}_{run}_{typ}.list"
+        path_gz = path + ".gz"
+        try:
+            f = gzip.open(path_gz, "rt")
+        except:
+            try:    f = open(path, "r")
+            except:
+                return None
+                
+        def limited_line_reader(f, n):
+            while n is None or n > 0:
+                l = f.readline()
+                if not l:
+                    break
+                l = l.strip()
+                if l:
+                    yield l
+                    if limit is not None:
+                        limit -= 1        
+            f.close()
+            
+        return limited_line_reader(f, limit)
+            
     def get_dark(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "D", limit)
 
@@ -307,7 +330,7 @@ class Handler(WPHandler):
         Indent = "    "
         last_items = []
         out = []
-        for path in sorted(lst):
+        for path in sorted(lst or []):
             items = [item for item in path.split("/") if item]
             n_common = 0
             for li, i in zip(items, last_items):
