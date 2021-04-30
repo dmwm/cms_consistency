@@ -1,5 +1,5 @@
 from webpie import WPApp, WPHandler
-import sys, glob, json, time, os
+import sys, glob, json, time, os, gzip
 from datetime import datetime
 from wm_handler import WMHandler, WMDataSource
 
@@ -116,7 +116,8 @@ class DataViewer(object):
         try:
             f = gzip.open(path_gz, "rt")
         except:
-            f = open(path, "r")
+            try:    f = open(path, "r")
+            except: f = None
         while limit is None or limit > 0:
             l = f.readline()
             if not l:
@@ -126,7 +127,8 @@ class DataViewer(object):
                 yield l
                 if limit is not None:
                     limit -= 1        
-        f.close()
+        if f is not None:
+            f.close()
 
     def get_dark(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "D", limit)
@@ -305,7 +307,7 @@ class Handler(WPHandler):
         Indent = "    "
         last_items = []
         out = []
-        for path in sorted(lst or []):
+        for path in sorted(lst):
             items = [item for item in path.split("/") if item]
             n_common = 0
             for li, i in zip(items, last_items):
