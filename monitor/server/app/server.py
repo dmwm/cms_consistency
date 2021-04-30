@@ -118,16 +118,16 @@ class DataViewer(object):
         except:
             try:    f = open(path, "r")
             except: f = None
-        while limit is None or limit > 0:
-            l = f.readline()
-            if not l:
-                break
-            l = l.strip()
-            if l:
-                yield l
-                if limit is not None:
-                    limit -= 1        
         if f is not None:
+            while limit is None or limit > 0:
+                l = f.readline()
+                if not l:
+                    break
+                l = l.strip()
+                if l:
+                    yield l
+                    if limit is not None:
+                        limit -= 1        
             f.close()
 
     def get_dark(self, rse, run, limit=None):
