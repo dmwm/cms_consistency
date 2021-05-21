@@ -454,7 +454,7 @@ class App(WPApp):
     
     def __init__(self, handler, home, cc_path, prefix, wm_path):
         WPApp.__init__(self, handler, prefix=prefix)
-        self.DataViewer = DataViewer(path)
+        self.DataViewer = DataViewer(cc_path)
         self.WMDataSource = WMDataSource(wm_path)
         self.Home = home
 
