@@ -452,16 +452,14 @@ class App(WPApp):
 
     Version = Version
     
-    def __init__(self, handler, path, prefix, wm_path):
+    def __init__(self, handler, home, cc_path, prefix, wm_path):
         WPApp.__init__(self, handler, prefix=prefix)
-        self.DataViewer = DataViewer(path)
+        self.DataViewer = DataViewer(cc_path)
         self.WMDataSource = WMDataSource(wm_path)
-        
+        self.Home = home
 
     def init(self):
-        import os
-        home = os.path.dirname(__file__) or "."
-        self.initJinjaEnvironment(tempdirs=[home], 
+        self.initJinjaEnvironment(tempdirs=[self.Home], 
             filters={
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
                 "as_JSON_Date":as_JSON_Date
@@ -495,8 +493,8 @@ if __name__ == "__main__":
     print("Starting server:\n  port %s\n  CC path %s\n  WM path %s" % (port, cc_path, wm_path))
 
     sys.stdout.flush()
-    
-    App(Handler, cc_path, prefix, wm_path).run_server(port, logging=logging, debug=debug)
+    home = os.path.dirname(__file__) or "."
+    App(Handler, home, cc_path, prefix, wm_path).run_server(port, logging=logging, debug=debug)
 
         
         
