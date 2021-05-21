@@ -48,8 +48,11 @@ class DataViewer(object):
         for path in files:
             fn = path.split("/",1)[-1]
             if os.stat(path).st_size > 0:
-                rse, timestamp, typ, ext = self.parse_filename(fn)
-                runs.append(timestamp)
+                r, timestamp, typ, ext = self.parse_filename(fn)
+                if r == rse:
+                    # if the RSE was X, then rses like X_Y will appear in this list too, 
+                    # so double check that we get the right RSE
+                    runs.append(timestamp)
         return sorted(runs)[-nlast:]
         
     def file_path(self, rse, run, typ):
@@ -146,7 +149,11 @@ class DataViewer(object):
             return self.get_stats(rse, last_run)
         else:
             return None
-        
+
+    def files(self, rse, typ="*"):
+        files = glob.glob(f"{self.Path}/{rse}_{typ}.*")
+        return files
+
 
 def display_file_list(lst):
     Indent = "    "
@@ -407,6 +414,10 @@ class Handler(WPHandler):
             stats_parts=stats_parts,
             time_now = time.time()
         )
+
+    def files(self, request, relpath, rse=None, type="*"):
+        files = self.App.DataViewer.files(rse, type)
+        return [f"{f}\n" for f in files], "text/plain"
 
 def as_dt(t):
     # datetim in UTC
