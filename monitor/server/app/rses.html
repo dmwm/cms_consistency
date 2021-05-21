@@ -79,11 +79,14 @@
         {
             tr = document.createElement("tr");
             if( d.error == null )
-                tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</a></td>'
-                    + '<td><a href="./show_run?rse="' + d["rse"] + "&run=" + d["last_run"] + '">' + d["start_time"] + "</a></td>"
+            {
+                var tdtext = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</a></td>'
+                    + '<td><a href="./show_run?rse=' + d["rse"] + "&run=" + d["last_run"] + '">' + d["start_time"] + "</a></td>"
                     + '<td class="' + d["status"] + '">' + d["status"] + "</td>"
                     + "<td>" + d["ndark"] + "</td>"
                     + "<td>" + d["nmissing"] + "</td>";
+                tr.innerHTML = tdtext;
+            }
             else
                 tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
                     + '<td colspan=4 class="failed">error: ' + d.error + '</td>';
