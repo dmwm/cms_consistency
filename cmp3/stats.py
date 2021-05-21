@@ -52,7 +52,7 @@ python [-k <key>] [-u <update JSON file>] <stats JSON file>
 if __name__ == "__main__":
     import sys, getopt
     
-    opts, args = getopt.getopt(sys.argv[1:], "k:u:")
+    opts, args = getopt.getopt(sys.argv[1:], "k:u:j:")
     opts = dict(opts)
     
     if not args:
@@ -62,6 +62,8 @@ if __name__ == "__main__":
     key = opts.get("-k")
     if "-u" in opts:
         update = json.loads(open(opts["-u"], "r").read())
+    elif "-j" in opts:
+        update = json.loads(opts["-j"])
     else:
         update = json.loads(sys.stdin.read())
 

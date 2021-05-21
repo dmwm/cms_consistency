@@ -42,7 +42,8 @@ a_prefix=${scratch}/${RSE}_A.list
 b_prefix=${scratch}/${RSE}_B.list
 r_prefix=${scratch}/${RSE}_R.list
 
-now=`date +%Y_%m_%d_%H_%M`
+now=`date -u +%Y_%m_%d_%H_%M`
+timestamp=`date -u +%s`
 
 d_out=${out}/${RSE}_${now}_D.list.gz
 m_out=${out}/${RSE}_${now}_M.list.gz
@@ -57,6 +58,24 @@ if [ "$cert" != "" ]; then
         fi
 fi
 
+# init stats file
+now_date_time=`date -u`
+python_version=`$python -V`
+cat > ${stats} <<_EOF_
+{
+    "start_time":   ${timestamp}.0,
+    "start_date_time_utc":  "${now_date_time}",
+    "run":          "${now}",
+    "rse":          "${RSE}",
+    "scratch":      "${scratch}",
+    "out":          "${out}",
+    "config":       "${config_file}",
+    "rucio_config": "${rucio_config_file}",
+    "driver_version":   "${version}",
+    "python_version":   "${python_version}",
+    "end_time":     null
+}
+_EOF_
 
 
 # 0. delete old lists
@@ -110,6 +129,12 @@ $python cmp3/cmp3.py -z -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out}
 
 echo "Dark list:    " `gunzip ${d_out} | wc -l`
 echo "Missing list: " `gunzip ${m_out} | wc -l`
+
+end_time=`date -u +%s`
+
+$python cmp3/stats.py stats.json << _EOF_
+{ "end_time":${end_time}.0 }
+_EOF_
 
 
 
