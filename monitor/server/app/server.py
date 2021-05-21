@@ -242,7 +242,7 @@ class Handler(WPHandler):
         rses = self.App.DataViewer.list_rses()
         infos = []
         for i, rse in enumerate(rses):
-            start_time, ndark, nmissing, nerrors, error = None, None, None, None, None
+            summary, ndark, nmissing, error = None, None, None, None, None, None
             try:
                 #if i % 5 == 1:
                 #    raise ValueError('debug "debug"')    
@@ -255,7 +255,7 @@ class Handler(WPHandler):
             #print("index: stats:", info.get("stats"))
             infos.append((rse, summary, ndark, nmissing, error))
             #print("index:", rse, start_time, ndark, nmissing, nerrors)
-            sys.stdout.flush()
+            #sys.stdout.flush()
             
         #print(infos)
         return self.render_to_response("rses.html", infos=infos)
