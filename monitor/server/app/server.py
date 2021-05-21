@@ -146,7 +146,7 @@ class DataViewer(object):
         last_run = self.list_runs(rse, 1)
         if last_run:
             last_run = last_run[0]
-            return self.get_stats(rse, last_run)
+            return (last_run,) + self.get_stats(rse, last_run)
         else:
             return None
 
@@ -246,14 +246,14 @@ class Handler(WPHandler):
             try:
                 #if i % 5 == 1:
                 #    raise ValueError('debug "debug"')    
-                stats, ndark, nmissing = self.App.DataViewer.last_stats(rse)
+                run, stats, ndark, nmissing = self.App.DataViewer.last_stats(rse)
                 summary = self.run_summary(stats)
                 
             except Exception as e:
                 exc = str(e).replace('"', r'\"')
                 error = "Data parsing error: %s" % (exc,)
             #print("index: stats:", info.get("stats"))
-            infos.append((rse, summary, ndark, nmissing, error))
+            infos.append((rse, run, summary, ndark, nmissing, error))
             #print("index:", rse, start_time, ndark, nmissing, nerrors)
             #sys.stdout.flush()
             

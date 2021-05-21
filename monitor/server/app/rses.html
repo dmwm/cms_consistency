@@ -101,10 +101,10 @@
     <tr>
         <th>RSE</th><th>Last run</th><th>Dark</th><th>Missing</th><th>Errors</th>
     </tr>
-    {% for rse, start_time, ndark, nmissing, nerrors in infos %}
+    {% for rse, last_run, start_time, ndark, nmissing, nerrors in infos %}
         <tr>
             <td><a href="./show_rse?rse={{rse}}">{{rse}}</td>
-            <td>{% if start_time is none %}{% else %}{{start_time|as_dt}}{% endif %}</td>
+            <td>{% if start_time is none %}{% else %}<a href="./show_run?rse={{rse}}&run={{run}}">{{start_time|as_dt}}{% endif %}</td>
             <td>{{ndark or ''}}</td>
             <td>{{nmissing or ''}}</td>
             <td>{{nerrors or ''}}</td>
