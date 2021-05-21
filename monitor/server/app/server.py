@@ -242,7 +242,7 @@ class Handler(WPHandler):
         rses = self.App.DataViewer.list_rses()
         infos = []
         for i, rse in enumerate(rses):
-            summary, ndark, nmissing, error = None, None, None, None, None, None
+            summary = ndark = nmissing = error = None
             try:
                 #if i % 5 == 1:
                 #    raise ValueError('debug "debug"')    
