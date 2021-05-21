@@ -46,7 +46,7 @@ class DataViewer(object):
         files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
         runs = []
         for path in files:
-            fn = path.split("/",1)[-1]
+            fn = path.rsplit("/",1)[-1]
             if os.stat(path).st_size > 0:
                 r, timestamp, typ, ext = self.parse_filename(fn)
                 if r == rse:
