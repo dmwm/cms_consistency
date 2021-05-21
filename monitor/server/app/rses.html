@@ -17,10 +17,11 @@
 <script type="text/javascript">
     var data = [];
     
-    {% for rse, summary, ndark, nmissing, error in infos %}
+    {% for rse, last_run, summary, ndark, nmissing, error in infos %}
         {% if error is none %}
             data.push({
                 "rse":"{{rse}}",
+                "last_run": "{{last_run}}",
     			"status":
     				{%- if summary['status'] == "failed" -%}
     					"{{- summary['failed'] or ''}} failed"
@@ -78,8 +79,8 @@
         {
             tr = document.createElement("tr");
             if( d.error == null )
-                tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
-                    + "<td>" + d["start_time"] + "</td>"
+                tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</a></td>'
+                    + '<td><a href="./show_run?rse="' + d["rse"] + "&run=" + d["last_run"] + '">' + d["start_time"] + "</a></td>"
                     + '<td class="' + d["status"] + '">' + d["status"] + "</td>"
                     + "<td>" + d["ndark"] + "</td>"
                     + "<td>" + d["nmissing"] + "</td>";
@@ -95,22 +96,5 @@
 </script>
 
 
-
-{#
-
-    <tr>
-        <th>RSE</th><th>Last run</th><th>Dark</th><th>Missing</th><th>Errors</th>
-    </tr>
-    {% for rse, last_run, start_time, ndark, nmissing, nerrors in infos %}
-        <tr>
-            <td><a href="./show_rse?rse={{rse}}">{{rse}}</td>
-            <td>{% if start_time is none %}{% else %}<a href="./show_run?rse={{rse}}&run={{run}}">{{start_time|as_dt}}{% endif %}</td>
-            <td>{{ndark or ''}}</td>
-            <td>{{nmissing or ''}}</td>
-            <td>{{nerrors or ''}}</td>
-        </tr>
-    {% endfor %}    
-</table>
-#}
 
 {% endblock %}
