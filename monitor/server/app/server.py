@@ -3,7 +3,7 @@ import sys, glob, json, time, os, gzip
 from datetime import datetime
 from wm_handler import WMHandler, WMDataSource
 
-Version = "1.4.3"
+Version = "1.4.4"
 
 class DataViewer(object):
     
@@ -420,7 +420,8 @@ def as_JSON_Date(t):
     if t is None:
         return "null"
     dt = datetime.utcfromtimestamp(t)
-    return dt.strftime("new Date(%d, %d, %d)" % (dt.year, dt.month, dt.day))
+    # JavaScript Date() takes month starting from 0
+    return dt.strftime("new Date(%d, %d, %d)" % (dt.year, dt.month-1, dt.day))  
     
 def as_json(d):
     return "\n"+json.dumps(d, indent=4)
