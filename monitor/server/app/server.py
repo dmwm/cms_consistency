@@ -421,7 +421,7 @@ class Handler(WPHandler):
     def files(self, request, relpath, rse=None, type="*"):
         files = self.App.DataViewer.files(rse, type)
         sizes = [os.path.getsize(path) for path in files]
-        return [f"{f}\n" for f in files], "text/plain"
+        return [f"{f} {3}\n" for f, d in zip(files, sizes)], "text/plain"
         
     def file(self, request, relpath):
         f = self.App.DataViewer.open_file(relpath)
