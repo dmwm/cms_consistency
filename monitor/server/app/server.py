@@ -151,7 +151,7 @@ class DataViewer(object):
             return None
 
     def files(self, rse, typ="*"):
-        files = glob.glob(f"{self.Path}/{rse}_{typ}.*")
+        files = sorted(glob.glob(f"{self.Path}/{rse}_{typ}.*"))
         return files
         
     def open_file(self, relpath):
@@ -420,6 +420,7 @@ class Handler(WPHandler):
 
     def files(self, request, relpath, rse=None, type="*"):
         files = self.App.DataViewer.files(rse, type)
+        sizes = [os.path.getsize(path) for path in files]
         return [f"{f}\n" for f in files], "text/plain"
         
     def file(self, request, relpath):
