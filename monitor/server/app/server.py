@@ -153,6 +153,9 @@ class DataViewer(object):
     def files(self, rse, typ="*"):
         files = glob.glob(f"{self.Path}/{rse}_{typ}.*")
         return files
+        
+    def open_file(self, relpath):
+        return open(self.Path+"/"+relpath, "r")
 
 
 def display_file_list(lst):
@@ -418,6 +421,15 @@ class Handler(WPHandler):
     def files(self, request, relpath, rse=None, type="*"):
         files = self.App.DataViewer.files(rse, type)
         return [f"{f}\n" for f in files], "text/plain"
+        
+    def file(self, request, relpath):
+        f = self.App.DataViewer.open_file(relpath)
+        def read_file(f):
+            data = f.read(10240)
+            while data:
+                yield data
+                data = f.read(10240)
+        return read_file(f), "text/plain"
 
 def as_dt(t):
     # datetim in UTC
