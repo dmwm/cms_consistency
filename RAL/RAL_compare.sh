@@ -63,22 +63,44 @@ echo
 
 downloaded="no"
 
+t0=`date +%s`
+
 for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${tape_dump_tmp}
 	timestamp=`date -u +%Y%m%d`
-	t0=`date +%s`
+    attempt_time=`date -u`
 	dump_file=${dump_path}/dump_${timestamp}.gz
 	dump_url=root://${server}/cms:${dump_file}
     xrdcp ${dump_url} ${tape_dump_tmp}
-    if [ "$?" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
+    xrdcp_status=$?
+    if [ "$xrdcp_status" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
 	    rm -f ${tape_dump_tmp}
+    	t1=`date +%s`
+		python3 cmp3/stats.py -k scanner ${stats} <<_EOF_
+		    {
+		        "rse":"$RSE",
+		        "scanner":{
+		            "type":"site_dump",
+					"url":"${dump_url}",
+		            "version":null,
+                    "last_attempt_time_utc": "${attempt_time}",
+    		        "status":   "failed",
+                    "status_code": ${xrdcp_status},
+    				"attempt":  $attempt
+		        },
+		        "server":"${server}",
+		        "start_time":$t0,
+		        "end_time":null,
+		        "status":   "running"
+		    }
+_EOF_
         echo sleeping ...
         sleep $sleep_interval
     else
         echo succeeded
         python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${tape_dump_tmp}
-		t1=`date +%s`
+    	t1=`date +%s`
 	    rm -f ${tape_dump_tmp}
         downloaded="yes"
 
@@ -92,7 +114,10 @@ for attempt in $attempts; do
 		        "scanner":{
 		            "type":"site_dump",
 					"url":"${dump_url}",
-		            "version":null
+		            "version":null,
+                    "last_attempt_time_utc": "${attempt_time}",
+    		        "status":   "done",
+    				"attempt":  $attempt
 		        },
 		        "server":"${server}",
 		        "start_time":$t0,
@@ -107,6 +132,26 @@ _EOF_
 done
 
 if [ "$downloaded" == "no" ]; then
+	python3 cmp3/stats.py -k scanner ${stats} <<_EOF_
+		    {
+		        "rse":"$RSE",
+		        "scanner":{
+		            "type":"site_dump",
+					"url":"${dump_url}",
+		            "version":null,
+                    "last_attempt_time_utc": "${attempt_time}",
+    		        "status":   "failed",
+                    "status_code": ${xrdcp_status},
+    				"attempt":  $attempt
+		        },
+		        "server":"${server}",
+		        "start_time":$t0,
+		        "end_time":$t1,
+		        "status":   "failed",
+                "last_attempt_time_utc": "${attempt_time}",
+				"attempt":$attempt
+		    }
+_EOF_
     exit 1
 fi
 
