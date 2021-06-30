@@ -20,7 +20,7 @@
     
     
 			    <tr>
-			        <th></th><th>Start time</th><th>Status</th><th>Missing</th><th>Dark</th>
+			        <th></th><th>Start time</th><th>Status</th><th>Missing</th><th>Dark</th><th>Confirmed dark</th>
 			    </tr>
 			    {% for t, info in runs %}
 			        <tr>
@@ -35,6 +35,7 @@
                         </td>
 			            <td>{{info["nmissing"] if info["nmissing"] is not none}}</td>
 			            <td>{{info["ndark"] if info["ndark"] is not none}}</td>
+			            <td>{{info["confirmed_dark"] if info["confirmed_dark"] is not none}}</td>
 			        </tr>
 			    {% endfor %}
     

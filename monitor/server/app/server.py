@@ -301,7 +301,8 @@ class Handler(WPHandler):
             infos.append((
                 run, 
                 {
-                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running
+                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running, 
+                    "confirmed_dark":confirmed_dark
                 }
             ))
         #print(infos)
