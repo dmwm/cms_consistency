@@ -31,6 +31,12 @@
 				</tr>
 				
 				{% for step, step_name, stats in stats_parts %}
+                    <!--
+                        stats:
+                             {% for k, v in stats.items() %}
+                                {{k}}: {{v}}
+                            {% endfor %}
+                    -->
 					<tr>
 						<td>{{step_name}}</td>
 						<td>{% if step == "scanner" %}
@@ -60,7 +66,7 @@
 								{%- if stats["dark"] is not none %}&nbsp;dark: {{stats["dark"]}}{% endif -%}
 								{%- if stats["missing"] is not none %}&nbsp;missing: {{stats["missing"]}}{% endif -%}
                             {%- elif step == "cmp2dark" and stats is not none -%}
-                                confirmed:&nbsp;{{ stats["confirmed_dark_files"]|default("")}}
+                                confirmed:&nbsp;{{ stats["confirmed_dark_files"]|default("") }}
 							{%- endif -%}
 						</td>
 						<td>
