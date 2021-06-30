@@ -39,7 +39,7 @@
 								{{stats["version"]}}
 							{% endif %}
 						</td>
-						<td>{{stats["start_time"]|as_dt}}</td>
+						<td>{{stats["start_time"]|as_dt|default("")}}</td>
 						<td class="{{stats['status'] or ''}}">
                             {%- if step == "scanner" and "scanning" in stats -%}
                                 scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
@@ -47,7 +47,7 @@
                                 {{stats["status"]}}
                             {%- endif -%}
                         </td>
-						<td>{{stats["end_time"]|as_dt}}</td>
+						<td>{{stats["end_time"]|as_dt|default("")}}</td>
 						<td>{{stats["elapsed"]|hms or (time_now-stats["start_time"])|hms}}</td>
 						<td>
 							{%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["files"]|default("")}}
@@ -55,6 +55,8 @@
 							{%- elif step == "cmp3" -%}
 								{%- if stats["dark"] is not none %}&nbsp;dark: {{stats["dark"]}}{% endif -%}
 								{%- if stats["missing"] is not none %}&nbsp;missing: {{stats["missing"]}}{% endif -%}
+                            {%- elif step == "cmp2dark" and stats is not none -%}
+                                confirmed:&nbsp;{{ stats["confirmed_dark_files"]|default("")}}
 							{%- endif -%}
 						</td>
 						<td>

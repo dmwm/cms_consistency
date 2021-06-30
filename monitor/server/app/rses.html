@@ -17,11 +17,12 @@
 <script type="text/javascript">
     var data = [];
     
-    {% for rse, last_run, summary, ndark, nmissing, error in infos %}
-        {% if error is none %}
+    {% for info in infos %}
+        {% if info["error"] is none %}
+        {% set summary=info["summary"]  %}
             data.push({
-                "rse":"{{rse}}",
-                "last_run": "{{last_run}}",
+                "rse":"{{info['rse']}}",
+                "last_run": "{{info['run']}}",
     			"status":
     				{%- if summary['status'] == "failed" -%}
     					"{{- summary['failed'] or ''}} failed"
@@ -29,14 +30,15 @@
     					"{{summary['status']}}"
     				{%- endif -%},
                 "start_time":"{{summary['start_time']|as_dt if summary['start_time'] else ''}}",
-                "ndark":"{{ndark or ''}}",
-                "nmissing":"{{nmissing or ''}}",
+                "ndark":"{{info['ndark'] or ''}}",
+                "nmissing":"{{info['nmissing'] or ''}}",
+                "confirmed_dark":"{{info['confirmed_dark'] or ''}}"
                 "error": null
             });
         {% else %}
             data.push({
-                "rse":"{{rse}}",
-                "error":"{{error}}"
+                "rse":"{{info['rse']}}",
+                "error":"{{info['error']}}"
             });
         {% endif %}
     {% endfor %}
@@ -73,7 +75,7 @@
         else
             data.sort(sort_by_rse);
         var tr = document.createElement("tr");
-        tr.innerHTML = "<th>RSE</th><th>Last run</th><th>Status</th><th>Dark</th><th>Missing</th>";
+        tr.innerHTML = "<th>RSE</th><th>Last run</th><th>Status</th><th>Dark</th><th>Confirmed dark</th><th>Missing</th>";
         t.appendChild(tr);
         for( d of data )
         {
@@ -84,12 +86,13 @@
                     + '<td><a href="./show_run?rse=' + d["rse"] + "&run=" + d["last_run"] + '">' + d["start_time"] + "</a></td>"
                     + '<td class="' + d["status"] + '">' + d["status"] + "</td>"
                     + "<td>" + d["ndark"] + "</td>"
+                    + "<td>" + d["confirmed_dark"] + "</td>"
                     + "<td>" + d["nmissing"] + "</td>";
                 tr.innerHTML = tdtext;
             }
             else
                 tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
-                    + '<td colspan=4 class="failed">error: ' + d.error + '</td>';
+                    + '<td colspan=5 class="failed">error: ' + d.error + '</td>';
             t.appendChild(tr);
         }
     };

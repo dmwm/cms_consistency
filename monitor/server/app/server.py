@@ -100,17 +100,18 @@ class DataViewer(object):
                 
     def get_stats(self, rse, run):
         stats = self.get_data(rse, run, "stats")
-        ndark = nmissing = None
+        ndark = nmissing = confirmed_dark = None
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
+        confirmed_dark = stats.get("cc_dark",{}).get("confirmed_dark_files")
         for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]:
             d = stats.get(k)
             if isinstance(d, dict) and not "elapsed" in d:
                 d["elapsed"] = None
                 if d.get("end_time") is not None and d.get("start_time") is not None:
                     d["elapsed"] = d["end_time"] - d["start_time"]
-        return stats, ndark, nmissing
+        return stats, ndark, nmissing, confirmed_dark
         
     def get_dark_or_missing(self, rse, run, typ, limit):
         path = f"{self.Path}/{rse}_{run}_{typ}.list"
@@ -249,14 +250,24 @@ class Handler(WPHandler):
             try:
                 #if i % 5 == 1:
                 #    raise ValueError('debug "debug"')    
-                run, stats, ndark, nmissing = self.App.DataViewer.last_stats(rse)
+                run, stats, ndark, nmissing, confirmed_dark = self.App.DataViewer.last_stats(rse)
                 summary = self.run_summary(stats)
                 
             except Exception as e:
                 exc = str(e).replace('"', r'\"')
                 error = "Data parsing error: %s" % (exc,)
             #print("index: stats:", info.get("stats"))
-            infos.append((rse, run, summary, ndark, nmissing, error))
+            infos.append(
+                {
+                    "rse":      rse, 
+                    "run":      run, 
+                    "summary":  summary, 
+                    "ndark":    ndark, 
+                    "nmissing": nmissing, 
+                    "confirmed_dark":   confirmed_dark,
+                    "error":    error
+                }
+            )
             #print("index:", rse, start_time, ndark, nmissing, nerrors)
             #sys.stdout.flush()
             
@@ -277,12 +288,10 @@ class Handler(WPHandler):
     def show_rse(self, request, relpath, rse=None, **args):
         runs = self.App.DataViewer.list_runs(rse)
         runs = sorted(runs, reverse=True)
-        runs_with_stats = [(run, self.App.DataViewer.get_stats(rse, run)) for run in runs]
-        #print("runs_with_stats:", runs_with_stats)
         
         infos = []
         for run in runs:
-            stats, ndark, nmissing = self.App.DataViewer.get_stats(rse, run)
+            stats, ndark, nmissing, confirmed_dark = self.App.DataViewer.get_stats(rse, run)
             summary = self.run_summary(stats)
             start_time = summary["start_time"]
             status = summary["status"]
@@ -372,7 +381,7 @@ class Handler(WPHandler):
     LIMIT = 1000
     
     def show_run(self, request, relpath, rse=None, run=None, **args):
-        stats, ndark, nmissing = self.App.DataViewer.get_stats(rse, run)
+        stats, ndark, nmissing, confirmed_dark = self.App.DataViewer.get_stats(rse, run)
         summary = self.run_summary(stats)
         errors = []
         if summary["status"] == "failed":
@@ -387,7 +396,10 @@ class Handler(WPHandler):
                 ("dbdump_before", "DB dump before scan"),
                 ("scanner", "Site scanner"),
                 ("dbdump_after", "DB dump after scan"),
-                ("cmp3", "Comparison")
+                ("cmp3", "Comparison"),
+                ("cmp2dark", "Dark confirmation"),
+                ("cc_dark", "Dark action"),
+                ("cc_miss", "Missing action")
             ]
             if stats.get(part)
         ]
