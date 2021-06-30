@@ -48,7 +48,11 @@
                             {%- endif -%}
                         </td>
 						<td>{% if "end_time" in stats %}{{stats["end_time"]|as_dt|default("")}}{% endif %}</td>
-						<td>{{stats["elapsed"]|hms or (time_now-stats["start_time"])|hms}}</td>
+						<td>
+                            {% if "elapsed" in stats %}         {{stats["elapsed"]|hms}}
+                            {% elif "start_time" in stats %}    {{(time_now-stats["start_time"])|hms}}
+                            {% endif %}
+                        </td>
 						<td>
 							{%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["files"]|default("")}}
 							{%- elif step == "scanner" %}{{stats["total_files"]|default("")}}
