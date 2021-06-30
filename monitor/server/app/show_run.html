@@ -36,10 +36,10 @@
 						<td>{% if step == "scanner" %}
 								{{stats["scanner"]["type"]}}&nbsp;{{stats["scanner"]["version"]}}
 							{% else %}
-								{{stats["version"]}}
+								{% if "version" in stats %}{{stats["version"]}}{% endif %}
 							{% endif %}
 						</td>
-						<td>{{stats["start_time"]|as_dt|default("")}}</td>
+						<td>{% if "start_time" in stats %}{{stats["start_time"]|as_dt|default("")}}{% endif %}</td>
 						<td class="{{stats['status'] or ''}}">
                             {%- if step == "scanner" and "scanning" in stats -%}
                                 scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
@@ -47,7 +47,7 @@
                                 {{stats["status"]}}
                             {%- endif -%}
                         </td>
-						<td>{{stats["end_time"]|as_dt|default("")}}</td>
+						<td>{% if "end_time" in stats %}{{stats["end_time"]|as_dt|default("")}}{% endif %}</td>
 						<td>{{stats["elapsed"]|hms or (time_now-stats["start_time"])|hms}}</td>
 						<td>
 							{%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["files"]|default("")}}
