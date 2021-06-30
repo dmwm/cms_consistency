@@ -65,6 +65,9 @@
 							{%- elif step == "cmp3" -%}
 								{%- if stats["dark"] is not none %}&nbsp;dark: {{stats["dark"]}}{% endif -%}
 								{%- if stats["missing"] is not none %}&nbsp;missing: {{stats["missing"]}}{% endif -%}
+                            {%- elif step == "cmp2dark" and stats is not none -%}
+                                {%- if "new_list_files" in stats %}initial:&nbsp;{{ stats["new_list_files"]|default[""] }}{% endif -%}
+                                {%- if "join_list_files" in stats %}confirmed:&nbsp;{{ stats["join_list_files"]|default("") }}{% endif -%}
                             {%- elif step == "cc_dark" and stats is not none -%}
                                 confirmed:&nbsp;{{ stats["confirmed_dark_files"]|default("") }}
 							{%- endif -%}

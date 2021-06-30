@@ -105,7 +105,7 @@ class DataViewer(object):
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
         confirmed_dark = stats.get("cc_dark",{}).get("confirmed_dark_files")
-        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3"]:
+        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", "cc_dark", "cc_miss", "cmp2dark"]:
             d = stats.get(k)
             if isinstance(d, dict) and not "elapsed" in d:
                 d["elapsed"] = None
