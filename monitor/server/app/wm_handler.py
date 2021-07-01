@@ -112,7 +112,7 @@ class WMHandler(WPHandler):
             l += len(item)
             if l > 100*1000:
                 yield ''.join(buf)
-                buf = ""
+                buf = []
                 l = 0
         if buf:
             yield ''.join(buf)
