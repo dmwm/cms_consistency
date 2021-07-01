@@ -105,7 +105,7 @@ echo
 $python xrootd_scanner.py -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 
 if [ "$?" != "0" ]; then
 	rm -f ${r_prefix}*
-        echo "Site scan failed. Exiting"
+    echo "Site scan failed. Exiting"
 	exit 1
 fi
         
