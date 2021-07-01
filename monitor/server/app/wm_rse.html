@@ -18,7 +18,10 @@
     </tr>
     <tr>    <th>Status</th><td>{{data["status"]}}</td>  </tr>
     <tr>    <th>Error</th><td>{{data["error"] or ''}}</td>  </tr>
-    <tr>    <th>Files</th><td><a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}">{{data["files"]}}</a></td>  </tr>
+    <tr>    <th>Files</th><td>{{data["files"]}}</td>
+        <td><a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}&format=raw">gzip</a></td>
+        <td><a href="./files/{{rse}}_wm_file_list.json?rse={{rse}}&format=json">json</a></td>
+    </tr>
     <tr>    <th>Directories</th><td>{{data["directories"]}}</td>  </tr>
     <tr>    <th>Empty directories</th><td>{{data["empty_directories"]}}</td>  </tr>
 </table>

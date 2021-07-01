@@ -188,6 +188,7 @@ class Handler(WPHandler):
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
         self.WM = WMHandler(*params, **args)
+        self.unmerged = WMHandler(*params, **args)
         
     COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
 

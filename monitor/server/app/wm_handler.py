@@ -29,7 +29,7 @@ class WMDataSource(object):
                 pass
         return sorted(rses, key=lambda d: d["rse"])
         
-    def file_list(self, rse):
+    def file_list_as_file(self, rse):
         path = f"{self.Path}/{rse}_files.list.00000"
         if os.path.isfile(path):
             f = open(path, "rb")
@@ -38,6 +38,22 @@ class WMDataSource(object):
             f = open(path + ".gz", "rb")
             type = "application/x-gzip"
         return f, type
+        
+    file_list = file_list_as_file
+        
+    def file_list_as_iterable(self, rse):
+        path = f"{self.Path}/{rse}_files.list.00000"
+        if os.path.isfile(path):
+            f = open(path, "r")
+        elif os.path.isfile(path + ".gz"):
+            f = gzip.open(path + ".gz", "rt")
+        while True:
+            line = f.readline()
+            if not line:
+                break
+            line = line.strip()
+            if line:
+                yield line
         
     def convert_rse_item(self, rse_info):
         rse_stats = {
@@ -84,15 +100,39 @@ class WMHandler(WPHandler):
             if not buf:
                 break
             yield buf
-    
-    def files(self, request, replapth, rse=None, **args):
+            
+    def json_iterator(self, iterable):
+        buf = ["[\n"]
+        l = 2
+        first = True
+        for x in iterable:
+            item = '%s "%s"' % (',' if not first else '', x)
+            first = False
+            buf.append(item)
+            l += len(item)
+            if l > 100*1000:
+                yield ''.join(buf)
+                buf = ""
+                l = 0
+        if buf:
+            yield ''.join(buf)
+        yield "\n]\n"
+
+    def files(self, request, replapth, rse=None, format="raw", **args):
         ds = self.App.WMDataSource
-        f, type = ds.file_list(rse)
-        headers = {
-            "Content-Type":type,
-            "Content-Disposition":"attachment"
-        }
-        return self.read_file(f), headers
+        if format == "raw":
+            f, type = ds.file_list(rse)
+            headers = {
+                "Content-Type":type,
+                "Content-Disposition":"attachment"
+            }
+            return self.read_file(f), headers
+        elif format == "json":
+            headers = {
+                "Content-Type":"text/json",
+                "Content-Disposition":"attachment"
+            }
+            return self.json_iterator(ds.file_list_as_iterable(rse)), headers
         
     #
     # GUI
