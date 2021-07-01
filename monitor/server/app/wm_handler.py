@@ -42,6 +42,15 @@ class WMDataSource(object):
         return f, type
         
     file_list = file_list_as_file
+    
+    def line_iterator(self, f):
+        while True:
+            line = f.readline()
+            if not line:
+                break
+            line = line.strip()
+            if line:
+                yield line
         
     def file_list_as_iterable(self, rse):
         path = f"{self.Path}/{rse}_files.list.00000"
@@ -51,13 +60,7 @@ class WMDataSource(object):
             f = gzip.open(path + ".gz", "rt")
         else:
             raise FileNotFoundError("not found")
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            line = line.strip()
-            if line:
-                yield line
+        return self.line_iterator(f)
         
     def convert_rse_item(self, rse_info):
         rse_stats = {
@@ -80,8 +83,6 @@ class WMDataSource(object):
         path = f"{self.Path}/{rse}_stats.json"
         data = json.loads(open(path, "r").read())["scanner"]
         return self.convert_rse_item(data)
-        
-    
         
 class WMHandler(WPHandler):
     
