@@ -3,11 +3,11 @@ FROM conda/miniconda3-centos7
 
 RUN conda update -n base -c defaults conda
 
+RUN echo 3
+
 RUN pip install webpie pythreader jinja2
 
 WORKDIR /root
-
-RUN echo 2
 
 ADD start.sh ./start.sh
 RUN mkdir app samples
