@@ -37,6 +37,8 @@ class WMDataSource(object):
         elif os.path.isfile(path + ".gz"):
             f = open(path + ".gz", "rb")
             type = "application/x-gzip"
+        else:
+            raise FileNotFoundError("not found")
         return f, type
         
     file_list = file_list_as_file
@@ -47,6 +49,8 @@ class WMDataSource(object):
             f = open(path, "r")
         elif os.path.isfile(path + ".gz"):
             f = gzip.open(path + ".gz", "rt")
+        else:
+            raise FileNotFoundError("not found")
         while True:
             line = f.readline()
             if not line:
@@ -120,19 +124,22 @@ class WMHandler(WPHandler):
 
     def files(self, request, replapth, rse=None, format="raw", **args):
         ds = self.App.WMDataSource
-        if format == "raw":
-            f, type = ds.file_list(rse)
-            headers = {
-                "Content-Type":type,
-                "Content-Disposition":"attachment"
-            }
-            return self.read_file(f), headers
-        elif format == "json":
-            headers = {
-                "Content-Type":"text/json",
-                "Content-Disposition":"attachment"
-            }
-            return self.json_iterator(ds.file_list_as_iterable(rse)), headers
+        try:
+            if format == "raw":
+                f, type = ds.file_list_as_file(rse)
+                headers = {
+                    "Content-Type":type,
+                    "Content-Disposition":"attachment"
+                }
+                return self.read_file(f), headers
+            elif format == "json":
+                headers = {
+                    "Content-Type":"text/json",
+                    "Content-Disposition":"attachment"
+                }
+                return self.json_iterator(ds.file_list_as_iterable(rse)), headers
+        except FileNotFoundError:
+            return 404, "not found"
         
     #
     # GUI
