@@ -484,6 +484,12 @@ def hms(t):
 def path_type(path):
     return "dir" if path.endswith("/") else "file"
     
+def none_as_blank(x):
+    if x is None:
+        return ''
+    else:
+        return str(x)
+    
 
 class App(WPApp):
 
@@ -499,9 +505,9 @@ class App(WPApp):
         self.initJinjaEnvironment(tempdirs=[self.Home], 
             filters={
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
-                "as_JSON_Date":as_JSON_Date
+                "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank
             }
-            )
+        )
         
         
 Usage = """

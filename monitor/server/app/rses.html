@@ -30,9 +30,9 @@
     					"{{summary['status']}}"
     				{%- endif -%},
                 "start_time":"{{summary['start_time']|as_dt if summary['start_time'] else ''}}",
-                "ndark":"{{info['ndark'] or ''}}",
-                "nmissing":"{{info['nmissing'] or ''}}",
-                "confirmed_dark":"{{info['confirmed_dark'] or ''}}",
+                "ndark":"{{info['ndark']|none_as_blank}}",
+                "nmissing":"{{info['nmissing']|none_as_blank}}",
+                "confirmed_dark":"{{info['confirmed_dark']|none_as_blank}}",
                 "error": null
             });
         {% else %}

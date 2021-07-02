@@ -33,9 +33,9 @@
                                 {{info["status"] or ""}}
                             {%- endif -%}
                         </td>
-			            <td>{{info["nmissing"] if info["nmissing"] is not none}}</td>
-			            <td>{{info["ndark"] if info["ndark"] is not none}}</td>
-			            <td>{{info["confirmed_dark"] if info["confirmed_dark"] is not none}}</td>
+			            <td>{{info["nmissing"]|none_as_blank}}</td>
+			            <td>{{info["ndark"]|none_as_blank}}</td>
+			            <td>{{info["confirmed_dark"]|none_as_blank}}</td>
 			        </tr>
 			    {% endfor %}
     
