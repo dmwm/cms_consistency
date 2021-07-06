@@ -15,7 +15,7 @@
         {% endfor %}
         </p>
 
-    {% else %}
+    {% endif %}
             <h3>Steps statistics</h3>
             
             <table class="data">
@@ -162,9 +162,9 @@
             
 	            {% endif %}
             
-	{% endif %}	{# if cmp3 is not none #}
+	        {% endif %}	{# if cmp3 is not none #}
 
-    {% endif %} {# errors #}
+    {# {% endif %}  errors #}
 
     <h3>Raw JSON statistics</h3>
     

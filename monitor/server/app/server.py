@@ -387,7 +387,7 @@ class Handler(WPHandler):
         errors = []
         if summary["status"] == "failed":
             failed_comp = summary["failed"]
-            errors = ["%s failed:" % failed_comp]
+            errors = ["%s failed" % failed_comp]
             failed_stats = stats[failed_comp]
             if failed_stats.get("error"):
                 errors.append("error: %s", failed_stats["error"])
@@ -417,7 +417,8 @@ class Handler(WPHandler):
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
             errors = errors,
-            dark_truncated = dark_truncated, missing_truncated=missing_truncated,
+            dark_truncated = dark_truncated, 
+            missing_truncated=missing_truncated,
             dbdump_before=stats.get("dbdump_before"),
             dbdump_after=stats.get("dbdump_after"),
             scanner=stats.get("scanner"),
