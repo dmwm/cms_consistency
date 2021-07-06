@@ -27,7 +27,10 @@ python=${PYTHON:-python3}
 echo will use python: $python
 
 file_list_prefix=${out}/${RSE}_files.list
-stats=${out}/${RSE}_stats.json
+
+now=`date -u +%Y_%m_%d_%H_%M`
+stats=${out}/${RSE}_${now}_stats.json
+last_stats=${out}/${RSE}_stats.json
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -41,8 +44,15 @@ fi
 export PYTHONPATH=`pwd`/cmp3
 
 $python xrootd_scanner.py -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
-if [ "$?" != "0" ]; then
-	rm -f ${stats} ${file_list_prefix}* 
-        echo "Site scan failed. Exiting"
-	exit 1
+scan_status=$?
+
+if [ -f ${stats} ]; then
+    rm -f ${last_stats}; ln -s ${stats} ${last_stats}
 fi
+
+if [ "$scan_status" != "0" ]; then
+	rm -f ${file_list_prefix}* 
+    echo "Site scan failed. Exiting"
+    exit 1
+fi
+

@@ -36,17 +36,19 @@ sleep_interval=1000      # 10 minutes
 attempts="1 2 3 4 5 6"
 
 
-today=`date -u +%Y_%m_%d_00_00`
+run=`date -u +%Y_%m_%d_00_00`
+timestamp=`date -u +%Y%m%d`
+dump_url=root://${server}/cms:${dump_path}/dump_${timestamp}.gz
 
-b_prefix=${scratch}/${RSE}_${today}_B.list
-a_prefix=${scratch}/${RSE}_${today}_A.list
-r_prefix=${scratch}/${RSE}_${today}_R.list
-stats=${out}/${RSE}_${today}_stats.json
+b_prefix=${scratch}/${RSE}_${run}_B.list
+a_prefix=${scratch}/${RSE}_${run}_A.list
+r_prefix=${scratch}/${RSE}_${run}_R.list
+stats=${out}/${RSE}_${run}_stats.json
 
-d_out=${out}/${RSE}_${today}_D.list
-m_out=${out}/${RSE}_${today}_M.list
+d_out=${out}/${RSE}_${run}_D.list
+m_out=${out}/${RSE}_${run}_M.list
 
-tape_dump_tmp=${scratch}/${RSE}_${today}_tape_dump.gz
+tape_dump_tmp=${scratch}/${RSE}_${run}_tape_dump.gz
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -68,10 +70,7 @@ t0=`date +%s`
 for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${tape_dump_tmp}
-	timestamp=`date -u +%Y%m%d`
     attempt_time=`date -u`
-	dump_file=${dump_path}/dump_${timestamp}.gz
-	dump_url=root://${server}/cms:${dump_file}
     xrdcp ${dump_url} ${tape_dump_tmp}
     xrdcp_status=$?
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then

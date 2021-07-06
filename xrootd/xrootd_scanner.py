@@ -107,8 +107,7 @@ class Scanner(Task):
                     return "OK", "", [], [location]
 
                 status = "ls failed"
-                reason = "status: %d" % (retcode,)
-                if err: reason += " " + err.strip()
+                reason = "status code: %s, stderr: [%s]" % (retcode, err)
 
                 command = "xrdfs %s stat %s" % (server, location)
                 subp = subprocess.Popen(command, shell=True, 
