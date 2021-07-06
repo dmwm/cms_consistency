@@ -79,7 +79,7 @@ class DataViewer(object):
                 scanner_stats = stats["scanner"]
                 if not "total_files" in scanner_stats:
                     nfiles = ndirectories = 0
-                    for root_info in scanner_stats["roots"]:
+                    for root_info in scanner_stats.get("roots", []):
                         nfiles += root_info["files"]
                         ndirectories += root_info["directories"]
                     scanner_stats["total_files"] = nfiles
