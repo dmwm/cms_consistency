@@ -442,7 +442,7 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
 def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list,
     purge_empty_dirs):
     
-    failed = False
+    failed = root_failed = False
     
     timeout = override_timeout or config.scanner_timeout(rse)
     top_path = root if root.startswith("/") else server_root + "/" + root
@@ -476,6 +476,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             "end_time":t1,
             "elapsed_time": t1-t0
         })
+        root_failed = True
     else:
         remove_prefix = config.scanner_remove_prefix(rse)
         add_prefix = config.scanner_add_prefix(rse)
@@ -550,6 +551,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
 
         if master.GaveUp:
             failed = True
+        root_failed = master.RootFailed
             
     del my_stats["scanning"]
     my_stats["roots"].append(root_stats)
@@ -557,10 +559,8 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         stats[stats_key] = my_stats
     if failed:
         stats["error"] = root_stats.get("error")
-    return failed
+    return failed, root_failed
     
-
-
 if __name__ == "__main__":
     import getopt, sys, time
 
@@ -632,12 +632,13 @@ if __name__ == "__main__":
         stats[stats_key] = my_stats
     
     failed = False
-        
+    all_roots_failed = True
     for root in config.scanner_roots(rse):
         try:
-            failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
+            failed, root_failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
                     override_max_scanners, out_list, dir_list,
                     purge_empty_dirs)
+            all_roots_failed = all_roots_failed and root_failed
         except:
             exc = traceback.format_exc()
             print(exc)
@@ -652,7 +653,7 @@ if __name__ == "__main__":
            
     out_list.close()
 
-    if failed:
+    if failed or all_roots_failed:
         my_stats["status"] = "failed"
     else:
         my_stats["status"] = "done"
