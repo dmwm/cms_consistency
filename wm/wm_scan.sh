@@ -28,8 +28,8 @@ echo will use python: $python
 
 file_list_prefix=${out}/${RSE}_files.list
 
-now=`date -u +%Y_%m_%d_%H_%M`
-stats=${out}/${RSE}_${now}_stats.json
+run=`date -u +%Y_%m_%d_%H_%M`
+stats=${out}/${RSE}_${run}_stats.json
 last_stats=${out}/${RSE}_stats.json
 
 # X509 proxy
@@ -51,7 +51,8 @@ if [ -f ${stats} ]; then
 fi
 
 if [ "$scan_status" != "0" ]; then
-	rm -f ${file_list_prefix}* 
+    # keep the output file even if it is incomplete
+	#rm -f ${file_list_prefix}*             
     echo "Site scan failed. Exiting"
     exit 1
 fi
