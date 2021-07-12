@@ -87,6 +87,7 @@ class WMDataSource(object):
     def ls(self, rse=None):
         #pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}_stats.json"
         files = glob.glob(f"{self.Path}/*_stats.json")
+        out = []
         for path in files:
             d = { "path": path, "error":"",
                 "size": None, "ctime":None, "ctime_text":None
