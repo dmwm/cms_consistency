@@ -1,5 +1,5 @@
 from webpie import WPApp, WPHandler
-import sys, glob, json, time, os, gzip
+import sys, glob, json, time, os, gzip, re
 from datetime import datetime
 
 Version = "1.1"
@@ -16,18 +16,32 @@ class WMDataSource(object):
         if not os.path.isdir(self.Path):
             return "Data volume %s does not exist" % (self.Path,)
         return "OK"
+        
+    Run_stats_pattern = re.compile(r"/(?P<dir>.*)/(?P<rse>.*)_(?P<run>\d{4}_\d{2}_\d{2}_\d{2}_\d{2})_stats\.json")
 
-    def list_rses(self):
-        files = glob.glob(f"{self.Path}/*_stats.json")
-        rses = []
+    def parse_stats_path(self, fn):
+        m = self.Run_stats_pattern.match(fn)
+        if not m:   return None
+        return m["rse"], m["run"]
+
+    def latest_stats(self):
+        files = sorted(glob.glob(f"{self.Path}/*_stats.json"))
+        latest_files = {}
         for path in files:
+            tup = self.parse_stats_path(path)
+            if tup:
+                rse, run = tup
+                latest_files[rse] = path
+        
+        out = []
+        for rse, path in latest_files.items():
             try:
                 data = json.loads(open(path, "r").read())
                 data = data["scanner"]
-                if "rse" in data: rses.append(data)
+                if "rse" in data: out.append(data)
             except:
                 pass
-        return sorted(rses, key=lambda d: d["rse"])
+        return sorted(out, key=lambda d: d["rse"])
         
     def file_list_as_file(self, rse):
         path = f"{self.Path}/{rse}_files.list.00000"
@@ -75,17 +89,27 @@ class WMDataSource(object):
         return rse_stats
         
     def stats(self):
-        data = self.list_rses()
+        data = self.latest_stats()
         stats = { rse_info["rse"]:self.convert_rse_item(rse_info) for rse_info in data }
         return stats
         
     def stats_for_rse(self, rse):
-        path = f"{self.Path}/{rse}_stats.json"
-        data = json.loads(open(path, "r").read())["scanner"]
-        return self.convert_rse_item(data)
+        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
+        latest_file = None
+        for path in files:
+            tup = self.parse_stats_path(path)
+            if tup:
+                r, run = tup
+                if r == rse:
+                    latest_file = path
+        if latest_file:
+            data = json.loads(open(path, "r").read())["scanner"]
+            return self.convert_rse_item(data)
+        else:
+            return None
 
     def ls(self, rse=None):
-        pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}*_stats.json"
+        pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}_*_stats.json"
         files = sorted(glob.glob(pattern))
         out = []
         for path in files:
@@ -114,7 +138,7 @@ class WMHandler(WPHandler):
     
     def rses(self, request, replapth, **args):
         ds = self.App.WMDataSource
-        data = ds.list_rses()
+        data = ds.latest_stats()
         return json.dumps(data), "text/json" 
 
     def stats(self, request, replapth, **args):
