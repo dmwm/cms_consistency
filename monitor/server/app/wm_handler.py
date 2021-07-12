@@ -86,7 +86,7 @@ class WMDataSource(object):
 
     def ls(self, rse=None):
         pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}*_stats.json"
-        files = glob.glob(pattern)
+        files = sorted(glob.glob(pattern))
         out = []
         for path in files:
             d = { "path": path, "error":"",
