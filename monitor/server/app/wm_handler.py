@@ -90,7 +90,7 @@ class WMDataSource(object):
         return [
             {
                 "path": path,
-                "size": None,           #os.path.getsize(path),     
+                "size": os.path.getsize(path),     
                 "ctime": None,           #os.path.getctime(path),
                 "ctime_text": None,           #time.ctime(os.path.getctime(path))
             }
