@@ -85,17 +85,21 @@ class WMDataSource(object):
         return self.convert_rse_item(data)
 
     def ls(self, rse=None):
-        pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}_stats.json"
-        files = glob.glob(pattern)
-        return [
-            {
-                "path": path,
-                "size": os.path.getsize(path),     
-                "ctime": None,           #os.path.getctime(path),
-                "ctime_text": None,           #time.ctime(os.path.getctime(path))
+        #pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}_stats.json"
+        files = glob.glob(f"{self.Path}/*_stats.json")
+        for path in files:
+            d = { "path": path, "error":"",
+                "size": None, "ctime":None, "ctime_text":None
             }
-            for path in files
-        ]
+            try:
+                d["size"] = os.path.getsize(path)
+                d["ctime"] = os.path.getctime(path)
+                d["ctime_text"] = time.ctime(os.path.getctime(path))
+            except Exception as e:
+                d["error"] = str(e)
+            out.append(d)
+        return out
+        
         
         
 class WMHandler(WPHandler):
@@ -171,7 +175,7 @@ class WMHandler(WPHandler):
         
     def ls(self, request, relpath, rse=None, **args):
         lst = self.App.WMDataSource.ls(rse)
-        return ["%s %s %s %s\n" % (d["path"], d["size"], d["ctime"], d["ctime_text"]) for d in lst], "text/plain"
+        return ["%s %s %s %s %s\n" % (d["path"], d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
         
         
             
