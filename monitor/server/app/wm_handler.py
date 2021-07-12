@@ -93,6 +93,10 @@ class WMDataSource(object):
                 "size": None, "ctime":None, "ctime_text":None
             }
             try:
+                d["real_path"] = os.path.realpath(path)
+            except Exception as e:
+                d["error"] = str(e)
+            try:
                 d["size"] = os.path.getsize(path)
                 d["ctime"] = os.path.getctime(path)
                 d["ctime_text"] = time.ctime(os.path.getctime(path))
@@ -176,7 +180,7 @@ class WMHandler(WPHandler):
         
     def ls(self, request, relpath, rse=None, **args):
         lst = self.App.WMDataSource.ls(rse)
-        return ["%s %s %s %s %s\n" % (d["path"], d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
+        return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"], d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
         
         
             
