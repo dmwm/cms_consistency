@@ -84,8 +84,9 @@ class WMDataSource(object):
         data = json.loads(open(path, "r").read())["scanner"]
         return self.convert_rse_item(data)
 
-    def list_files(self):
-        files = glob.glob(f"{self.Path}/*_stats.json")
+    def ls(self, rse=None):
+        pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}_stats.json"
+        files = glob.glob(pattern)
         return [
             {
                 "path": path,
@@ -167,6 +168,10 @@ class WMHandler(WPHandler):
     def rse(self, request, relpath, rse=None, **args):
         data = self.App.WMDataSource.stats_for_rse(rse)
         return self.render_to_response("wm_rse.html", rse=rse, data=data)
+        
+    def ls(self, request, relpath, rse=None, **args):
+        lst = self.App.WMDataSource.ls(rse)
+        return ["%s %s %s %s\n" % (d["path"], d["size"], d["ctime"], d["ctime_text"]) for d in lst], "text/plain"
         
         
             
