@@ -176,7 +176,7 @@ class Scanner(Task):
             stats += " " + reason
             self.message(status, stats)
             if self.Master is not None:
-                self.Master.scanner_failed(self)
+                self.Master.scanner_failed(self, f"{status}: {reason}")
 
         else:
             counts = " %8d %-8d" % (len(files), len(dirs))
@@ -212,7 +212,7 @@ class ScannerMaster(PyThread):
         self.Directories = set()
         self.RecursiveFailed = {}       # parent path -> count
         self.Errors = {}                # location -> count
-        self.GaveUp = set()
+        self.GaveUp = {}
         self.LastReport = time.time()
         self.EmptyDirs = set()
         self.NScanned = 0
@@ -309,7 +309,7 @@ class ScannerMaster(PyThread):
             self.LastReport = time.time()
 
     @synchronized
-    def scanner_failed(self, scanner):
+    def scanner_failed(self, scanner, error):
         path = scanner.Location
         if scanner.WasRecursive:
             with self:
@@ -328,7 +328,7 @@ class ScannerMaster(PyThread):
             self.ScannerQueue.addTask(scanner)
         else:
             print("Gave up:", scanner.Location)
-            self.GaveUp.add(scanner.Location)
+            self.GaveUp[scanner.Location] = error
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
             self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
@@ -523,7 +523,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
     
         if master.GaveUp:
             sys.stderr.write("Scanner failed to scan the following %d locations:\n" % (len(master.GaveUp),))
-            for p in sorted(list(master.GaveUp)):
+            for p in sorted(list(master.GaveUp.keys())):
                 sys.stderr.write(p+"\n")
 
         print("Files:                %d" % (master.NFiles,))
@@ -541,7 +541,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         root_stats.update({
             "root_failed": master.RootFailed,
             "error": master.Error,
-            "failed_subdirectories": list(master.GaveUp),
+            "failed_subdirectories": [f"{path}: {error}" for path, error in master.GaveUp.items()],
             "files": master.NFiles,
             "directories": master.NDirectories,
             "empty_directories":len(master.EmptyDirs),

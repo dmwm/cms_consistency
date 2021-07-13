@@ -48,6 +48,8 @@ timestamp=`date -u +%s`
 d_out=${out}/${RSE}_${now}_D.list.gz
 m_out=${out}/${RSE}_${now}_M.list.gz
 stats=${out}/${RSE}_${now}_stats.json
+scanner_errors=${out}/${RSE}_${now}_scanner.errors
+dbdump_errors=${out}/${RSE}_${now}_dbdump.errors
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -93,7 +95,8 @@ if [ "$rucio_config_file" != "-" ]; then
     rucio_cfg="-d $rucio_config_file"
 fi
 
-$python cmp3/db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
+echo "DB dump before the scan..." > ${dbdump_errors}
+$python cmp3/db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors}
 
 sleep 10
 
@@ -102,10 +105,12 @@ echo
 echo Site dump ...
 echo
 
-$python xrootd_scanner.py -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 
-if [ "$?" != "0" ]; then
+echo "Site scan..." > ${scanner_errors}
+$python xrootd_scanner.py -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
+scanner_status=$?
+if [ "$scanner_status" != "0" ]; then
+    echo "Site scan failed. Status code: $scanner_status" >> ${scanner_errors}
 	rm -f ${r_prefix}*
-    echo "Site scan failed. Exiting"
 	exit 1
 fi
         
@@ -117,7 +122,8 @@ echo
 echo DB dump after ...
 echo
 
-$python cmp3/db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+echo "DB dump after the scan..." >> ${dbdump_log}
+$python cmp3/db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
 
 # 4. cmp3
 
