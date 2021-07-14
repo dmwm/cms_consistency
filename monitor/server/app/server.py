@@ -419,7 +419,7 @@ class Handler(WPHandler):
         #
         scanner = stats.get("scanner")
         if scanner:
-            for r in scanner["roots"]:
+            for r in scanner.get("roots", []):
                 failed = r.get("failed_subdirectories", {})
                 if isinstance(failed, list):
                     out = {}
