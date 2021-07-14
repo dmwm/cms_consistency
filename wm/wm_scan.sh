@@ -43,7 +43,7 @@ fi
 
 export PYTHONPATH=`pwd`/cmp3
 
-$python xrootd_scanner.py -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
+$python xrootd_scanner.py -k -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
 scan_status=$?
 
 if [ -f ${stats} ]; then
