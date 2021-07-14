@@ -107,6 +107,7 @@
                                 <td>
                                     {% for path, error in d["failed_subdirectories"].items() %}
                                         {{path}}:&nbsp;{{error}}<br/>
+                                    {% endfor %}
                                 </td>
     	                    </tr>
 	                {% endfor %}
