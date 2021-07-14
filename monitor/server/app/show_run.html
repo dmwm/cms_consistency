@@ -94,13 +94,25 @@
 	            <table class="data">
 	                <tr>
 	                    <th>Location</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Elapsed time</th>
-	                        <th>Error</th>
+	                        <th>Error</th><th>Failed subdirectories</th>
 	                </tr>
 	                {% for d in scanner_roots %}
 	                    <tr>
-	                        <td>{{d["root"]}}</td><td>{{d["files"]}}</td><td>{{d["directories"]}}</td><td>{{d["empty_directories"]}}</td>
-	                            <td>{{d["elapsed_time"]|hms}}</td>
-	                            <td style="text-align:left">{{d["error"] or ""}}</td>
+	                        <td>{{d["root"]}}</td>
+                            <td>{{d["files"]}}</td>
+                            <td>{{d["directories"]}}</td>
+                            <td>{{d["empty_directories"]}}</td>
+                            <td>{{d["elapsed_time"]|hms}}</td>
+                            <td style="text-align:left">{{d["error"] or ""}}</td>
+                            <td>
+                                {% if d["failed_subdirectories"]|length > 0 %}
+                                    <table class=placement>
+                                        {% for path, error in d["failed_subdirectories"].items() %}
+                                            <tr><td>{{path}}</td><td>{{error}}</td></tr>
+                                        {% endfor %}
+                                    </table>
+                                {% endif %}
+                            <td>
 	                    </tr>
 	                {% endfor %}
 	            </table>
