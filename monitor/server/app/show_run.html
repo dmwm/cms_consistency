@@ -109,7 +109,7 @@
                                     <td rowspan={{nfailed}}>{{d["elapsed_time"]|hms}}</td>
                                     <td rowspan={{nfailed}} style="text-align:left">{{d["error"] or ""}}</td>
                                 {% endif %}
-                                <td>{{path}}</td><td>{{error}}</td>
+                                <td class="failed_dir path">{{path}}</td><td class="failed_dir error">{{error}}</td>
     	                    </tr>
                         {% endfor %}
 	                {% endfor %}
