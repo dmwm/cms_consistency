@@ -565,7 +565,7 @@ if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:vqM:s:S:zd:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:vqM:s:S:zd:k")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -584,6 +584,7 @@ if __name__ == "__main__":
     if max_files is not None: max_files = int(max_files)
     stats_file = opts.get("-s")
     stats_key = opts.get("-S", "scanner")
+    ignore_directory_scan_errors = "-k" in opts
     
     stats = None if not stats_file else Stats(stats_file)
     
@@ -637,7 +638,7 @@ if __name__ == "__main__":
         try:
             failed, root_failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
                     override_max_scanners, out_list, dir_list,
-                    purge_empty_dirs)
+                    purge_empty_dirs, ignore_directory_scan_errors)
             all_roots_failed = all_roots_failed and root_failed
         except:
             exc = traceback.format_exc()
