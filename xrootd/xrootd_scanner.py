@@ -409,7 +409,7 @@ python xrootd_scanner.py [options] <rse>
     -m <max workers>            - default 5
     -R <recursion depth>        - start using -R at or below this depth (dfault 3)
     -n <nparts>
-    -d                          - display progress
+    -k                          - do not treat individual directories scan errors as overall scan failure
     -q                          - quiet - only print summary
     -M <max_files>              - stop scanning the root after so many files were found
     -s <stats_file>              - write final statistics to JSON file
@@ -440,7 +440,7 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
     
 
 def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list,
-    purge_empty_dirs):
+    purge_empty_dirs, ignore_failed_directories):
     
     failed = root_failed = False
     
@@ -541,7 +541,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         root_stats.update({
             "root_failed": master.RootFailed,
             "error": master.Error,
-            "failed_subdirectories": [f"{path}: {error}" for path, error in master.GaveUp.items()],
+            "failed_subdirectories": master.GaveUp,
             "files": master.NFiles,
             "directories": master.NDirectories,
             "empty_directories":len(master.EmptyDirs),
@@ -549,7 +549,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             "elapsed_time": t1-t0
         })
 
-        if master.GaveUp:
+        if (not ignore_failed_directories) and master.GaveUp:
             failed = True
         root_failed = master.RootFailed
             
