@@ -127,7 +127,7 @@
                                 <td>
                                     {% if d["failed_subdirectories"]|length %}
                                         <table class="failed_dirs">
-                                            {% for path, error in d["failed_subdirectories"].items() %}
+                                            {% for path, error in d["failed_subdirectories"].items()|sort() %}
                                                 <tr><td class="failed_dir_path">{{path}}</td><td class="failed_dir_error">{{error}}</td></tr>
                                             {% endfor %}
                                         </table>
