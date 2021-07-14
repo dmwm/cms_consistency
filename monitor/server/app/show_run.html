@@ -1,5 +1,21 @@
 {% extends 'base.html' %}
 
+{% block html_head %}
+<style type="text/css">
+    td.failed_dir_path {
+        font: 12px monospace;
+        text-align: left;
+        border: 0;
+    }
+
+    td.failed_dir_error {
+        font-size: 12px;
+        text-align: left;
+        border: 0;
+    }
+</style>
+{% endblock %}
+
 {% block headline %}RSE:{{rse}} Run:{{run}}{% endblock %}
 
 {% block link_menu %}<a href="./index">home</a>&nbsp;&nbsp;<a href="./show_rse?rse={{rse}}">{{rse}}</a>{% endblock %}
@@ -105,9 +121,13 @@
                                 <td>{{d["elapsed_time"]|hms}}</td>
                                 <td style="text-align:left">{{d["error"] or ""}}</td>
                                 <td>
-                                    {% for path, error in d["failed_subdirectories"].items() %}
-                                        {{path}}:&nbsp;{{error}}<br/>
-                                    {% endfor %}
+                                    {% if d["failed_subdirectories"]|length %}
+                                        <table class="failed_dirs">
+                                            {% for path, error in d["failed_subdirectories"].items() %}
+                                                <tr><td class="failed_dir_path">{{path}}</td><td class="failed_dir_error">{{error}}</td></tr>
+                                            {% endfor %}
+                                        </table>
+                                    {% endif %}
                                 </td>
     	                    </tr>
 	                {% endfor %}
