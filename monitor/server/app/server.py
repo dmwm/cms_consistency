@@ -414,6 +414,25 @@ class Handler(WPHandler):
         dark = self.App.DataViewer.get_dark(rse, run, self.LIMIT)
         missing = self.App.DataViewer.get_missing(rse, run, self.LIMIT)
         
+        #
+        # retrofit failed directories
+        #
+        scanner = stats.get("scanner")
+        if scanner:
+            for r in scanner["roots"]:
+                failed = r.get("failed_directories", {})
+                if isinstance(failed, list):
+                    out = {}
+                    for line in failed:
+                        error = ""
+                        path = line
+                        parts = line.split(None, 1)
+                        if len(parts) > 1:
+                            path, error = parts
+                        out[path] = error
+                    failed = out
+                r["failed_directories"] = failed
+                    
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
             errors = errors,
