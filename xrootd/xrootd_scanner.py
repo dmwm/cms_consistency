@@ -523,8 +523,8 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
     
         if master.GaveUp:
             sys.stderr.write("Scanner failed to scan the following %d locations:\n" % (len(master.GaveUp),))
-            for p in sorted(list(master.GaveUp.keys())):
-                sys.stderr.write(p+"\n")
+            for path, error in sorted(list(master.GaveUp.items())):
+                sys.stderr.write(f"{path}: {error}\n")
 
         print("Files:                %d" % (master.NFiles,))
         print("Directories found:    %d" % (master.NToScan,))
