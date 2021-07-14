@@ -420,7 +420,7 @@ class Handler(WPHandler):
         scanner = stats.get("scanner")
         if scanner:
             for r in scanner["roots"]:
-                failed = r.get("failed_directories", {})
+                failed = r.get("failed_subdirectories", {})
                 if isinstance(failed, list):
                     out = {}
                     for line in failed:
@@ -431,7 +431,7 @@ class Handler(WPHandler):
                             path, error = parts
                         out[path] = error
                     failed = out
-                r["failed_directories"] = failed
+                r["failed_subdirectories"] = failed
                     
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
