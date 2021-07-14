@@ -469,7 +469,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         root_stats.update({
             "root_failed": True,
             "error": reason,
-            "failed_subdirectories": 0,
+            "failed_subdirectories": {},
             "files": 0,
             "directories": 0,
             "empty_directories":0,
