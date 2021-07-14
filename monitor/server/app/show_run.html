@@ -97,21 +97,18 @@
 	                        <th>Error</th><th colspan=2>Failed subdirectories</th>
 	                </tr>
 	                {% for d in scanner_roots %}
-                        {% set nfailed = d["failed_subdirectories"]|length %}
-                    
-                        {% for path, error in d["failed_subdirectories"].items() %}
     	                    <tr>
-                                {% if loop.first %}
-        	                        <td rowspan={{nfailed}}>{{d["root"]}}</td>
-                                    <td rowspan={{nfailed}}>{{d["files"]}}</td>
-                                    <td rowspan={{nfailed}}>{{d["directories"]}}</td>
-                                    <td rowspan={{nfailed}}>{{d["empty_directories"]}}</td>
-                                    <td rowspan={{nfailed}}>{{d["elapsed_time"]|hms}}</td>
-                                    <td rowspan={{nfailed}} style="text-align:left">{{d["error"] or ""}}</td>
-                                {% endif %}
-                                <td class="failed_dir_path">{{path}}</td><td class="failed_dir_error">{{error}}</td>
+    	                        <td>{{d["root"]}}</td>
+                                <td>{{d["files"]}}</td>
+                                <td>{{d["directories"]}}</td>
+                                <td>{{d["empty_directories"]}}</td>
+                                <td>{{d["elapsed_time"]|hms}}</td>
+                                <td style="text-align:left">{{d["error"] or ""}}</td>
+                                <td>
+                                    {% for path, error in d["failed_subdirectories"].items() %}
+                                        {{path}}:&nbsp;{{error}}<br/>
+                                </td>
     	                    </tr>
-                        {% endfor %}
 	                {% endfor %}
 	            </table>
 
