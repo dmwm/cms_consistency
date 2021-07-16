@@ -199,7 +199,11 @@ class WMHandler(WPHandler):
         return self.render_to_response("wm_index.html", rses = rses, data=data)
         
     def rse(self, request, relpath, rse=None, **args):
+        if not rse:
+            return "RSE must be specified", 400
         data = self.App.WMDataSource.stats_for_rse(rse)
+        if data is None:
+            return f"RSE {rse} not found", 404
         return self.render_to_response("wm_rse.html", rse=rse, data=data)
         
     def ls(self, request, relpath, rse=None, **args):
