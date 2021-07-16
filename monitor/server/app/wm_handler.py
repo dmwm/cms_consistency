@@ -1,8 +1,25 @@
 from webpie import WPApp, WPHandler
-import sys, glob, json, time, os, gzip, re
+import sys, glob, json, time, os, gzip, re, os.path
 from datetime import datetime
 
 Version = "1.1"
+
+class JSONParseError(Exception):
+    
+    def __init__(self, path):
+        self.Path = path
+        self.Exists = self.IsFile = self.Size = self.MTime = None
+        try:
+            self.Exists = os.path.exists(path)
+            self.IsFile = os.path.isfile(path)
+            self.Size = os.path.getsize()
+            self.MTime = os.path.getmtime()
+        except:
+            pass
+            
+    def __str__(self):
+        return f"Error parsing JSON file {self.Path}"
+            
 
 class WMDataSource(object):
     
@@ -103,7 +120,10 @@ class WMDataSource(object):
                 if r == rse:
                     latest_file = path
         if latest_file:
-            data = json.loads(open(path, "r").read())["scanner"]
+            try:
+                data = json.loads(open(path, "r").read())["scanner"]
+            except:
+                raise JSONParseError(path)
             return self.convert_rse_item(data)
         else:
             return None
@@ -201,7 +221,9 @@ class WMHandler(WPHandler):
     def rse(self, request, relpath, rse=None, **args):
         if not rse:
             return "RSE must be specified", 400
-        data = self.App.WMDataSource.stats_for_rse(rse)
+        try:    data = self.App.WMDataSource.stats_for_rse(rse)
+        except JSONParseError as e:
+            return str(e), 500
         if data is None:
             return f"RSE {rse} not found", 404
         return self.render_to_response("wm_rse.html", rse=rse, data=data)
