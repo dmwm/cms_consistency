@@ -3,7 +3,7 @@ import sys, glob, json, time, os, gzip
 from datetime import datetime
 from wm_handler import WMHandler, WMDataSource
 
-Version = "1.4.15"
+Version = "1.5.0"
 
 class DataViewer(object):
     
