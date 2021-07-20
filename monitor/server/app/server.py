@@ -430,6 +430,10 @@ class Handler(WPHandler):
             ]
             if stats.get(part)
         ]
+        for _,_,s in stats_parts:
+            if "status" in s:
+                status = (s.get("status") or "").lower() or None
+                s["status"] = status
         scanner_roots = []
         if "scanner" in stats and "roots" in stats["scanner"]:
             scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"])

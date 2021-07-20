@@ -110,17 +110,17 @@
                     </tr>
                     <tr>
                         <td class="field_name">Missing files</td>
-                        <td>{{summary["missing_stats"]["detected"]}}</td>
-                        <td>{{summary["missing_stats"]["confirmed"]}}</td>
-                        <td>{{summary["missing_stats"]["acted_on"]}}</td>
-                        <td>{{summary["missing_stats"]["action_status"]}}</td>
+                        <td>{{summary["missing_stats"]["detected"]|none_as_blank}}</td>
+                        <td>{{summary["missing_stats"]["confirmed"]|none_as_blank}}</td>
+                        <td>{{summary["missing_stats"]["acted_on"]|none_as_blank}}</td>
+                        <td class="{{summary['missing_stats']['action_status'] or ''}}">{{summary["missing_stats"]["action_status"]|none_as_blank}}</td>
                     </tr>
                     <tr>
                         <td class="field_name">Dark files</td>
-                        <td>{{summary["dark_stats"]["detected"]}}</td>
-                        <td>{{summary["dark_stats"]["confirmed"]}}</td>
-                        <td>{{summary["dark_stats"]["acted_on"]}}</td>
-                        <td>{{summary["dark_stats"]["action_status"]}}</td>
+                        <td>{{summary["dark_stats"]["detected"]|none_as_blank}}</td>
+                        <td>{{summary["dark_stats"]["confirmed"]|none_as_blank}}</td>
+                        <td>{{summary["dark_stats"]["acted_on"]|none_as_blank}}</td>
+                        <td class="{{summary['dark_stats']['action_status'] or ''}}">{{summary["dark_stats"]["action_status"]|none_as_blank}}</td>
                     </tr>
                 </table>
             {% endif %}
