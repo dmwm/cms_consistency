@@ -328,7 +328,8 @@ class Handler(WPHandler):
                 run, 
                 {
                     "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running,
-                    "confirmed_dark":confirmed_dark
+                    "confirmed_dark":summary["dark_stats"]["confirmed"], "acted_dark":summary["dark_stats"]["acted_on"], "dark_status":summary["dark_stats"]["action_status"],
+                    "acted_missing":summary["missing_stats"]["acted_on"], "missing_status":summary["missing_stats"]["action_status"]
                 }
             ))
         #print(infos)
