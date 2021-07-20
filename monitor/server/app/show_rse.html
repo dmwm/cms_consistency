@@ -56,9 +56,9 @@
 		        google.charts.setOnLoadCallback(drawChart);
 				// runs is in reversed order
 				var data = [
-					['Date', 'Detected dark', 'Detected missing']
+					['Run', 'Detected dark', 'Detected missing']
 					{% for t, info in runs|reverse %}
-						,[	{{info['start_time']|as_JSON_Date}}, 
+                    ,[	    {{t}}, 
 							{{info["ndark"] if info["ndark"] is not none else "null"}},
 							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
 						]
