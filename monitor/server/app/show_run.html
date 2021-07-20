@@ -110,17 +110,17 @@
                     </tr>
                     <tr>
                         <td class="field_name">Missing files</td>
-                        <td>summary["missing_stats"]["detected"]</td>
-                        <td>summary["missing_stats"]["confirmed"]</td>
-                        <td>summary["missing_stats"]["acted_on"]</td>
-                        <td>summary["missing_stats"]["action_status"]</td>
+                        <td>{{summary["missing_stats"]["detected"]}}</td>
+                        <td>{{summary["missing_stats"]["confirmed"]}}</td>
+                        <td>{{summary["missing_stats"]["acted_on"]}}</td>
+                        <td>{{summary["missing_stats"]["action_status"]}}</td>
                     </tr>
                     <tr>
                         <td class="field_name">Dark files</td>
-                        <td>summary["dark_stats"]["detected"]</td>
-                        <td>summary["dark_stats"]["confirmed"]</td>
-                        <td>summary["dark_stats"]["acted_on"]</td>
-                        <td>summary["dark_stats"]["action_status"]</td>
+                        <td>{{summary["dark_stats"]["detected"]}}</td>
+                        <td>{{summary["dark_stats"]["confirmed"]}}</td>
+                        <td>{{summary["dark_stats"]["acted_on"]}}</td>
+                        <td>{{summary["dark_stats"]["action_status"]}}</td>
                     </tr>
                 </table>
             {% endif %}
@@ -129,8 +129,8 @@
 			
 	            <h3>Site scan details</h3>
 	            <table class="data">
-	                <tr><th>Server address</th><td>{{scanner["server"]}}</td></tr>
-	                <tr><th>Server root</th><td>{{scanner["server_root"]}}</td></tr>
+	                <tr><td class=field_name>Server address</td><td>{{scanner["server"]}}</td></tr>
+	                <tr><td class=field_name>Server root</td><td>{{scanner["server_root"]}}</td></tr>
 	            </table>
 
 	            <p></p>
@@ -142,7 +142,7 @@
 	                </tr>
 	                {% for d in scanner_roots %}
     	                    <tr>
-    	                        <td>{{d["root"]}}</td>
+    	                        <td class=field_name>{{d["root"]}}</td>
                                 <td>{{d["files"]}}</td>
                                 <td>{{d["directories"]}}</td>
                                 <td>{{d["empty_directories"]}}</td>
