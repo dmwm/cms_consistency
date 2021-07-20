@@ -80,10 +80,10 @@
         else
             data.sort(sort_by_rse);
         var tr = document.createElement("tr");
-        tr.innerHTML = "<th rowspan=2>RSE</th><th rowspan=2>Last run</th><th rowspan=2>Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>";
+        tr.innerHTML = "<th rowspan=2>RSE</th><th rowspan=2>Last run</th><th rowspan=2>Status</th><th colspan=4>Dark</th><th colspan=3>Missing</th>";
         t.appendChild(tr);
         tr = document.createElement("tr");
-        var columns = "<th>Detected</th><th>Confirmed</th><th>Acted</th><th>Action status</th>";
+        var columns = "<th>Detected</th><th>Confirmed</th><th>Acted</th><th>Action status</th><th>Detected</th><th>Acted</th><th>Action status</th>";
         tr.innerHTML = columns + columns;
         t.appendChild(tr);
         for( d of data )
@@ -101,14 +101,13 @@
                     + "<td>" + d["dark_action_status"] + "</td>"
                 
                     + "<td>" + d["nmissing"] + "</td>"
-                    + "<td>" + d["confirmed_missing"] + "</td>"
                     + "<td>" + d["acted_missing"] + "</td>"
                     + "<td>" + d["missing_action_status"] + "</td>";
                 tr.innerHTML = tdtext;
             }
             else
                 tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
-                    + '<td colspan=10 class="failed">error: ' + d.error + '</td>';
+                    + '<td colspan=9 class="failed">error: ' + d.error + '</td>';
             t.appendChild(tr);
         }
     };
