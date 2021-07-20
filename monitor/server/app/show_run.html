@@ -101,6 +101,30 @@
 				{% endfor %}
             </table>
             
+            {% if cmp3 is not none and summary is not none and cmp3["status"] == "done" %}
+            
+                <h3>Action summary</h3>
+                <table class="data">
+                    <tr>
+                        <td></td><th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
+                    </tr>
+                    <tr>
+                        <td class="field_name">Missing files</td>
+                        <td>summary["missing_stats"]["detected"]</td>
+                        <td>summary["missing_stats"]["confirmed"]</td>
+                        <td>summary["missing_stats"]["acted_on"]</td>
+                        <td>summary["missing_stats"]["action_status"]</td>
+                    </tr>
+                    <tr>
+                        <td class="field_name">Dark files</td>
+                        <td>summary["dark_stats"]["detected"]</td>
+                        <td>summary["dark_stats"]["confirmed"]</td>
+                        <td>summary["dark_stats"]["acted_on"]</td>
+                        <td>summary["dark_stats"]["action_status"]</td>
+                    </tr>
+                </table>
+            {% endif %}
+            
 			{% if scanner is not none %}
 			
 	            <h3>Site scan details</h3>

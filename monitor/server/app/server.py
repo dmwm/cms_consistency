@@ -469,7 +469,7 @@ class Handler(WPHandler):
             scanner=stats.get("scanner"),
             scanner_roots = scanner_roots,
             cmp3=stats.get("cmp3"),
-            stats=stats,
+            stats=stats, summary=summary,
             ndark = ndark, nmissing=nmissing,
             dark=self.display_file_list(dark),
             missing = self.display_file_list(missing),
