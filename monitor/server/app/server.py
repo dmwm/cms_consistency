@@ -512,6 +512,14 @@ def as_JSON_Date(t):
     # JavaScript Date() takes month starting from 0
     return dt.strftime("new Date(%d, %d, %d)" % (dt.year, dt.month-1, dt.day))  
     
+def as_date(t):
+    # datetim in UTC
+    if t is None:
+        return "null"
+    dt = datetime.utcfromtimestamp(t)
+    # JavaScript Date() takes month starting from 0
+    return dt.strftime("%Y/%m/%d")
+    
 def as_json(d):
     return "\n"+json.dumps(d, indent=4)
     
@@ -557,7 +565,8 @@ class App(WPApp):
         self.initJinjaEnvironment(tempdirs=[self.Home], 
             filters={
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
-                "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank
+                "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank,
+                "as_date":as_date
             }
         )
         
