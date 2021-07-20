@@ -58,7 +58,7 @@
 				var data = [
 					['Run', 'Detected dark', 'Detected missing']
 					{% for t, info in runs|reverse %}
-                    ,[	    {{t}}, 
+                    ,[	    "{{t}}", 
 							{{info["ndark"] if info["ndark"] is not none else "null"}},
 							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
 						]
