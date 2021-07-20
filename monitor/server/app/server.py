@@ -230,15 +230,44 @@ class Handler(WPHandler):
         else:
             tend = None
             
-        return {
+        summary = {
             "status": status,
             "start_time": tstart,
             "end_time": tend,
             "failed": failed_comp,
-            "running": running_comp
+            "running": running_comp,            
+            "missing_stats" : {
+                "detected":         None,
+                "confirmed":        None,
+                "acted_on":         None,
+                "action_status":    None
+            },
+            "dark_stats": {
+                "detected":         None,
+                "confirmed":        None,
+                "acted_on":         None,
+                "action_status":    None
+            }
         }
         
-    
+        if "cmp3" in stats and stats["cmp3"]["status"] == "done":
+            summary["missing_stats"]["detected"] = stats["cmp3"]["missing"]
+            summary["dark_stats"]["detected"] = stats["cmp3"]["dark"]
+            
+            if "cmp2dark" in stats:
+                summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
+
+            if "cc_dark" in stats:
+                summary["dark_stats"]["acted_on"] = stats["cc_dark"].get("confirmed_dark_files")
+                summary["dark_stats"]["action_status"] = stats["cc_dark"].get("status", "").lower() or None
+                
+            if "cc_miss" in stats:
+                summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_miss_files") or \
+                    stats["missing_dark"].get("confirmed_dark_files")       # there used to be a typo in older versions 
+                summary["missing_stats"]["action_status"] = stats["cc_miss"].get("status", "").lower() or None
+        
+        return summary
+                
     def index(self, request, relpath, **args):
         #
         # list available RSEs
@@ -262,9 +291,6 @@ class Handler(WPHandler):
                     "rse":      rse, 
                     "run":      run, 
                     "summary":  summary, 
-                    "ndark":    ndark, 
-                    "nmissing": nmissing, 
-                    "confirmed_dark":   confirmed_dark,
                     "error":    error
                 }
             )

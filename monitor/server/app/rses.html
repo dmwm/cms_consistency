@@ -30,9 +30,14 @@
     					"{{summary['status']}}"
     				{%- endif -%},
                 "start_time":"{{summary['start_time']|as_dt if summary['start_time'] else ''}}",
-                "ndark":"{{info['ndark']|none_as_blank}}",
-                "nmissing":"{{info['nmissing']|none_as_blank}}",
-                "confirmed_dark":"{{info['confirmed_dark']|none_as_blank}}",
+                "ndark":"{{summary['dark_stats']['detected']|none_as_blank}}",
+                "nmissing":"{{summary['missing_stats']['detected']|none_as_blank}}",
+                "confirmed_dark":"{{summary['dark_stats']['confirmed']|none_as_blank}}",
+                "confirmed_missing":"{{summary['missing_stats']['confirmed']|none_as_blank}}",
+                "acted_dark":"{{summary['dark_stats']['acted_on']|none_as_blank}}",
+                "acted_missing":"{{summary['missing_stats']['acted_on']|none_as_blank}}",
+                "dark_action_status":"{{summary['dark_stats']['action_status']|none_as_blank}}",
+                "missing_action_status":"{{summary['missing_stats']['action_status']|none_as_blank}}",
                 "error": null
             });
         {% else %}
@@ -75,7 +80,11 @@
         else
             data.sort(sort_by_rse);
         var tr = document.createElement("tr");
-        tr.innerHTML = "<th>RSE</th><th>Last run</th><th>Status</th><th>Dark</th><th>Confirmed dark</th><th>Missing</th>";
+        tr.innerHTML = "<th rowspan=2>RSE</th><th rowspan=2>Last run</th><th rowspan=2>Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>";
+        t.appendChild(tr);
+        tr = document.createElement("tr");
+        var columns = "<th>Detected</th><th>Confirmed</th><th>Acted</th><th>Action status</th>";
+        tr.innerHTML = columns + columns;
         t.appendChild(tr);
         for( d of data )
         {
@@ -85,14 +94,21 @@
                 var tdtext = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</a></td>'
                     + '<td><a href="./show_run?rse=' + d["rse"] + "&run=" + d["last_run"] + '">' + d["start_time"] + "</a></td>"
                     + '<td class="' + d["status"] + '">' + d["status"] + "</td>"
+
                     + "<td>" + d["ndark"] + "</td>"
                     + "<td>" + d["confirmed_dark"] + "</td>"
-                    + "<td>" + d["nmissing"] + "</td>";
+                    + "<td>" + d["acted_dark"] + "</td>"
+                    + "<td>" + d["dark_action_status"] + "</td>"
+                
+                    + "<td>" + d["nmissing"] + "</td>"
+                    + "<td>" + d["confirmed_missing"] + "</td>"
+                    + "<td>" + d["acted_missing"] + "</td>"
+                    + "<td>" + d["missing_action_status"] + "</td>";
                 tr.innerHTML = tdtext;
             }
             else
                 tr.innerHTML = '<td><a href="./show_rse?rse=' + d["rse"] + '">' + d["rse"] + '</td>'
-                    + '<td colspan=5 class="failed">error: ' + d.error + '</td>';
+                    + '<td colspan=10 class="failed">error: ' + d.error + '</td>';
             t.appendChild(tr);
         }
     };
