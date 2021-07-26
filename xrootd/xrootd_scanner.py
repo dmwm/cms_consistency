@@ -664,7 +664,7 @@ if __name__ == "__main__":
     if stats is not None:
         stats[stats_key] = my_stats
 
-    if failed:
+    if failed or all_roots_failed:
         sys.exit(1)
     else:
         sys.exit(0)

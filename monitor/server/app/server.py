@@ -220,10 +220,10 @@ class Handler(WPHandler):
             else:
                 all_done = False
         
-        last_comp = stats.get(self.COMPONENTS[-1])
-        if last_comp:
-            if last_comp.get("status") == "done":
-                all_done = True
+        #last_comp = stats.get(self.COMPONENTS[-1])
+        #if last_comp:
+        #    if last_comp.get("status") == "done":
+        #        all_done = True
         
         if all_done:
             status = "done"
