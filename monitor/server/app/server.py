@@ -323,7 +323,7 @@ class Handler(WPHandler):
             start_time = summary["start_time"]
             status = summary["status"]
             if status == "failed":
-                status += " " + summary["failed"]
+                status = summary["failed"] + " failed"
             running = summary.get("running")
             infos.append((
                 run, 
