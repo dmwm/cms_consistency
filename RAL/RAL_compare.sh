@@ -32,9 +32,8 @@ esac
 export PYTHONPATH=`pwd`/cmp3:`pwd`
 
 
-sleep_interval=1000      # 10 minutes
-attempts="1 2 3 4 5 6"
-
+sleep_interval=1800      # 30 minutes
+attempts="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
 
 run=`date -u +%Y_%m_%d_00_00`
 timestamp=`date -u +%Y%m%d`
@@ -71,7 +70,7 @@ for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${tape_dump_tmp}
     attempt_time=`date -u`
-    xrdcp ${dump_url} ${tape_dump_tmp}
+    xrdcp ${dump_url} ${tape_dump_tmp} > ${scratch}/${RSE}_xrdcp_${run}.stderr 2>&1
     xrdcp_status=$?
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
 	    rm -f ${tape_dump_tmp}
