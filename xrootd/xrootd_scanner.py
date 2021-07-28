@@ -32,7 +32,14 @@ def truncated_path(root, path):
             n = len(parts)
             #return ("%s -> ..(%d)../" % (path, n-N))+"/".join(parts[-N:])
             return ("..(%d)../" % (n-N))+"/".join(parts[-N:])
-        
+
+def canonic_path(path):
+    while path and "//" in path:
+        path = path.replace("//", "/")
+    if path != "/" and path.endswith("/"):
+        path = path[:-1]
+    return path
+
 
 class RMDir(Task):
     
@@ -63,7 +70,7 @@ class Scanner(Task):
         Task.__init__(self)
         self.Server = server
         self.Master = master
-        self.Location = location
+        self.Location = canonic_path(location)
         self.Timeout = timeout
         self.WasRecursive = self.Recursive = recursive
         self.Subprocess = None
@@ -200,7 +207,7 @@ class ScannerMaster(PyThread):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Server = server
-        self.Root = self.canonic(root)
+        self.Root = canonic_path(root)
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
         self.ScannerQueue = TaskQueue(max_scanners)
@@ -253,13 +260,6 @@ class ScannerMaster(PyThread):
             self.Results.append(('f', files))
             self.NFiles += len(files)
 
-    def canonic(self, path):
-        while path and "//" in path:
-                path = path.replace("//", "/")
-        if path != "/" and path.endswith("/"):
-            path = path[:-1]
-        return path
-        
     def parent(self, path):
         parts = path.rsplit("/", 1)
         if len(parts) < 2:
@@ -297,7 +297,7 @@ class ScannerMaster(PyThread):
             self.Results.append(('d', dirs))
             self.NDirectories += len(dirs)
             for d in dirs:
-                d = self.canonic(d)
+                d = canonic_path(d)
                 if not self.dir_ignored(d):
                     self.addDirectory(d, scan)
             self.show_progress()
@@ -361,7 +361,7 @@ class ScannerMaster(PyThread):
         for t, lst in self.Results:
             if lst and (type is None or type == t):
                 for path in lst:
-                    path = self.canonic(path)
+                    path = canonic_path(path)
                     if not self.file_ignored(path):
                         if type is None:
                             yield t, path
