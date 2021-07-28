@@ -45,33 +45,39 @@
                 <div id="stats_chart"></div>
                 
                 <script type="text/javascript">
-                    var data = new google.visualization.DataTable();
-                    data.addColumn('date', 'Date');
-                    data.addColumn('number', 'Files');
-                    data.addColumn('number', 'Elapsed time');
-                    data.addRows([
-                        {% for r in stats_by_run %}
-                            {{',' if not loop.first }}[new Date({{r["start_time_miliseconds"]}}), {{r["files"]}}, {{r["elapsed_time"]}}]
-                        {% endfor %}                    
-                    ]);
-                    var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
-                    date_formatter.format(data, 0)
-                    var options = {
-                        title: 'Statistics by run',
-                        width: 900,
-                        height: 500,
-                        series: {
-                            0: {    axis: "Elapsed", },
-                            1: {    axis: "Files"   } 
-                        },
-                        axes: {
-                            Elapsed: {  label: "Elapsed time, hours"    },
-                            Files: {    label: "Number of files"    }
-                        } 
-                    };   
+    		        google.charts.load('current', {'packages':['line']});
+    		        google.charts.setOnLoadCallback(drawChart);
                     
     				function drawChart()
     				{
+
+                        var data = new google.visualization.DataTable();
+                        data.addColumn('date', 'Date');
+                        data.addColumn('number', 'Files');
+                        data.addColumn('number', 'Elapsed time');
+                        data.addRows([
+                            {% for r in stats_by_run %}
+                                {{',' if not loop.first }}[new Date({{r["start_time_miliseconds"]}}), {{r["files"]}}, {{r["elapsed_time"]}}]
+                            {% endfor %}                    
+                        ]);
+                        var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
+                        date_formatter.format(data, 0)
+                        var options = {
+                            title: 'Statistics by run',
+                            width: 900,
+                            height: 500,
+                            series: {
+                                0: {    axis: "Elapsed", },
+                                1: {    axis: "Files"   } 
+                            },
+                            axes: {
+                                Elapsed: {  label: "Elapsed time, hours"    },
+                                Files: {    label: "Number of files"    }
+                            } 
+                        };   
+                    
+
+
     					var chart = new google.charts.Line(document.getElementById('stats_chart'));
     					chart.draw(data, options);
     				}
