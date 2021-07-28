@@ -1,33 +1,85 @@
 {% extends 'base.html' %}
 
+{% block html_head %}
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+{% endblock %}
+
 {% block title %}Unmerged Files Monitor{% endblock %}
 
 {% block link_menu %}<a href="./index">Home</a>{% endblock %}
 
-{% block headline %}RSE {{rse}}{% endblock %}
+{% block headline %}Latest run for RSE {{rse}}{% endblock %}
 
 {% block content %}
 
-{% if data is none %}
+{% if latest_run is none %}
     <p>RSE {{rse}} not found</p>
 {% else %}
-    <table class="form">    
-        <tr>    <th>Server</th><td>{{data["server"]}}</td>  </tr>
-        <tr>    <th>Server root</th><td>{{data["server_root"]}}</td>  </tr>
-        <tr>    <th>Start time</th><td>{{data["start_time"]|as_dt}}</td>  </tr>
-        <tr>    <th>End time</th><td>{{data["end_time"]|as_dt}}</td>  </tr>
-        <tr>    <th>Elapsed time</th>
-                <td>{% if data["end_time"] and data["start_time"] -%} {{(data["end_time"]-data["start_time"])|hms}} {%- endif -%}</td>  
+    <table class=placement>
+        <tr>
+            <td>
+                <table class="form">    
+                    <tr>    <th>Server</th><td>{{latest_run["server"]}}</td>  </tr>
+                    <tr>    <th>Server root</th><td>{{latest_run["server_root"]}}</td>  </tr>
+                    <tr>    <th>Start time</th><td>{{latest_run["start_time"]|as_dt}}</td>  </tr>
+                    <tr>    <th>End time</th><td>{{latest_run["end_time"]|as_dt}}</td>  </tr>
+                    <tr>    <th>Elapsed time</th>
+                            <td>{% if latest_run["end_time"] and latest_run["start_time"] -%} 
+                                    {{(latest_run["end_time"]-latest_run["start_time"])|hms}} 
+                                {%- endif -%}</td>  
+                    </tr>
+                    <tr>    <th>Status</th><td>{{latest_run["status"]}}</td>  </tr>
+                    <tr>    <th>Error</th><td>{{latest_run["error"] or ''}}</td>  </tr>
+                    <tr>    <th>Files</th>
+                        <td>{{latest_run["files"]}} 
+                        <a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}&format=raw">gzip</a>
+                        <a href="./files/{{rse}}_wm_file_list.json?rse={{rse}}&format=json">json</a>
+                    </td>
+                    </tr>
+                    <tr>    <th>Directories</th><td>{{latest_run["directories"]}}</td>  </tr>
+                    <tr>    <th>Empty directories</th><td>{{latest_run["empty_directories"]}}</td>  </tr>
+                </table>
+            </td>
+            <td>
+                <!-- chart -->
+                <div id="stats_chart"></div>
+                
+                <script type="text/javascript">
+                    var data = new google.visualization.DataTable();
+                    data.addColumn('date', 'Date');
+                    data.addColumn('number', 'Files');
+                    data.addColumn('number', 'Elapsed time');
+                    data.addRows([
+                        {% for r in stats_by_run %}
+                            {{',' if not loop.first }}[new Date({{r["start_time_miliseconds"]}}), {{r["files"]}}, {{r["elapsed_time"]}}]
+                        {% endfor %}                    
+                    ]);
+                    var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
+                    date_formatter.format(data, 0)
+                    var options = {
+                        title: 'Statistics by run',
+                        width: 900,
+                        height: 500,
+                        series: {
+                            0: {    axis: "Elapsed", },
+                            1: {    axis: "Files"   } 
+                        },
+                        axes: {
+                            Elapsed: {  label: "Elapsed time, hours"    },
+                            Files: {    label: "Number of files"    }
+                        } 
+                    };   
+                    
+    				function drawChart()
+    				{
+    					var chart = new google.charts.Line(document.getElementById('stats_chart'));
+    					chart.draw(data, options);
+    				}
+                </script>
+            </td>
         </tr>
-        <tr>    <th>Status</th><td>{{data["status"]}}</td>  </tr>
-        <tr>    <th>Error</th><td>{{data["error"] or ''}}</td>  </tr>
-        <tr>    <th>Files</th><td>{{data["files"]}}</td>
-            <td><a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}&format=raw">gzip</a></td>
-            <td><a href="./files/{{rse}}_wm_file_list.json?rse={{rse}}&format=json">json</a></td>
-        </tr>
-        <tr>    <th>Directories</th><td>{{data["directories"]}}</td>  </tr>
-        <tr>    <th>Empty directories</th><td>{{data["empty_directories"]}}</td>  </tr>
     </table>
+                
 {% endif %}
 
 
