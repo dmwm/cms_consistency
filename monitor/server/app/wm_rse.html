@@ -67,17 +67,19 @@
                             width: 600,
                             height: 300,
                             series: {
-                                0: {    targetAxisIndex: 0   }, 
-                                1: {    targetAxisIndex: 1   }
+                                0: {    axis: "Files",    }, 
+                                1: {    axis: "Elapsed"   }
                             },
-                            vAxes: {
-                                1: {  
-                                    label: "Elapsed time, hours",
-                                    minValue: 0
-                                },
-                                0: {    
-                                    label: "Number of files",
-                                    minValue: 1
+                            axes: {
+                                y: {
+                                    Elapsed: {  
+                                        label: "Elapsed time, hours",
+                                        minValue: 0
+                                    },
+                                    Files: {    
+                                        label: "Number of files",
+                                        minValue: 0
+                                    }
                                 }
                             } 
                         };   
