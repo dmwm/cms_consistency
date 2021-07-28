@@ -256,6 +256,8 @@ class ScannerMaster(PyThread):
     def canonic(self, path):
         while path and "//" in path:
                 path = path.replace("//", "/")
+        if path != "/" and path.endswith("/"):
+            path = path[:-1]
         return path
         
     def parent(self, path):
