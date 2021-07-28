@@ -230,7 +230,7 @@ class WMHandler(WPHandler):
     def rse_statistics_data(self, request, relpath, rse=None, **args):
         runs = self.App.WMDataSource.all_stats_for_rse(rse)
         # filter out all errors
-        runs = [r for r in runs if not r["error"]]
+        runs = [r for r in runs if not r.get("error")]
         return json.dumps(runs), "text/json"
         
     #
