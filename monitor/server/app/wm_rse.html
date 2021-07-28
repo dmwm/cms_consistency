@@ -67,25 +67,26 @@
                             width: 600,
                             height: 300,
                             series: {
-                                0: {    axis: "Files",    }, 
-                                1: {    axis: "Elapsed"   }
+                                0: {    targetAxisIndex: 0    }, 
+                                1: {    targetAxisIndex: 1   }
                             },
-                            axes: {
-                                y: {
-                                    Elapsed: {  
-                                        label: "Elapsed time, hours",
-                                        viewWindow:{
-                                            min:0
-                                        }
+                            vAxes: {
+                                0: {    
+                                    title: "Number of files",
+                                    viewWindow:{
+                                        min:0
                                     },
-                                    Files: {    
-                                        label: "Number of files",
-                                        viewWindow:{
-                                            min:0
-                                        },
-                                        gridlines: {
-                                            color: "#222"
-                                        }
+                                    gridlines: {
+                                        color: "#222"
+                                    }
+                                },
+                                1: {    
+                                    title: "Elapsed time, hours",
+                                    viewWindow:{
+                                        min:0
+                                    },
+                                    gridlines: {
+                                        color: "#CCC"
                                     }
                                 }
                             } 
