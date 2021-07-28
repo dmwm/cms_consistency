@@ -60,8 +60,8 @@
                                 {{',' if not loop.first }}[new Date({{r["start_time_miliseconds"]}}), {{r["files"]}}, {{r["elapsed_time"]}}]
                             {% endfor %}                    
                         ]);
-                        var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
-                        date_formatter.format(data, 0)
+                        //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
+                        //date_formatter.format(data, 0)
                         var options = {
                             title: 'Statistics by run',
                             width: 600,
@@ -89,7 +89,10 @@
                                         color: "#CCC"
                                     }
                                 }
-                            } 
+                            },
+                            hAxis: {
+                                format: "M/d/yy"
+                            }
                         };   
                     
 
