@@ -17,7 +17,7 @@
 {% else %}
     <table class=placement>
         <tr>
-            <td>
+            <td style="padding:20 20">
                 <table class="form">    
                     <tr>    <th>Server</th><td>{{latest_run["server"]}}</td>  </tr>
                     <tr>    <th>Server root</th><td>{{latest_run["server_root"]}}</td>  </tr>
@@ -40,7 +40,7 @@
                     <tr>    <th>Empty directories</th><td>{{latest_run["empty_directories"]}}</td>  </tr>
                 </table>
             </td>
-            <td>
+            <td style="padding:20 20">
                 <!-- chart -->
                 <div id="stats_chart"></div>
                 
@@ -64,8 +64,8 @@
                         date_formatter.format(data, 0)
                         var options = {
                             title: 'Statistics by run',
-                            //width: 500,
-                            //height: 300,
+                            width: 600,
+                            height: 300,
                             series: {
                                 0: {    axis: "Elapsed", },
                                 1: {    axis: "Files"   } 
