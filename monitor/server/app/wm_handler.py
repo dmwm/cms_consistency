@@ -227,10 +227,10 @@ class WMHandler(WPHandler):
         except FileNotFoundError:
             return 404, "not found"
             
-    def rse_statistics_data(self, request, rse=None, **args):
+    def rse_statistics_data(self, request, relpath, rse=None, **args):
         runs = self.App.WMDataSource.all_stats_for_rse(rse)
         # filter out all errors
-        runs = [r for r in runs if r.get("status") == "done" and not r["error"]]
+        runs = [r for r in runs if not r["error"]]
         return json.dumps(runs), "text/json"
         
     #
@@ -257,6 +257,8 @@ class WMHandler(WPHandler):
             r["elapsed_time"] = (r["end_time"] - r["start_time"])/3600
             r["start_time_miliseconds"] = int(r["start_time"]*1000)
         return self.render_to_response("wm_rse.html", rse=rse, latest_run=latest_run, stats_by_run=stats_by_run)
+        
+    
         
     def ls(self, request, relpath, rse=None, **args):
         lst = self.App.WMDataSource.ls(rse)
