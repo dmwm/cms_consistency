@@ -319,7 +319,7 @@ class Handler(WPHandler):
         cc_stats = self.App.CCDataSource.latest_stats_per_rse()
         um_stats = self.App.UMDataSource.latest_stats_per_rse()
         
-        all_rses = set(cc_stats.keys()) + set(um_stats.keys())
+        all_rses = set(cc_stats.keys()) | set(um_stats.keys())
 
         infos = []
         all_rses = sorted(list(all_rses))
