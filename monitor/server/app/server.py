@@ -69,7 +69,7 @@ class Handler(WPHandler):
         cc_stats = cc_data_source.latest_stats_per_rse()
         cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
 
-        um_stats = self.App.UMDataSource.latest_stats_per_rse()
+        um_stats = um_data_source.latest_stats_per_rse()
         um_summaries = {rse: um_data_source.run_summary(stats) for rse, stats in um_stats.items()}
         
         all_rses = set(cc_stats.keys()) | set(um_stats.keys())
@@ -83,7 +83,7 @@ class Handler(WPHandler):
                 "um_stats":   um_summaries.get(rse)
             }
             
-        #print(infos)
+        print("infos:", infos)
         
         if sort == "rse":
             infos = sorted(infos, key=lambda x: x["rse"])
