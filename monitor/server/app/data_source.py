@@ -123,7 +123,11 @@ class UMDataSource(DataSource):
         out = {"run": data["run"], "rse":data["rse"]}
         if "error" in data:
             out["error"] = data["error"]
-        out.update(data.get("scanner", {}))
+        scanner_data = data.get("scanner", {})
+        roots = scanner_data.get("roots",[])
+        root_data = roots[0] if roots else {}
+        out.update(scanner_data)
+        out.update(root_data)
         return out
 
     def run_summary(self, stats):
