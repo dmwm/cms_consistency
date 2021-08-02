@@ -72,6 +72,11 @@ class Handler(WPHandler):
         um_stats = um_data_source.latest_stats_per_rse()
         um_summaries = {rse: um_data_source.run_summary(stats) for rse, stats in um_stats.items()}
         
+        print("um_summaries:")
+        for rse, summary in um_summaries.items():
+            print (rse, summary)
+        sys.stdout.flush()
+        
         all_rses = set(cc_stats.keys()) | set(um_stats.keys())
         all_rses = sorted(list(all_rses))
 
