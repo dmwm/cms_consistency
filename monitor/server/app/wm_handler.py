@@ -112,8 +112,11 @@ class WMHandler(WPHandler):
             r["start_time_miliseconds"] = int(r["start_time"]*1000)
         return self.render_to_response("wm_rse.html", rse=rse, latest_run=latest_run, stats_by_run=stats_by_run)
         
-    def stats_file(self, request, relpath, rse=None, run=None):
-        stats = self.App.UMDataSource.read_stats(rse, run)
+    def stats(self, request, relpath, rse=None, run=None):
+        if run:
+            stats = self.App.UMDataSource.read_stats(rse, run)
+        else:
+            stats = self.App.UMDataSource.latest_stats_for_rse(rse)
         return json.dumps(stats), "text/json"
         
     def ls(self, request, relpath, rse=None, **args):
