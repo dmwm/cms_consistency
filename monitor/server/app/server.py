@@ -205,25 +205,14 @@ class Handler(WPHandler):
         #
         data_source = self.App.CCDataSource
 
-        for rse, stats in data_source.
-
-        for i, rse in enumerate(rses):
-            summary = ndark = nmissing = error = None
-            try:
-                #if i % 5 == 1:
-                #    raise ValueError('debug "debug"')    
-                summary = self.cc_run_summary(stats)
-                
-            except Exception as e:
-                exc = str(e).replace('"', r'\"')
-                error = "Data parsing error: %s" % (exc,)
-            #print("index: stats:", info.get("stats"))
+        for rse, stats in data_source.latest_stats_per_rse().items():
+            summary = data_source.run_summary(stats)
             infos.append(
                 {
                     "rse":      rse, 
-                    "run":      run, 
+                    "run":      stats["run"], 
                     "summary":  summary, 
-                    "error":    error
+                    "error":    stats["error"]
                 }
             )
             #print("index:", rse, start_time, ndark, nmissing, nerrors)
