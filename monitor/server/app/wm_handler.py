@@ -103,7 +103,7 @@ class WMHandler(WPHandler):
 
     def stats(self, request, replapth, **args):
         ds = self.App.UMDataSource
-        data = ds.latests_stat_per_rse()
+        data = ds.latests_stats_per_rse()
         return json.dumps(data), "text/json" 
     
     def read_file(self, f):
