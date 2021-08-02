@@ -97,12 +97,12 @@ class WMHandler(WPHandler):
         return json.dumps(Version), "text/json"
     
     def rses(self, request, replapth, **args):
-        ds = self.App.WMDataSource
+        ds = self.App.UMDataSource
         data = ds.latest_stats()
         return json.dumps(data), "text/json" 
 
     def stats(self, request, replapth, **args):
-        ds = self.App.WMDataSource
+        ds = self.App.UMDataSource
         data = ds.latests_stat_per_rse()
         return json.dumps(data), "text/json" 
     
@@ -131,7 +131,7 @@ class WMHandler(WPHandler):
         yield "\n]\n"
 
     def files(self, request, replapth, rse=None, format="raw", **args):
-        ds = self.App.WMDataSource
+        ds = self.App.UMDataSource
         try:
             if format == "raw":
                 f, type = ds.file_list_as_file(rse)
@@ -150,7 +150,7 @@ class WMHandler(WPHandler):
             return 404, "not found"
             
     def rse_statistics_data(self, request, relpath, rse=None, **args):
-        runs = self.App.WMDataSource.all_stats_for_rse(rse)
+        runs = self.App.UMDataSource.all_stats_for_rse(rse)
         # filter out all errors
         runs = [r for r in runs if not r.get("error")]
         return json.dumps(runs), "text/json"
@@ -160,7 +160,7 @@ class WMHandler(WPHandler):
     #
         
     def index(self, request, relpath, **args):
-        data = self.App.WMDataSource.latests_stat_per_rse()
+        data = self.App.UMDataSource.latests_stat_per_rse()
         rses = sorted(list(data.keys()))
         return self.render_to_response("wm_index.html", rses = rses, data=data)
         
@@ -168,7 +168,7 @@ class WMHandler(WPHandler):
         if not rse:
             return "RSE must be specified", 400
 
-        stats_by_run = self.App.WMDataSource.all_stats_for_rse(rse)
+        stats_by_run = self.App.UMDataSource.all_stats_for_rse(rse)
         if not stats_by_run:
             return f"Data for RSE {rse} not found", 404
         latest_run = stats_by_run[-1]
@@ -183,7 +183,7 @@ class WMHandler(WPHandler):
     
         
     def ls(self, request, relpath, rse=None, **args):
-        lst = self.App.WMDataSource.ls(rse)
+        lst = self.App.UMDataSource.ls(rse)
         return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"], d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
         
         
