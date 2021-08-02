@@ -29,7 +29,7 @@ class DataSource(object):
     def parse_stats_path(self, path):
         fn = path.split("/")[-1]
         rse, run, typ, ext = self.parse_filename(fn)
-        assert typ == "stats" and "ext" == "json", f"Expected file name to be *_stats.json, path is '{path}', parts: {rse}:{run}:{typ}:{ext}"
+        assert typ == "stats" and ext == "json", f"Expected file name to be *_stats.json, path is '{path}', parts: {rse}:{run}:{typ}:{ext}"
         return rse, run
 
     def latest_stats(self):
