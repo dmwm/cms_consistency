@@ -47,18 +47,6 @@
     {% set cc_summary = info["cc_summary"] %}
     {% set um_summary = info["um_summary"] %}
 
-            "missing_stats" : {
-                "detected":         None,
-                "acted_on":         None,
-                "action_status":    None
-            },
-            "dark_stats": {
-                "detected":         None,
-                "confirmed":        None,
-                "acted_on":         None,
-                "action_status":    None
-            }
-
     <tr>
         <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
         {% if cc_summary is none %}
