@@ -92,13 +92,13 @@ class Handler(WPHandler):
         if sort == "rse":
             infos = sorted(infos, key=lambda x: x["rse"])
         elif sort == "cc_run":
-            infos = sorted(infos, key=lambda x: ((x or {}).get("cc_summary", {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: (x.get("cc_summary", {}).get("start_time", -1), x["rse"]))
         elif sort == "-cc_run":
-            infos = sorted(infos, key=lambda x: (-(x or {}).get("cc_summary", {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: (-x.get("cc_summary", {}).get("start_time", -1), x["rse"]))
         elif sort == "um_run":
-            infos = sorted(infos, key=lambda x: ((x or {}).get("um_summary", {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: (x.get("um_summary", {}).get("start_time", -1), x["rse"]))
         elif sort == "-um_run":
-            infos = sorted(infos, key=lambda x: (-(x or {}).get("um_summary", {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: (-x.get("um_summary", {}).get("start_time", -1), x["rse"]))
         
         return self.render_to_response("rses_combined.html", infos=infos)
         
