@@ -50,57 +50,6 @@ class CCDataSource(DataSource):
                     break
         return rse_stats
 
-    Run_stats_pattern = re.compile(r"/(?P<dir>.*)/(?P<rse>.*)_(?P<run>\d{4}_\d{2}_\d{2}_\d{2}_\d{2})_stats\.json")
-
-    def parse_stats_path(self, fn):
-        m = self.Run_stats_pattern.match(fn)
-        if not m:   return None
-        return m["rse"], m["run"]
-
-    def latest_stats(self):
-        files = sorted(glob.glob(f"{self.Path}/*_stats.json"))
-        latest_files = {}
-        for path in files:
-            tup = self.parse_stats_path(path)
-            if tup:
-                rse, run = tup
-                latest_files[rse] = path
-        
-        out = []
-        for rse, path in latest_files.items():
-            try:
-                data = json.loads(open(path, "r").read())
-                data = data["scanner"]
-                if "rse" in data: out.append(data)
-            except:
-                pass
-        return sorted(out, key=lambda d: d["rse"])
-        
-        
-    def latest_stats_per_rse(self):
-        data = self.latest_stats()
-        stats = { rse_info["rse"]:self.fill_missing(rse_info) for rse_info in data }
-        return stats
-        
-    def latest_stats_for_rse(self, rse):
-        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
-        latest_file = None
-        for path in files:
-            tup = self.parse_stats_path(path)
-            if tup:
-                r, run = tup
-                if r == rse:
-                    latest_file = path
-        if latest_file:
-            try:
-                data = json.loads(open(path, "r").read())["scanner"]
-            except:
-                raise JSONParseError(path)
-            return self.fill_missing(data)
-        else:
-            return None
-
-        
     NLAST_RUNS = 8
     
     def list_runs(self, rse, nlast=NLAST_RUNS):
