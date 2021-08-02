@@ -47,6 +47,18 @@
     {% set cc_summary = info["cc_summary"] %}
     {% set um_summary = info["um_summary"] %}
 
+            "missing_stats" : {
+                "detected":         None,
+                "acted_on":         None,
+                "action_status":    None
+            },
+            "dark_stats": {
+                "detected":         None,
+                "confirmed":        None,
+                "acted_on":         None,
+                "action_status":    None
+            }
+
     <tr>
         <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
         {% if cc_summary is none %}
@@ -54,14 +66,18 @@
         {% else %}
             <td><a href="./show_cc_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]}}</td>
-            <td>{{cc_summary["ndark"]}}</td>
-            <td>{{cc_summary["confirmed_dark"]}}</td>
-            <td>{{cc_summary["acted_dark"]}}</td>
-            <td class="{{cc_summary['dark_action_status']}}">{{cc_summary["dark_action_status"]}}</td>
+            <td>{{cc_summary["dark_stats"]["detected"]|none_as_blank}}</td>
+            <td>{{cc_summary["dark_stats"]["confirmed"]|none_as_blank}}</td>
+            <td>{{cc_summary["dark_stats"]["acted_on"]|none_as_blank}}</td>
+            <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
+                {{cc_summary['dark_stats']['action_status']|none_as_blank}}
+            </td>
             
-            <td>{{cc_summary["nmissing"]}}</td>
-            <td>{{cc_summary["acted_missing"]}}</td>
-            <td class="{{cc_summary['missing_action_status']}}">{{cc_summary["missing_action_status"]}}</td>
+            <td>{{cc_summary["missing_stats"]["detected"]|none_as_blank}}</td>
+            <td>{{cc_summary["missing_stats"]["acted_on"]}}</td>
+            <td class="{{cc_summary['missing_stats']['action_status']|none_as_blank}}">
+                {{cc_summary['missing_stats']['action_status']|none_as_blank}}
+            </td>
         {% endif %}
         
         {% if um_summary is none %}

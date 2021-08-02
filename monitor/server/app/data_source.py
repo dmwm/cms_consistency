@@ -384,7 +384,6 @@ class CCDataSource(DataSource):
             "running": running_comp,            
             "missing_stats" : {
                 "detected":         None,
-                "confirmed":        None,
                 "acted_on":         None,
                 "action_status":    None
             },
