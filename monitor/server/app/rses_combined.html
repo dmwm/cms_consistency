@@ -53,7 +53,7 @@
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
             <td><a href="./show_cc_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
-            <td class="{{cc_summary['status']}}">{{cc_summary["status"]}}</td>
+            <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["detected"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["confirmed"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["acted_on"]|none_as_blank}}</td>
@@ -62,7 +62,7 @@
             </td>
             
             <td>{{cc_summary["missing_stats"]["detected"]|none_as_blank}}</td>
-            <td>{{cc_summary["missing_stats"]["acted_on"]}}</td>
+            <td>{{cc_summary["missing_stats"]["acted_on"]|none_as_blank}}</td>
             <td class="{{cc_summary['missing_stats']['action_status']|none_as_blank}}">
                 {{cc_summary['missing_stats']['action_status']|none_as_blank}}
             </td>
@@ -74,7 +74,7 @@
             <td><a href="./show_um_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}} {{um_summary["error"] or ""}}</td>
-            <td>{{um_summary["files"]}}</td>
+            <td>{{um_summary["files"]|none_as_blank}}</td>
         {% endif %}
     </tr>
 {% endfor %}
