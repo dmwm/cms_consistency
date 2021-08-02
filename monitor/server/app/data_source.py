@@ -53,7 +53,10 @@ class DataSource(object):
                         else:
                             data["elapsed_time"] = None
                     out.append(data)
-            except:
+                else:
+                    print(f"key 'rse' not in data: {data}")
+            except Exception as e:
+                print(f"Error parsing {path}: {e}")
                 pass
         return sorted(out, key=lambda d: d["rse"])
         
