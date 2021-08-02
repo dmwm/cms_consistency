@@ -317,7 +317,15 @@ class Handler(WPHandler):
         #
         
         cc_stats = self.App.CCDataSource.latest_stats_per_rse()
+        print("CC stats:")
+        for rse, stats in cc_stats.items():
+            print(rse,":", stats)
         um_stats = self.App.UMDataSource.latest_stats_per_rse()
+        print("UM stats:")
+        for rse, stats in um_stats.items():
+            print(rse,":", stats)
+        
+        
         
         all_rses = set(cc_stats.keys()) | set(um_stats.keys())
 
