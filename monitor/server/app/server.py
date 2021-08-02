@@ -96,9 +96,9 @@ class Handler(WPHandler):
         elif sort == "-cc_run":
             infos = sorted(infos, key=lambda x: (-(x["cc_summary"] or {}).get("start_time", -1), x["rse"]))
         elif sort == "um_run":
-            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time", -1), x["rse"]))
         elif sort == "-um_run":
-            infos = sorted(infos, key=lambda x: (-(x["cc_summary"] or {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: (-(x["um_summary"] or {}).get("start_time", -1), x["rse"]))
         
         return self.render_to_response("rses_combined.html", infos=infos)
         
