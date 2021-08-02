@@ -67,6 +67,7 @@ class DataSource(object):
         out = {}
         for rse in self.list_rses():
             stats = self.latest_stats_for_rse(rse)
+            print(f"latest_stats_per_rse: stats for rse {rse}:", stats)
             if stats is not None:
                 out[rse] = stats
         return out
