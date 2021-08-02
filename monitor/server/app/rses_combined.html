@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{#
+    {% for r in rses %}
+        <p><a href="./show_rse?rse={{r}}">{{r}}</a></p>
+    {% endfor %}
+#}
+
+<p><span style="color:gray">sort by:</span>
+    <a href="?sort=rse">RSE</a> 
+    <a href="?sort=-cc_run">CC run (+)</a> <a href="?sort=cc_run">(-)</a>
+    <a href="?sort=-um_run">unmerged run (+)</a> <a href="?sort=um_run">(-)</a>
+</p>
+
+<table class="data" id="data">
+
+<tr>
+    <th rowspan=3>RSE</th>
+    <th colspan=8>Data Consistency</th>
+    <th colspan=4>Unmerged Files</th>
+</tr>
+<tr>
+    <th rowspan=2>Last run<th>
+    <th rowspan=2>Status<th>
+    <th colpan=4>Dark files</th>
+    <th colpan=3>Missing files</th>
+    <th rowspan=2>Last run</th>
+    <th rowspan=2>Elapsed time</th>
+    <th rowspan=2>Status</th>
+    <th rowspan=2>Files</th>
+</tr>
+<tr>
+    <th>Detected</th>
+    <th>Confirmed</th>
+    <th>Acted</th>
+    <th>Action status</th>
+</tr>
+<tr>
+    <th>Detected</th>
+    <th>Acted</th>
+    <th>Action status</th>
+</tr>
+
+{% for info in infos %}
+    {% set rse = info["rse"] %}
+    {% set cc_stats = info["cc_stats"] %}
+    {% set um_stats = info["um_stats"] %}
+
+    <tr>
+        <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
+        {% if cc_stats is none %}
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        {% else %}
+            {% set summary = cc_stats["summary"] %}
+            <td><a href="./show_cc_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_dt}}</a></td>
+            <td class="{{summary['status']}}">{{summary["status"]}}</td>
+            <td>{{summary["ndark"]}}</td>
+            <td>{{summary["confirmed_dark"]}}</td>
+            <td>{{summary["acted_dark"]}}</td>
+            <td class="{{summary['dark_action_status']}}">{{summary["dark_action_status"]}}</td>
+            
+            <td>{{summary["nmissing"]}}</td>
+            <td>{{summary["acted_missing"]}}</td>
+            <td class="{{summary['missing_action_status']}}">{{summary["missing_action_status"]}}</td>
+        {% endif %}
+        
+        {% if um_status is none %}
+            <td></td><td></td><td></td><td></td>
+        {% else %}
+            <td><a href="./show_um_run?rse={{rse}}&run={{um_stats['run']}}">{{um_stats['start_time']|as_dt}}</a></td>
+            <td>{{um_stats['elapsed_time']|hms}}</td>
+            <td class="{{um_stats['status']}}">{{um_stats["status"]}} {{um_stats["error"] or ""}}</td>
+            <td>{{um_stats["files"]}}</td>
+        {% endif %}
+    </tr>
+{% endfor %}
+            
+</table>
+
+
+{% endblock %}

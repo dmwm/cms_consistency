@@ -1,15 +1,13 @@
 from webpie import WPApp, WPHandler
 import sys, glob, json, time, os, gzip
 from datetime import datetime
-from wm_handler import WMHandler, WMDataSource
+from wm_handler import WMHandler, UMDataSource
+from data_source import DataSource
 
 Version = "1.5.3"
 
-class DataViewer(object):
+class CCDataSource(DataSource):
     
-    def __init__(self, path):
-        self.Path = path
-        
     def parse_filename(self, fn):
         # filename looks like this:
         #
@@ -39,6 +37,69 @@ class DataViewer(object):
             rse, timestamp, typ, ext = self.parse_filename(fn)
             rses.add(rse)
         return sorted(list(rses))
+
+    def fill_missing_scanner_parts(self, rse_info):
+        rse_stats = {
+            k: rse_info.get(k) for k in ["scanner", "server_root", "server", "start_time", "end_time", "status"]
+        }
+        if "roots" in rse_info:
+            for r in rse_info["roots"]:
+                if r["root"] == "unmerged":
+                    for k in ["error", "root_failed", "failed_subdirectories", "files", "directories", "empty_directories"]:
+                        rse_stats[k] = r.get(k)
+                    break
+        return rse_stats
+
+    Run_stats_pattern = re.compile(r"/(?P<dir>.*)/(?P<rse>.*)_(?P<run>\d{4}_\d{2}_\d{2}_\d{2}_\d{2})_stats\.json")
+
+    def parse_stats_path(self, fn):
+        m = self.Run_stats_pattern.match(fn)
+        if not m:   return None
+        return m["rse"], m["run"]
+
+    def latest_stats(self):
+        files = sorted(glob.glob(f"{self.Path}/*_stats.json"))
+        latest_files = {}
+        for path in files:
+            tup = self.parse_stats_path(path)
+            if tup:
+                rse, run = tup
+                latest_files[rse] = path
+        
+        out = []
+        for rse, path in latest_files.items():
+            try:
+                data = json.loads(open(path, "r").read())
+                data = data["scanner"]
+                if "rse" in data: out.append(data)
+            except:
+                pass
+        return sorted(out, key=lambda d: d["rse"])
+        
+        
+    def latest_stats_per_rse(self):
+        data = self.latest_stats()
+        stats = { rse_info["rse"]:self.fill_missing(rse_info) for rse_info in data }
+        return stats
+        
+    def latest_stats_for_rse(self, rse):
+        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
+        latest_file = None
+        for path in files:
+            tup = self.parse_stats_path(path)
+            if tup:
+                r, run = tup
+                if r == rse:
+                    latest_file = path
+        if latest_file:
+            try:
+                data = json.loads(open(path, "r").read())["scanner"]
+            except:
+                raise JSONParseError(path)
+            return self.fill_missing(data)
+        else:
+            return None
+
         
     NLAST_RUNS = 8
     
@@ -191,7 +252,7 @@ class Handler(WPHandler):
         
     COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
 
-    def run_summary(self, stats):
+    def cc_run_summary(self, stats):
         status = None
         tstart, tend = None, None
         failed_comp = None
@@ -273,14 +334,14 @@ class Handler(WPHandler):
         #
         # list available RSEs
         #
-        rses = self.App.DataViewer.list_rses()
+        rses = self.App.CCDataSource.list_rses()
         infos = []
         for i, rse in enumerate(rses):
             summary = ndark = nmissing = error = None
             try:
                 #if i % 5 == 1:
                 #    raise ValueError('debug "debug"')    
-                run, stats, ndark, nmissing, confirmed_dark = self.App.DataViewer.last_stats(rse)
+                run, stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.last_stats(rse)
                 summary = self.run_summary(stats)
                 
             except Exception as e:
@@ -301,24 +362,77 @@ class Handler(WPHandler):
         #print(infos)
         return self.render_to_response("rses.html", infos=infos)
         
+    def index_combined(self, request, relpath, sort="rse", **args):
+        #
+        # list available RSEs
+        #
+        
+        cc_stats = self.App.CCDataSource.latest_stats_per_rse()
+        um_stats = self.App.UMDataSource.latest_stats_per_rse()
+        
+        all_rses = set(cc_stats.keys()) + set(um_stats.keys())
+
+        infos = []
+        all_rses = sorted(list(all_rses))
+        for i, rse in enumerate(all_rses):
+            info = {
+                "rse":            rse,
+                "cc_stats":   None,
+                "um_stats":   um_stats.get("rse")
+            }
+            if rse in cc_stats:
+                stats = cc_stats[rse]
+                summary = ndark = nmissing = error = None
+                try:
+                    #if i % 5 == 1:
+                    #    raise ValueError('debug "debug"')    
+                    run, stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.last_stats(rse)
+                    summary = self.cc_run_summary(stats)
+                
+                except Exception as e:
+                    exc = str(e).replace('"', r'\"')
+                    error = "Data parsing error: %s" % (exc,)
+                #print("index: stats:", info.get("stats"))
+                info["cc_stats"] = {
+                    "run":      run, 
+                    "summary":  summary, 
+                    "error":    error
+                }
+            infos.append(info)
+            
+        #print(infos)
+        
+        if sort == "rse":
+            infos = sorted(infos, key=lambda x: x["rse"])
+        elif sort == "cc_run":
+            infos = sorted(infos, key=lambda x: (x.get("cc_run_stats", {}).get("start_time", -1), x["rse"]))
+        elif sort == "-cc_run":
+            infos = sorted(infos, key=lambda x: (-x.get("cc_run_stats", {}).get("start_time", -1), x["rse"]))
+        elif sort == "um_run":
+            infos = sorted(infos, key=lambda x: (x.get("um_run_stats", {}).get("start_time", -1), x["rse"]))
+        elif sort == "-um_run":
+            infos = sorted(infos, key=lambda x: (-x.get("um_run_stats", {}).get("start_time", -1), x["rse"]))
+        
+        return self.render_to_response("rses_combined.html", infos=infos)
+        
     def probe(self, request, relpath, **args):
-        return self.App.DataViewer.status(), "text/plain"
-        return "OK" if self.App.DataViewer.is_mounted() else ("Data directory unreachable", 500)
+        return self.App.CCDataSource.status(), "text/plain"
+        return "OK" if self.App.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
         
     def raw_stats(self, request, relpath, rse=None, run=None, **args):
-        runs = self.App.DataViewer.list_runs(rse)
+        runs = self.App.CCDataSource.list_runs(rse)
         raw_stats = mtime = None
         if run:
-            raw_stats, mtime = self.App.DataViewer.raw_stats(rse, run)
+            raw_stats, mtime = self.App.CCDataSource.raw_stats(rse, run)
         return self.render_to_response("raw_stats.html", rse=rse, runs=runs, raw_stats=raw_stats, mtime=mtime)
 
     def show_rse(self, request, relpath, rse=None, **args):
-        runs = self.App.DataViewer.list_runs(rse)
+        runs = self.App.CCDataSource.list_runs(rse)
         runs = sorted(runs, reverse=True)
         
         infos = []
         for run in runs:
-            stats, ndark, nmissing, confirmed_dark = self.App.DataViewer.get_stats(rse, run)
+            stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.get_stats(rse, run)
             summary = self.run_summary(stats)
             start_time = summary["start_time"]
             status = summary["status"]
@@ -394,14 +508,14 @@ class Handler(WPHandler):
         return errors
         
     def dark(self, request, relpath, rse=None, run=None, **args):
-        lst = self.App.DataViewer.get_dark(rse, run)
+        lst = self.App.CCDataSource.get_dark(rse, run)
         return (path+"\n" for path in lst), {
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
         }
             
     def missing(self, request, relpath, rse=None, run=None, **args):
-        lst = self.App.DataViewer.get_missing(rse, run)
+        lst = self.App.CCDataSource.get_missing(rse, run)
         return (path+"\n" for path in lst), {
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
@@ -410,7 +524,7 @@ class Handler(WPHandler):
     LIMIT = 1000
     
     def show_run(self, request, relpath, rse=None, run=None, **args):
-        stats, ndark, nmissing, confirmed_dark = self.App.DataViewer.get_stats(rse, run)
+        stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.get_stats(rse, run)
         summary = self.run_summary(stats)
         errors = []
         if summary["status"] == "failed":
@@ -443,8 +557,8 @@ class Handler(WPHandler):
         dark_truncated = (ndark or 0)  > self.LIMIT
         missing_truncated = (nmissing or 0) > self.LIMIT
         
-        dark = self.App.DataViewer.get_dark(rse, run, self.LIMIT)
-        missing = self.App.DataViewer.get_missing(rse, run, self.LIMIT)
+        dark = self.App.CCDataSource.get_dark(rse, run, self.LIMIT)
+        missing = self.App.CCDataSource.get_missing(rse, run, self.LIMIT)
         
         #
         # retrofit failed directories
@@ -484,12 +598,12 @@ class Handler(WPHandler):
         )
 
     def files(self, request, relpath, rse=None, type="*"):
-        files = self.App.DataViewer.files(rse, type)
+        files = self.App.CCDataSource.files(rse, type)
         sizes = [os.path.getsize(path) for path in files]
         return [f"{f} {s}\n" for f, s in zip(files, sizes)], "text/plain"
         
     def file(self, request, relpath):
-        f = self.App.DataViewer.open_file(relpath)
+        f = self.App.CCDataSource.open_file(relpath)
         def read_file(f):
             data = f.read(10240)
             while data:
@@ -557,8 +671,8 @@ class App(WPApp):
     
     def __init__(self, handler, home, cc_path, prefix, wm_path):
         WPApp.__init__(self, handler, prefix=prefix)
-        self.DataViewer = DataViewer(cc_path)
-        self.WMDataSource = WMDataSource(wm_path)
+        self.CCDataSource = CCDataSource(cc_path)
+        self.UMDataSource = UMDataSource(wm_path)
         self.Home = home
 
     def init(self):

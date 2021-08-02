@@ -1,6 +1,7 @@
 from webpie import WPApp, WPHandler
 import sys, glob, json, time, os, gzip, re, os.path
 from datetime import datetime
+from data_source import DataSource
 
 Version = "1.1"
 
@@ -21,44 +22,10 @@ class JSONParseError(Exception):
         return f"Error parsing JSON file {self.Path}"
             
 
-class WMDataSource(object):
+class UMDataSource(DataSource):
     
-    def __init__(self, path):
-        self.Path = path
-        
-    def is_mounted(self):
-        return os.path.isdir(self.Path)
-
-    def status(self):
-        if not os.path.isdir(self.Path):
-            return "Data volume %s does not exist" % (self.Path,)
-        return "OK"
-        
-    Run_stats_pattern = re.compile(r"/(?P<dir>.*)/(?P<rse>.*)_(?P<run>\d{4}_\d{2}_\d{2}_\d{2}_\d{2})_stats\.json")
-
-    def parse_stats_path(self, fn):
-        m = self.Run_stats_pattern.match(fn)
-        if not m:   return None
-        return m["rse"], m["run"]
-
     def latest_stats(self):
-        files = sorted(glob.glob(f"{self.Path}/*_stats.json"))
-        latest_files = {}
-        for path in files:
-            tup = self.parse_stats_path(path)
-            if tup:
-                rse, run = tup
-                latest_files[rse] = path
-        
-        out = []
-        for rse, path in latest_files.items():
-            try:
-                data = json.loads(open(path, "r").read())
-                data = data["scanner"]
-                if "rse" in data: out.append(data)
-            except:
-                pass
-        return sorted(out, key=lambda d: d["rse"])
+        return [d["scanner"] for d in DataSource.latest_stats(self) if "scanner" in d]
         
     def file_list_as_file(self, rse):
         path = f"{self.Path}/{rse}_files.list.00000"
@@ -93,7 +60,7 @@ class WMDataSource(object):
             raise FileNotFoundError("not found")
         return self.line_iterator(f)
         
-    def convert_rse_item(self, rse_info):
+    def fill_missing_scanner_parts(self, rse_info):
         rse_stats = {
             k: rse_info.get(k) for k in ["scanner", "server_root", "server", "start_time", "end_time", "status"]
         }
@@ -105,69 +72,24 @@ class WMDataSource(object):
                     break
         return rse_stats
         
-    def latest_stat_per_rse(self):
+    def latest_stats_per_rse(self):
         data = self.latest_stats()
-        stats = { rse_info["rse"]:self.convert_rse_item(rse_info) for rse_info in data }
+        stats = { rse_info["rse"]:self.fill_missing_scanner_parts(rse_info) for rse_info in data }
         return stats
         
     def latest_stats_for_rse(self, rse):
-        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
-        latest_file = None
-        for path in files:
-            tup = self.parse_stats_path(path)
-            if tup:
-                r, run = tup
-                if r == rse:
-                    latest_file = path
-        if latest_file:
-            try:
-                data = json.loads(open(path, "r").read())["scanner"]
-            except:
-                raise JSONParseError(path)
-            return self.convert_rse_item(data)
+        data = DataSource.latest_stats_for_rse(self, rse)
+        if data and "scanner" in data:
+            return self.fill_missing_scanner_parts(data["scanner"])
         else:
             return None
             
     def all_stats_for_rse(self, rse):
-        out = []
-        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
-        for path in files:
-            _, run = self.parse_stats_path(path)
-            try:
-                data = json.loads(open(path, "r").read())["scanner"]
-            except KeyError:
-                data = {    "error":    f"scanner section not found in {path}"   }
-            except:
-                data = {    "error":    f"JSON parse error in {path}"   }
-            else:
-                data = self.convert_rse_item(data)
-            data["run"] = run
-            out.append(data)
-        out = sorted(out, key=lambda d:d["run"])
-        return out
+        lst = DataSource.all_stats_for_rse(self, rse)
+        return [self.fill_missing_scanner_parts(data["scanner"]) for data in lst if "scanner" in data]
 
     def ls(self, rse=None):
-        pattern = f"{self.Path}/*_stats.json" if rse is None else f"{self.Path}/{rse}_*_stats.json"
-        files = sorted(glob.glob(pattern))
-        out = []
-        for path in files:
-            d = { "path": path, "error":"",
-                "size": None, "ctime":None, "ctime_text":None
-            }
-            try:
-                d["real_path"] = os.path.realpath(path)
-            except Exception as e:
-                d["error"] = str(e)
-            try:
-                d["size"] = os.path.getsize(path)
-                d["ctime"] = os.path.getctime(path)
-                d["ctime_text"] = time.ctime(os.path.getctime(path))
-            except Exception as e:
-                d["error"] = str(e)
-            out.append(d)
-        return out
-        
-        
+        return self.ls_stats(rse)
         
 class WMHandler(WPHandler):
     
@@ -181,7 +103,7 @@ class WMHandler(WPHandler):
 
     def stats(self, request, replapth, **args):
         ds = self.App.WMDataSource
-        data = ds.latest_stat_per_rse()
+        data = ds.latests_stat_per_rse()
         return json.dumps(data), "text/json" 
     
     def read_file(self, f):
@@ -238,7 +160,7 @@ class WMHandler(WPHandler):
     #
         
     def index(self, request, relpath, **args):
-        data = self.App.WMDataSource.latest_stat_per_rse()
+        data = self.App.WMDataSource.latests_stat_per_rse()
         rses = sorted(list(data.keys()))
         return self.render_to_response("wm_index.html", rses = rses, data=data)
         
