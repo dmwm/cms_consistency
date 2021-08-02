@@ -114,13 +114,14 @@ class Handler(WPHandler):
         return self.render_to_response("raw_stats.html", rse=rse, runs=runs, raw_stats=raw_stats, mtime=mtime)
 
     def show_rse(self, request, relpath, rse=None, **args):
-        runs = self.App.CCDataSource.list_runs(rse)
+        data_source = self.App.CCDataSource
+        runs = data_source.list_runs(rse)
         runs = sorted(runs, reverse=True)
         
         infos = []
         for run in runs:
-            stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.get_stats(rse, run)
-            summary = self.run_summary(stats)
+            stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
+            summary = data_source.run_summary(stats)
             start_time = summary["start_time"]
             status = summary["status"]
             if status == "failed":
@@ -211,8 +212,9 @@ class Handler(WPHandler):
     LIMIT = 1000
     
     def show_run(self, request, relpath, rse=None, run=None, **args):
-        stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.get_stats(rse, run)
-        summary = self.run_summary(stats)
+        data_source = self.App.CCDataSource
+        stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
+        summary = data_source.run_summary(stats)
         errors = []
         if summary["status"] == "failed":
             failed_comp = summary["failed"]
