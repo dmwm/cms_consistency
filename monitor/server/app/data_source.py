@@ -45,16 +45,14 @@ class DataSource(object):
         for rse, (path, run) in latest_files.items():
             try:
                 data = json.loads(open(path, "r").read())
-                if "rse" in data:
-                    data["run"] = data.get("run", run)      # fill if missing
-                    if not "elapsed_time" in data:
-                        if "start_time" in data and "end_time" in data:
-                            data["elapsed_time"] = data["end_time"] - data["start_time"]
-                        else:
-                            data["elapsed_time"] = None
-                    out.append(data)
-                else:
-                    print(f"key 'rse' not in data: {data}")
+                data.setdefault("rse", rse)
+                data.setdefault("run", run)
+                if not "elapsed_time" in data:
+                    if "start_time" in data and "end_time" in data:
+                        data["elapsed_time"] = data["end_time"] - data["start_time"]
+                    else:
+                        data["elapsed_time"] = None
+                out.append(data)
             except Exception as e:
                 print(f"Error parsing {path}: {e}")
                 pass
