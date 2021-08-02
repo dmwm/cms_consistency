@@ -1,7 +1,7 @@
 from webpie import WPApp, WPHandler
 import sys, glob, json, time, os, gzip, re, os.path
 from datetime import datetime
-from data_source import DataSource
+from data_source import UMDataSource
 
 Version = "1.1"
 
@@ -22,74 +22,6 @@ class JSONParseError(Exception):
         return f"Error parsing JSON file {self.Path}"
             
 
-class UMDataSource(DataSource):
-    
-    def latest_stats(self):
-        return [d["scanner"] for d in DataSource.latest_stats(self) if "scanner" in d]
-        
-    def file_list_as_file(self, rse):
-        path = f"{self.Path}/{rse}_files.list.00000"
-        if os.path.isfile(path):
-            f = open(path, "rb")
-            type = "text/plain"
-        elif os.path.isfile(path + ".gz"):
-            f = open(path + ".gz", "rb")
-            type = "application/x-gzip"
-        else:
-            raise FileNotFoundError("not found")
-        return f, type
-        
-    file_list = file_list_as_file
-    
-    def line_iterator(self, f):
-        while True:
-            line = f.readline()
-            if not line:
-                break
-            line = line.strip()
-            if line:
-                yield line
-        
-    def file_list_as_iterable(self, rse):
-        path = f"{self.Path}/{rse}_files.list.00000"
-        if os.path.isfile(path):
-            f = open(path, "r")
-        elif os.path.isfile(path + ".gz"):
-            f = gzip.open(path + ".gz", "rt")
-        else:
-            raise FileNotFoundError("not found")
-        return self.line_iterator(f)
-        
-    def fill_missing_scanner_parts(self, rse_info):
-        rse_stats = {
-            k: rse_info.get(k) for k in ["scanner", "server_root", "server", "start_time", "end_time", "status"]
-        }
-        if "roots" in rse_info:
-            for r in rse_info["roots"]:
-                if r["root"] == "unmerged":
-                    for k in ["error", "root_failed", "failed_subdirectories", "files", "directories", "empty_directories"]:
-                        rse_stats[k] = r.get(k)
-                    break
-        return rse_stats
-        
-    def latest_stats_per_rse(self):
-        data = self.latest_stats()
-        stats = { rse_info["rse"]:self.fill_missing_scanner_parts(rse_info) for rse_info in data }
-        return stats
-        
-    def latest_stats_for_rse(self, rse):
-        data = DataSource.latest_stats_for_rse(self, rse)
-        if data and "scanner" in data:
-            return self.fill_missing_scanner_parts(data["scanner"])
-        else:
-            return None
-            
-    def all_stats_for_rse(self, rse):
-        lst = DataSource.all_stats_for_rse(self, rse)
-        return [self.fill_missing_scanner_parts(data["scanner"]) for data in lst if "scanner" in data]
-
-    def ls(self, rse=None):
-        return self.ls_stats(rse)
         
 class WMHandler(WPHandler):
     
