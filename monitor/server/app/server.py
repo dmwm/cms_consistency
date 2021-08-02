@@ -37,7 +37,7 @@ class Handler(WPHandler):
         WPHandler.__init__(self, *params, **args)
         self.WM = self.unmerged = WMHandler(*params, **args)
         
-    def index(self, request, relpath, **args):
+    def __index(self, request, relpath, **args):
         #
         # list available RSEs
         #
@@ -101,6 +101,8 @@ class Handler(WPHandler):
             infos = sorted(infos, key=lambda x: (-x.get("um_run_stats", {}).get("start_time", -1), x["rse"]))
         
         return self.render_to_response("rses_combined.html", infos=infos)
+        
+    index = index_combined
         
     def probe(self, request, relpath, **args):
         return self.App.CCDataSource.status(), "text/plain"
