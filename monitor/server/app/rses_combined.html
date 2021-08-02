@@ -66,7 +66,7 @@
             <td class="{{summary['missing_action_status']}}">{{summary["missing_action_status"]}}</td>
         {% endif %}
         
-        {% if um_status is none %}
+        {% if um_stats is none %}
             <td></td><td></td><td></td><td></td>
         {% else %}
             <td><a href="./show_um_run?rse={{rse}}&run={{um_stats['run']}}">{{um_stats['start_time']|as_dt}}</a></td>
