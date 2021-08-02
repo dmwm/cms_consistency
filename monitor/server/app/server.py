@@ -67,10 +67,10 @@ class Handler(WPHandler):
         um_data_source = self.App.UMDataSource
 
         cc_stats = cc_data_source.latest_stats_per_rse()
-        cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, run in cc_stats.items()}
+        cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
 
         um_stats = self.App.UMDataSource.latest_stats_per_rse()
-        um_summaries = {rse: um_data_source.run_summary(stats) for rse, run in um_stats.items()}
+        um_summaries = {rse: um_data_source.run_summary(stats) for rse, stats in um_stats.items()}
         
         all_rses = set(cc_stats.keys()) | set(um_stats.keys())
         all_rses = sorted(list(all_rses))
