@@ -92,6 +92,7 @@ class DataSource(object):
         out = []
         files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
         for path in files:
+            _, run = self.parse_stats_path(path) 
             data = self.read_stats(rse, run, path=path)
             out.append(data)
         return out
