@@ -48,8 +48,8 @@ class DataSource(object):
                 data.setdefault("rse", rse)
                 data.setdefault("run", run)
                 if not "elapsed_time" in data:
-                    if "start_time" in data and "end_time" in data:
-                        data["elapsed_time"] = data["end_time"] - data["start_time"]
+                    if data.get("start_time") and data.get("end_time"):
+                        data["elapsed_time"] = data.get("end_time") - data.get("start_time")
                     else:
                         data["elapsed_time"] = None
                 out.append(data)
