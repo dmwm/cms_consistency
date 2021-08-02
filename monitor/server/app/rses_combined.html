@@ -44,34 +44,33 @@
 
 {% for info in infos %}
     {% set rse = info["rse"] %}
-    {% set cc_stats = info["cc_stats"] %}
-    {% set um_stats = info["um_stats"] %}
+    {% set cc_summary = info["cc_summary"] %}
+    {% set um_summary = info["um_summary"] %}
 
     <tr>
         <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
-        {% if cc_stats is none %}
+        {% if cc_summary is none %}
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            {% set summary = cc_stats["summary"] %}
-            <td><a href="./show_cc_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_dt}}</a></td>
-            <td class="{{summary['status']}}">{{summary["status"]}}</td>
-            <td>{{summary["ndark"]}}</td>
-            <td>{{summary["confirmed_dark"]}}</td>
-            <td>{{summary["acted_dark"]}}</td>
-            <td class="{{summary['dark_action_status']}}">{{summary["dark_action_status"]}}</td>
+            <td><a href="./show_cc_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
+            <td class="{{cc_summary['status']}}">{{cc_summary["status"]}}</td>
+            <td>{{cc_summary["ndark"]}}</td>
+            <td>{{cc_summary["confirmed_dark"]}}</td>
+            <td>{{cc_summary["acted_dark"]}}</td>
+            <td class="{{cc_summary['dark_action_status']}}">{{cc_summary["dark_action_status"]}}</td>
             
-            <td>{{summary["nmissing"]}}</td>
-            <td>{{summary["acted_missing"]}}</td>
-            <td class="{{summary['missing_action_status']}}">{{summary["missing_action_status"]}}</td>
+            <td>{{cc_summary["nmissing"]}}</td>
+            <td>{{cc_summary["acted_missing"]}}</td>
+            <td class="{{cc_summary['missing_action_status']}}">{{cc_summary["missing_action_status"]}}</td>
         {% endif %}
         
-        {% if um_stats is none %}
+        {% if um_summary is none %}
             <td></td><td></td><td></td><td></td>
         {% else %}
-            <td><a href="./show_um_run?rse={{rse}}&run={{um_stats['run']}}">{{um_stats['start_time']|as_dt}}</a></td>
-            <td>{{um_stats['elapsed_time']|hms}}</td>
-            <td class="{{um_stats['status']}}">{{um_stats["status"]}} {{um_stats["error"] or ""}}</td>
-            <td>{{um_stats["files"]}}</td>
+            <td><a href="./show_um_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
+            <td>{{um_summary['elapsed_time']|hms}}</td>
+            <td class="{{um_summary['status']}}">{{um_summary["status"]}} {{um_summary["error"] or ""}}</td>
+            <td>{{um_summary["files"]}}</td>
         {% endif %}
     </tr>
 {% endfor %}

@@ -78,8 +78,8 @@ class Handler(WPHandler):
         infos = [
             {
                 "rse":        rse,
-                "cc_stats":   cc_summaries.get(rse),
-                "um_stats":   um_summaries.get(rse)
+                "cc_summary":   cc_summaries.get(rse),
+                "um_summary":   um_summaries.get(rse)
             } 
             for rse in all_rses
         ]
