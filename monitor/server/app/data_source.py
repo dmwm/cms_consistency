@@ -126,7 +126,7 @@ class UMDataSource(DataSource):
         return out
 
     def run_summary(self, stats):
-        summary = {stats.get(k) for k in [
+        summary = {k:stats.get(k) for k in [
             "start_time", "end_time", "status", "error", "files"
         ]}
         if summary.get("start_time") and summary.get("end_time"):
