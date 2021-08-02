@@ -75,16 +75,14 @@ class Handler(WPHandler):
         all_rses = set(cc_stats.keys()) | set(um_stats.keys())
         all_rses = sorted(list(all_rses))
 
-        infos = []
-        for rse in all_rses:
-            info = {
-                "rse":            rse,
+        infos = [
+            {
+                "rse":        rse,
                 "cc_stats":   cc_summaries.get(rse),
                 "um_stats":   um_summaries.get(rse)
-            }
-            
-        print("infos:", infos)
-        sys.stdout.flush()
+            } 
+            for rse in all_rses
+        ]
         
         if sort == "rse":
             infos = sorted(infos, key=lambda x: x["rse"])

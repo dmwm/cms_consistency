@@ -12,11 +12,11 @@ ls -l app
 
 echo "--- $CC_DATA: ---"
 ls -ld $CC_DATA
-ls -l $CC_DATA
+#ls -l $CC_DATA
 
 echo "--- $WM_DATA: ---"
 ls -ld $WM_DATA
-ls -l $WM_DATA
+#ls -l $WM_DATA
 
 python -V
 
