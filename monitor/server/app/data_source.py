@@ -57,6 +57,10 @@ class DataSource(object):
                 }
             else:
                 raise
+        return self.postprocess_stats(data) if not raw else data
+        
+    # overridable - will be called immediatelty after read_stats()
+    def postprocess_stats(self, data):
         return data
         
     def latest_stats_per_rse(self):
@@ -114,9 +118,11 @@ class DataSource(object):
         
 class UMDataSource(DataSource):
     
-    def latest_stats(self):
-        return [d["scanner"] for d in DataSource.latest_stats(self) if "scanner" in d]
-        
+    def postprocess_stats(self, data):
+        out = {"run": data["run"], "rse":data["rse"], "error":data["error"]}
+        out.update(data.get("scanner", {}))
+        return out
+
     def run_summary(self, stats):
         summary = {stats.get(k) for k in [
             "start_time", "end_time", "status", "error", "files"
@@ -172,22 +178,6 @@ class UMDataSource(DataSource):
                     break
         return rse_stats
         
-    def latest_stats_per_rse(self):
-        data = self.latest_stats()
-        stats = { rse_info["rse"]:self.fill_missing_scanner_parts(rse_info) for rse_info in data }
-        return stats
-        
-    def latest_stats_for_rse(self, rse):
-        data = DataSource.latest_stats_for_rse(self, rse)
-        if data and "scanner" in data:
-            return self.fill_missing_scanner_parts(data["scanner"])
-        else:
-            return None
-            
-    def all_stats_for_rse(self, rse):
-        lst = DataSource.all_stats_for_rse(self, rse)
-        return [self.fill_missing_scanner_parts(data["scanner"]) for data in lst if "scanner" in data]
-
 class CCDataSource(DataSource):
     
     def parse_filename(self, fn):
