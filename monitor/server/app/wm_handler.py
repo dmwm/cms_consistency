@@ -160,7 +160,7 @@ class WMHandler(WPHandler):
     #
         
     def index(self, request, relpath, **args):
-        data = self.App.UMDataSource.latests_stats_per_rse()
+        data = self.App.UMDataSource.latest_stats_per_rse()
         rses = sorted(list(data.keys()))
         return self.render_to_response("wm_index.html", rses = rses, data=data)
         
