@@ -119,7 +119,9 @@ class DataSource(object):
 class UMDataSource(DataSource):
     
     def postprocess_stats(self, data):
-        out = {"run": data["run"], "rse":data["rse"], "error":data["error"]}
+        out = {"run": data["run"], "rse":data["rse"]}
+        if "error" in data:
+            out["error"] = data["error"]
         out.update(data.get("scanner", {}))
         return out
 
