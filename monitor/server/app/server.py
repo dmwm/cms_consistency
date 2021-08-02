@@ -84,6 +84,7 @@ class Handler(WPHandler):
             }
             
         print("infos:", infos)
+        sys.stdout.flush()
         
         if sort == "rse":
             infos = sorted(infos, key=lambda x: x["rse"])
