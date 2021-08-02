@@ -199,99 +199,20 @@ class Handler(WPHandler):
         WPHandler.__init__(self, *params, **args)
         self.WM = self.unmerged = WMHandler(*params, **args)
         
-    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
-
-    def cc_run_summary(self, stats):
-        status = None
-        tstart, tend = None, None
-        failed_comp = None
-        running_comp = None
-        all_done = True
-        for comp in self.COMPONENTS:
-            if comp in stats:
-                comp_stats = stats[comp]
-                comp_status = comp_stats.get("status")
-                tend = comp_stats.get("end_time")
-                comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
-                comp_done = comp_status == "done" or comp_status is None and comp_stats.get("end_time") is not None
-                comp_running = comp_started and not (comp_status in ("done", "failed"))
-                if not comp_done:
-                    all_done = False
-                if "start_time" in comp_stats and tstart is None:
-                    tstart = comp_stats["start_time"]
-                if comp_started and status is None:
-                    status = "started"
-                if comp_running:
-                    running_comp = comp
-                if comp_status == "failed":
-                    status = "failed"
-                    failed_comp = comp
-                    break
-            else:
-                all_done = False
-        
-        #last_comp = stats.get(self.COMPONENTS[-1])
-        #if last_comp:
-        #    if last_comp.get("status") == "done":
-        #        all_done = True
-        
-        if all_done:
-            status = "done"
-        else:
-            tend = None
-            
-        summary = {
-            "status": status,
-            "start_time": tstart,
-            "end_time": tend,
-            "failed": failed_comp,
-            "running": running_comp,            
-            "missing_stats" : {
-                "detected":         None,
-                "confirmed":        None,
-                "acted_on":         None,
-                "action_status":    None
-            },
-            "dark_stats": {
-                "detected":         None,
-                "confirmed":        None,
-                "acted_on":         None,
-                "action_status":    None
-            }
-        }
-        
-        if "cmp3" in stats and stats["cmp3"]["status"] == "done":
-            summary["missing_stats"]["detected"] = stats["cmp3"]["missing"]
-            summary["dark_stats"]["detected"] = stats["cmp3"]["dark"]
-            
-            if "cmp2dark" in stats:
-                summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
-
-            if "cc_dark" in stats:
-                summary["dark_stats"]["acted_on"] = stats["cc_dark"].get("confirmed_dark_files")
-                summary["dark_stats"]["action_status"] = stats["cc_dark"].get("status", "").lower() or None
-                
-            if "cc_miss" in stats:
-                summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_miss_files")
-                if summary["missing_stats"]["acted_on"] is None:
-                    summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_dark_files")       # there used to be a typo in older versions 
-                summary["missing_stats"]["action_status"] = stats["cc_miss"].get("status", "").lower() or None
-        
-        return summary
-                
     def index(self, request, relpath, **args):
         #
         # list available RSEs
         #
-        rses = self.App.CCDataSource.list_rses()
-        infos = []
+        data_source = self.App.CCDataSource
+
+        for rse, stats in data_source.
+
         for i, rse in enumerate(rses):
             summary = ndark = nmissing = error = None
             try:
                 #if i % 5 == 1:
                 #    raise ValueError('debug "debug"')    
-                run, stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.last_stats(rse)
-                summary = self.run_summary(stats)
+                summary = self.cc_run_summary(stats)
                 
             except Exception as e:
                 exc = str(e).replace('"', r'\"')
@@ -315,47 +236,25 @@ class Handler(WPHandler):
         #
         # list available RSEs
         #
-        
-        cc_stats = self.App.CCDataSource.latest_stats_per_rse()
-        print("CC stats:")
-        for rse, stats in cc_stats.items():
-            print(rse,":", stats)
+        cc_data_source = self.App.CCDataSource
+        um_data_source = self.App.UMDataSource
+
+        cc_stats = cc_data_source.latest_stats_per_rse()
+        cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, run in cc_stats.items()}
+
         um_stats = self.App.UMDataSource.latest_stats_per_rse()
-        print("UM stats:")
-        for rse, stats in um_stats.items():
-            print(rse,":", stats)
-        
-        
+        um_summaries = {rse: um_data_source.run_summary(stats) for rse, run in um_stats.items()}
         
         all_rses = set(cc_stats.keys()) | set(um_stats.keys())
+        all_rses = sorted(list(all_rses))
 
         infos = []
-        all_rses = sorted(list(all_rses))
-        for i, rse in enumerate(all_rses):
+        for rse in all_rses:
             info = {
                 "rse":            rse,
-                "cc_stats":   None,
-                "um_stats":   um_stats.get("rse")
+                "cc_stats":   cc_summaries.get(rse),
+                "um_stats":   um_summaries.get(rse)
             }
-            if rse in cc_stats:
-                stats = cc_stats[rse]
-                summary = ndark = nmissing = error = None
-                try:
-                    #if i % 5 == 1:
-                    #    raise ValueError('debug "debug"')    
-                    run, stats, ndark, nmissing, confirmed_dark = self.App.CCDataSource.last_stats(rse)
-                    summary = self.cc_run_summary(stats)
-                
-                except Exception as e:
-                    exc = str(e).replace('"', r'\"')
-                    error = "Data parsing error: %s" % (exc,)
-                #print("index: stats:", info.get("stats"))
-                info["cc_stats"] = {
-                    "run":      run, 
-                    "summary":  summary, 
-                    "error":    error
-                }
-            infos.append(info)
             
         #print(infos)
         
