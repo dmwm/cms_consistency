@@ -27,7 +27,7 @@ shift
 shift
 shift
 
-while $1; do
+while [ "$1" ]; do
     case $1 in
     -k)
         key=$2
