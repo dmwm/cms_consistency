@@ -27,7 +27,7 @@ shift
 shift
 shift
 
-while [ "$1" ]; do
+while [ -n "$1" ]; do
     case $1 in
     -k)
         key=$2
@@ -140,7 +140,7 @@ for attempt in $attempts; do
 _EOF_
 		python3 cmp3/stats.py -k scanner ${stats} < $stats_update
         if [ "$um_stats" != "" ]; then
-    		python3 cmp3/stats.py -k scanner ${$um_stats} < $stats_update
+    		python3 cmp3/stats.py -k scanner $um_stats < $stats_update
         fi
 
         echo sleeping ...
@@ -181,7 +181,7 @@ _EOF_
     		n=`wc -l ${um_list_prefix} | egrep  '^[ ]*[0-9]+[ ]+total' | awk -e '{ print $1 }'`
     		n=${n:-0}
             gzip ${um_list_prefix}
-    		cat > ${um_stats} <<_EOF_
+    		cat > $um_stats <<_EOF_
 		    {
                 "scanner": {
     		        "rse":"$RSE",
@@ -229,7 +229,7 @@ if [ "$downloaded" == "no" ]; then
 _EOF_
     python3 cmp3/stats.py -k scanner ${stats} < ${scratch}/${RSE}_update.json
     if [ "$um_stats" != "" ]; then
-		python3 cmp3/stats.py -k scanner ${$um_stats} < ${scratch}/${RSE}_update.json
+		python3 cmp3/stats.py -k scanner $um_stats < ${scratch}/${RSE}_update.json
     fi
     exit 1
 fi
