@@ -106,7 +106,7 @@ class WMHandler(WPHandler):
         latest_run = stats_by_run[-1]
             
         # filter out all errors
-        stats_by_run = [r for r in stats_by_run if r.get("status") == "done" and not r["error"] and r.get("start_time") and r.get("end_time")]
+        stats_by_run = [r for r in stats_by_run if r.get("status") == "done" and not r.get("error") and r.get("start_time") and r.get("end_time")]
         for r in stats_by_run:
             r["elapsed_time"] = (r["end_time"] - r["start_time"])/3600
             r["start_time_miliseconds"] = int(r["start_time"]*1000)
