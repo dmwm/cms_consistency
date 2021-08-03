@@ -3,7 +3,11 @@
 
 #
 # Usage:
-#   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> [<cert file> [<key file>]]
+#   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> 
+#         -c <cert or proxy file> 
+#         -k <key file>
+#         -u <unmerged list output directory>
+#         -U <unmerged root path>           default: /store/unmerged/
 #
 
 config=$1
@@ -11,8 +15,43 @@ rucio_config_file=$2
 RSE=$3
 scratch=$4
 out=$5
-cert=$6
-key=$7
+key=""
+cert=""
+unmerged_out_dir=""
+unmerged_path="/store/unmerged/"
+
+# skip required args
+shift
+shift
+shift
+shift
+shift
+
+while $1; do
+    case $1 in
+    -k)
+        key=$2
+        shift
+        ;;
+    -c)
+        cert=$2
+        shift
+        ;;
+    -u)
+        unmerged_out_dir=$2
+        shift
+        ;;
+    -U)
+        unmerged_path=$2
+        shift
+        ;;
+	*)
+		echo Unknown option $1
+		exit 1
+		;;
+    esac
+    shift
+done    
 
 server=ceph-gw1.gridpp.rl.ac.uk
 
@@ -43,11 +82,17 @@ b_prefix=${scratch}/${RSE}_${run}_B.list
 a_prefix=${scratch}/${RSE}_${run}_A.list
 r_prefix=${scratch}/${RSE}_${run}_R.list
 stats=${out}/${RSE}_${run}_stats.json
+stats_update=${scratch}/${RSE}_update.json
 
 d_out=${out}/${RSE}_${run}_D.list
 m_out=${out}/${RSE}_${run}_M.list
 
 tape_dump_tmp=${scratch}/${RSE}_${run}_tape_dump.gz
+
+if [ "$unmerged_out_dir" != "" ]; then
+    um_stats=${unmerged_out_dir}/${RSE}_${run}_stats.json
+    um_list_prefix=${unmerged_out_dir}/${RSE}_files.list
+fi
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -75,7 +120,7 @@ for attempt in $attempts; do
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
 	    rm -f ${tape_dump_tmp}
     	t1=`date +%s`
-		python3 cmp3/stats.py -k scanner ${stats} <<_EOF_
+        cat > $stats_update <<_EOF_
 		    {
 		        "rse":"$RSE",
 		        "scanner":{
@@ -93,6 +138,11 @@ for attempt in $attempts; do
 		        "status":   "running"
 		    }
 _EOF_
+		python3 cmp3/stats.py -k scanner ${stats} < $stats_update
+        if [ "$um_stats" != "" ]; then
+    		python3 cmp3/stats.py -k scanner ${$um_stats} < $stats_update
+        fi
+
         echo sleeping ...
         sleep $sleep_interval
     else
@@ -106,7 +156,7 @@ _EOF_
 		n=`wc -l ${r_prefix}.* | egrep  '^[ ]*[0-9]+[ ]+total' | awk -e '{ print $1 }'`
 		n=${n:-0}
 		
-		python3 cmp3/stats.py -k scanner ${stats} <<_EOF_
+        cat > $stats_update <<_EOF_
 		    {
 		        "rse":"$RSE",
 		        "scanner":{
@@ -124,13 +174,40 @@ _EOF_
 				"total_files":$n
 		    }
 _EOF_
+        python3 cmp3/stats.py -k scanner ${stats} < $stats_update
+        # unmerged files list and stats
+        if [ "$unmerged_out_dir" != "" ]; then
+            grep ^${unmerged_path} ${tape_dump_tmp} > ${um_list_prefix}
+    		n=`wc -l ${um_list_prefix} | egrep  '^[ ]*[0-9]+[ ]+total' | awk -e '{ print $1 }'`
+    		n=${n:-0}
+            gzip ${um_list_prefix}
+    		cat > ${um_stats} <<_EOF_
+		    {
+                "scanner": {
+    		        "rse":"$RSE",
+    		        "scanner":{
+    		            "type":"site_dump",
+    					"url":"${dump_url}",
+    		            "version":null,
+                        "last_attempt_time_utc": "${attempt_time}",
+        		        "status":   "done",
+        				"attempt":  $attempt
+    		        },
+    		        "server":"${server}",
+    		        "start_time":$t0,
+    		        "end_time":$t1,
+    		        "status":   "done",
+    				"total_files":$n
+                }
+		    }
+_EOF_
 
         break
     fi
 done
 
 if [ "$downloaded" == "no" ]; then
-	python3 cmp3/stats.py -k scanner ${stats} <<_EOF_
+	cat > ${scratch}/${RSE}_update.json <<_EOF_
 		    {
 		        "rse":"$RSE",
 		        "scanner":{
@@ -150,6 +227,10 @@ if [ "$downloaded" == "no" ]; then
 				"attempt":$attempt
 		    }
 _EOF_
+    python3 cmp3/stats.py -k scanner ${stats} < ${scratch}/${RSE}_update.json
+    if [ "$um_stats" != "" ]; then
+		python3 cmp3/stats.py -k scanner ${$um_stats} < ${scratch}/${RSE}_update.json
+    fi
     exit 1
 fi
 
