@@ -87,7 +87,7 @@ stats_update=${scratch}/${RSE}_update.json
 d_out=${out}/${RSE}_${run}_D.list
 m_out=${out}/${RSE}_${run}_M.list
 
-tape_dump_tmp=${scratch}/${RSE}_${run}_tape_dump.gz
+site_dump_tmp=${scratch}/${RSE}_${run}_site_dump.gz
 
 if [ "$unmerged_out_dir" != "" ]; then
     um_stats=${unmerged_out_dir}/${RSE}_${run}_stats.json
@@ -104,7 +104,7 @@ if [ "$cert" != "" ]; then
 fi
 
 echo
-echo Downloading tape dump ...
+echo Downloading site dump ...
 echo
 
 downloaded="no"
@@ -113,12 +113,12 @@ t0=`date +%s`
 
 for attempt in $attempts; do
     echo Attempt $attempt ...
-    rm -f ${tape_dump_tmp}
+    rm -f ${site_dump_tmp}
     attempt_time=`date -u`
-    xrdcp ${dump_url} ${tape_dump_tmp} > ${scratch}/${RSE}_xrdcp_${run}.stderr 2>&1
+    xrdcp ${dump_url} ${site_dump_tmp} > ${scratch}/${RSE}_xrdcp_${run}.stderr 2>&1
     xrdcp_status=$?
-    if [ "$xrdcp_status" != "0" ] || [ ! -f ${tape_dump_tmp} ]; then
-	    rm -f ${tape_dump_tmp}
+    if [ "$xrdcp_status" != "0" ] || [ ! -f ${site_dump_tmp} ]; then
+	    rm -f ${site_dump_tmp}
     	t1=`date +%s`
         cat > $stats_update <<_EOF_
 		    {
@@ -147,9 +147,9 @@ _EOF_
         sleep $sleep_interval
     else
         echo succeeded
-        python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${tape_dump_tmp}
+        python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}
     	t1=`date +%s`
-	    rm -f ${tape_dump_tmp}
+	    rm -f ${site_dump_tmp}
         downloaded="yes"
 
 		# count files in the dump
@@ -177,7 +177,7 @@ _EOF_
         python3 cmp3/stats.py -k scanner ${stats} < $stats_update
         # unmerged files list and stats
         if [ "$unmerged_out_dir" != "" ]; then
-            grep ^${unmerged_path} ${tape_dump_tmp} > ${um_list_prefix}
+            grep ^${unmerged_path} ${site_dump_tmp} > ${um_list_prefix}
     		n=`wc -l ${um_list_prefix} | egrep  '^[ ]*[0-9]+[ ]+total' | awk -e '{ print $1 }'`
     		n=${n:-0}
             gzip ${um_list_prefix}
