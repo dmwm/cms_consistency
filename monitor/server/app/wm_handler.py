@@ -115,8 +115,10 @@ class WMHandler(WPHandler):
     def stats(self, request, relpath, rse=None, run=None):
         if run:
             stats = self.App.UMDataSource.read_stats(rse, run)
-        else:
+        elif rse:
             stats = self.App.UMDataSource.latest_stats_for_rse(rse)
+        else:
+            stats = self.App.UMDataSource.latest_stats_per_rse()
         return json.dumps(stats), "text/json"
         
     def ls(self, request, relpath, rse=None, **args):
