@@ -116,7 +116,7 @@ class DataSource(object):
             except Exception as e:
                 d["error"] = str(e)
             out.append(d)
-        print("ls: out:", out)
+        #print("ls: out:", out)
         sys.stdout.flush()
         return out
         
@@ -142,7 +142,7 @@ class UMDataSource(DataSource):
         summary = {k:stats.get(k) for k in [
             "start_time", "end_time", "status", "error", "files"
         ]}
-        print("UMDataSource.run_summary: stats['files']=", stats.get("files"), "   summary['files']=", summary["files"])
+        #print("UMDataSource.run_summary: stats['files']=", stats.get("files"), "   summary['files']=", summary["files"])
         if summary.get("start_time") and summary.get("end_time"):
             summary["elapsed_time"] = summary["end_time"] - summary["start_time"]
         else:

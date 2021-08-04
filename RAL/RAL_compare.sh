@@ -196,7 +196,7 @@ for attempt in $attempts; do
 	        echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
-                python cmp3/json_file.py $um_stats set scanner.total_files $n
+                python cmp3/json_file.py $um_stats set scanner.files $n
             fi   
         fi
         break
