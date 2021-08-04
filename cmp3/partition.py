@@ -68,7 +68,7 @@ def main():
     for path in in_lst:
         if starts_with and not path.startswith(starts_with):    continue
         for ignore_path in ignore_list:
-            if path.starts_with(ignore_path):
+            if path.startswith(ignore_path):
                 continue
         if filter_in is not None and not filter_in.search(path): continue
         if remove_prefix is not None:
