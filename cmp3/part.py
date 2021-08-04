@@ -40,6 +40,8 @@ class PartitionedList(object):
         else:
             self.Files = [open(fn, "r") if not fn.endswith(".gz") else gzip.open(fn, "rt") for fn in self.FileNames]
             
+        self.NWritten = 0
+            
     @staticmethod
     def open(prefix=None, files=None):
         # open existing set
@@ -51,7 +53,10 @@ class PartitionedList(object):
     def create(nparts, prefix, compressed=False):
         # create new set
         gz = ".gz" if compressed else ""
-        files = ["%s.%05d%s" % (prefix, i, gz) for i in range(nparts)]
+        if nparts == 1:
+            files = ["%s%s" % (prefix, gz)]
+        else:
+            files = ["%s.%05d%s" % (prefix, i, gz) for i in range(nparts)]
         return PartitionedList("w", files, compressed)
         
     @staticmethod
@@ -68,6 +73,7 @@ class PartitionedList(object):
         #print(item, "%", self.NParts, "->", i)
         item = item+"\n"
         self.Files[i].write(item)
+        self.NWritten += 1
         
     def files(self):
         return self.Files

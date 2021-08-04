@@ -80,6 +80,8 @@ def main():
         out_lst.add(path)
     out_lst.close()
     
+    print(out_lst.NWritten)
+    
    
 if __name__ == "__main__":
     main()

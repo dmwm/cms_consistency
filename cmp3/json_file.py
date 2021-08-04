@@ -82,29 +82,24 @@ if __name__ == "__main__":
     Usage = """
     python json_file.py [-c] <file_path> <command> <args>
         set <path> "<JSON expression>"
-        set <path> -f <file.json>
-        set <path> -f -   < file.json
+        set <path> - < file.json
         set <path> -t "text"
         set <path> -t -   < file.text
     """
 
     def do_set(jf, args):
         path = args[0]
-        opts, args = getopt.getopt(args[1:], "f:t:")
+        opts, args = getopt.getopt(args[1:], "t")
         opts = dict(opts)
-        if "-f" in opts:
-            data_file_path = opts["-f"]
-            data_file = sys.stdin if data_file_path == "-" else open(data_file_path, "r")
-            data = json.load(data_file)
-            jf.set_at_path(path, data)
-        elif "-t" in opts:
-            text = opts["-t"]
-            if text == "-":
-                text = sys.stdin.read()
-            text_file_path = opts["-t"]
-            jf.set_at_path(path, text)
+        
+        data = args[0]
+        if data == "-":
+            data = sys.stdin.read()
+        if "-t" in opts:
+            pass
         else:
-            jf.set_at_path(path, json.loads(args[0]))
+            data = json.loads(data)
+        jf.set_at_path(path, data)
         jf.save()
         
     opts, args = getopt.getopt(sys.argv[1:], "c")

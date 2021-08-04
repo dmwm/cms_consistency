@@ -92,6 +92,17 @@ site_dump_tmp=${scratch}/${RSE}_${run}_site_dump.gz
 if [ "$unmerged_out_dir" != "" ]; then
     um_stats=${unmerged_out_dir}/${RSE}_${run}_stats.json
     um_list_prefix=${unmerged_out_dir}/${RSE}_files.list
+    unmerged_part_config=${scratch}/RAL_unmerged_part.yaml
+    cat > $unmerged_part_config << _EOF_
+rses: 
+    RAL:
+        partitions: 1
+        preprocess:
+            filter:     "/store/unmerged/"
+            rewrite:
+                match:  "([^ ]+).*"
+                out:    \1
+_EOF_
 fi
 
 # X509 proxy
@@ -111,6 +122,27 @@ downloaded="no"
 
 t0=`date +%s`
 
+cat > $stats_update << _EOF_
+    {
+        "rse":"$RSE",
+        "scanner":{
+            "type":"site_dump",
+			"url":"${dump_url}",
+            "version":null,
+			"attempt":  0
+        },
+        "server":"${server}",
+        "start_time":$t0,
+        "end_time":null,
+        "status":   "running"
+    }
+_EOF_
+
+python cmp3/json_file.py -c $stats set scanner - < $stats_update
+if [ "$um_stats" != "" ]; then
+    python cmp3/json_file.py -c $um_stats set scanner - < $stats_update
+fi   
+
 for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${site_dump_tmp}
@@ -120,116 +152,56 @@ for attempt in $attempts; do
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${site_dump_tmp} ]; then
 	    rm -f ${site_dump_tmp}
     	t1=`date +%s`
-        cat > $stats_update <<_EOF_
-		    {
-		        "rse":"$RSE",
-		        "scanner":{
-		            "type":"site_dump",
-					"url":"${dump_url}",
-		            "version":null,
-                    "last_attempt_time_utc": "${attempt_time}",
-    		        "status":   "failed",
-                    "status_code": ${xrdcp_status},
-    				"attempt":  $attempt
-		        },
-		        "server":"${server}",
-		        "start_time":$t0,
-		        "end_time":null,
-		        "status":   "running"
-		    }
-_EOF_
-		python3 cmp3/stats.py -k scanner ${stats} < $stats_update
-        if [ "$um_stats" != "" ]; then
-    		python3 cmp3/stats.py -k scanner $um_stats < $stats_update
-        fi
-
+        
+        python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
+        python cmp3/json_file.py ${stats} set scanner.scanner.status -t failed
+        python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
+        python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
+        
         echo sleeping ...
         sleep $sleep_interval
     else
         echo succeeded
-        python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}
+        n=`python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
     	t1=`date +%s`
-	    rm -f ${site_dump_tmp}
         downloaded="yes"
 
-		# count files in the dump
-		n=`wc -l ${r_prefix}.* | egrep  '^[ ]*[0-9]+[ ]+total' | awk -e '{ print $1 }'`
-		n=${n:-0}
-		
-        cat > $stats_update <<_EOF_
-		    {
-		        "rse":"$RSE",
-		        "scanner":{
-		            "type":"site_dump",
-					"url":"${dump_url}",
-		            "version":null,
-                    "last_attempt_time_utc": "${attempt_time}",
-    		        "status":   "done",
-    				"attempt":  $attempt
-		        },
-		        "server":"${server}",
-		        "start_time":$t0,
-		        "end_time":$t1,
-		        "status":   "done",
-				"total_files":$n
-		    }
-_EOF_
-        python3 cmp3/stats.py -k scanner ${stats} < $stats_update
+        python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
+        python cmp3/json_file.py ${stats} set scanner.scanner.status -t "done"
+        python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
+        python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
+
+        python cmp3/json_file.py ${stats} set scanner.total_files $n
+        
+        
         # unmerged files list and stats
         if [ "$unmerged_out_dir" != "" ]; then
-            grep ^${unmerged_path} ${site_dump_tmp} > ${um_list_prefix}
-    		n=`wc -l ${um_list_prefix} | egrep  '^[ ]*[0-9]+[ ]+total' | awk -e '{ print $1 }'`
-    		n=${n:-0}
-            gzip ${um_list_prefix}
-    		cat > $um_stats <<_EOF_
-		    {
-                "scanner": {
-    		        "rse":"$RSE",
-    		        "scanner":{
-    		            "type":"site_dump",
-    					"url":"${dump_url}",
-    		            "version":null,
-                        "last_attempt_time_utc": "${attempt_time}",
-        		        "status":   "done",
-        				"attempt":  $attempt
-    		        },
-    		        "server":"${server}",
-    		        "start_time":$t0,
-    		        "end_time":$t1,
-    		        "status":   "done",
-    				"total_files":$n
-                }
-		    }
-_EOF_
+            n=`python3 cmp3/partition.py -c $unmerged_part_config -r RAL -z -q -n 1 -o ${um_list_prefix} ${site_dump_tmp}`
+
+            if [ "$um_stats" != "" ]; then
+                python cmp3/json_file.py $um_stats set scanner.total_files $n
+            fi   
         fi
         break
     fi
 done
 
-if [ "$downloaded" == "no" ]; then
-	cat > ${scratch}/${RSE}_update.json <<_EOF_
-		    {
-		        "rse":"$RSE",
-		        "scanner":{
-		            "type":"site_dump",
-					"url":"${dump_url}",
-		            "version":null,
-                    "last_attempt_time_utc": "${attempt_time}",
-    		        "status":   "failed",
-                    "status_code": ${xrdcp_status},
-    				"attempt":  $attempt
-		        },
-		        "server":"${server}",
-		        "start_time":$t0,
-		        "end_time":$t1,
-		        "status":   "failed",
-                "last_attempt_time_utc": "${attempt_time}",
-				"attempt":$attempt
-		    }
-_EOF_
-    python3 cmp3/stats.py -k scanner ${stats} < ${scratch}/${RSE}_update.json
+rm -f ${site_dump_tmp}
+
+if [ "$downloaded" == "yes" ]; then
+    python cmp3/json_file.py ${stats} set scanner.status -t "done"
+    python cmp3/json_file.py ${stats} set scanner.end_time $t1
     if [ "$um_stats" != "" ]; then
-		python3 cmp3/stats.py -k scanner $um_stats < ${scratch}/${RSE}_update.json
+        python cmp3/json_file.py $um_stats set scanner.status -t "done"
+        python cmp3/json_file.py $um_stats set scanner.end_time $t1
+    fi
+else
+    python cmp3/json_file.py ${stats} set scanner.status -t "failed"
+    python cmp3/json_file.py ${stats} set scanner.end_time $t1
+
+    if [ "$um_stats" != "" ]; then
+        python cmp3/json_file.py $um_stats set scanner.status -t "failed"
+        python cmp3/json_file.py $um_stats set scanner.end_time $t1
     fi
     exit 1
 fi
