@@ -1,8 +1,7 @@
 rses: 
     "*":
+        ignore_list:
+            - /store/unmerged/logs
         partitions: 1
         preprocess:
-            filter:     "/store/unmerged/"
-            rewrite:
-                match:  "([^ ]+).*"
-                out:    \1
+            filter:     /store/unmerged/

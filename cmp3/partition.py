@@ -39,8 +39,9 @@ def main():
         preprocess = config.rse_param(rse, "preprocess")
         ignore_list = config.rse_param(rse, "ignore_list") or []
         if preprocess is not None:
-            ignore_list += preprocess.get("ignore_list", [])
-            ignore_list = list(set(ignore_list))        # remove duplicates
+            ilist = preprocess.get("ignore_list")
+            if ilist is not None:
+                ignore_list = ilist
             filter_in = preprocess.get("filter")
             if filter_in is not None:
                 #print("filtering:", filter_in)
@@ -64,12 +65,19 @@ def main():
     
     in_lst = PartitionedList.open(files=args)
     out_lst = PartitionedList.create(nparts, out_prefix, zout)
+
+    #print("ignore list:", ignore_list)
     
     for path in in_lst:
         if starts_with and not path.startswith(starts_with):    continue
         for ignore_path in ignore_list:
+            #print(f"checking path {path} for ignore path {ignore_path}")
             if path.startswith(ignore_path):
-                continue
+                ignore=True
+                break
+        else:
+            ignore=False
+        if ignore: continue
         if filter_in is not None and not filter_in.search(path): continue
         if remove_prefix is not None:
             if not path.startswith(remove_prefix):

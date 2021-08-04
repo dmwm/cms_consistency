@@ -38,8 +38,8 @@ while [ -n "$1" ]; do
         shift
         ;;
     -u)
-        unmerged_out_dir=$2
-        unmerged_config=$3
+        unmerged_config=$2
+        unmerged_out_dir=$3
         shift
         shift
         ;;
@@ -80,7 +80,7 @@ echo timestamp: $timestamp
 dump_url=root://${server}/cms:${dump_path}/dump_${timestamp}.gz
 
 # HACK
-# dump_url=root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/dump_20210730.gz
+dump_url=root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/dump_20210730.gz
 
 echo dump_url: $dump_url
 
@@ -156,7 +156,7 @@ for attempt in $attempts; do
     xrdcp ${dump_url} ${site_dump_tmp} 2> $stderr
     xrdcp_status=$?
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${site_dump_tmp} ]; then
-	    rm -f ${site_dump_tmp}
+	rm -f ${site_dump_tmp}
     	t1=`date +%s`
         
         python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
@@ -203,7 +203,7 @@ for attempt in $attempts; do
     fi
 done
 
-rm -f ${site_dump_tmp}
+# HACK rm -f ${site_dump_tmp}
 
 if [ "$downloaded" == "yes" ]; then
     python cmp3/json_file.py ${stats} set scanner.status -t "done"
