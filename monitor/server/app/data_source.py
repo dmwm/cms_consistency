@@ -116,6 +116,7 @@ class DataSource(object):
             except Exception as e:
                 d["error"] = str(e)
             out.append(d)
+        print("ls: out:", out)
         return out
         
     def open_stats_file(self, rse, run):
