@@ -7,6 +7,7 @@ scratch
 *.cfg
 Untitled.ipynb
 !RAL/partition.yaml
+!RAL/unmerged_partition.yaml
 
 config.json
 

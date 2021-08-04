@@ -10,7 +10,7 @@ class Stats(object):
         return self.Data[name]
         
     def overwrite(self, key, value):
-        self.Data[name] = value
+        self.Data[key] = value
         self.save()
         
     __setitem__ = overwrite

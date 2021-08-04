@@ -1,0 +1,8 @@
+rses: 
+    "*":
+        partitions: 1
+        preprocess:
+            filter:     "/store/unmerged/"
+            rewrite:
+                match:  "([^ ]+).*"
+                out:    \1

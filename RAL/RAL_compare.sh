@@ -18,7 +18,6 @@ out=$5
 key=""
 cert=""
 unmerged_out_dir=""
-unmerged_path="/store/unmerged/"
 
 # skip required args
 shift
@@ -41,14 +40,10 @@ while [ -n "$1" ]; do
         unmerged_out_dir=$2
         shift
         ;;
-    -U)
-        unmerged_path=$2
-        shift
-        ;;
-	*)
-		echo Unknown option $1
-		exit 1
-		;;
+    *)
+	echo Unknown option $1
+	exit 1
+	;;
     esac
     shift
 done    
@@ -76,7 +71,15 @@ attempts="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
 
 run=`date -u +%Y_%m_%d_00_00`
 timestamp=`date -u +%Y%m%d`
+echo run: $run
+echo timestamp: $timestamp
+
 dump_url=root://${server}/cms:${dump_path}/dump_${timestamp}.gz
+
+# HACK
+# dump_url=root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/dump_20210730.gz
+
+echo dump_url: $dump_url
 
 b_prefix=${scratch}/${RSE}_${run}_B.list
 a_prefix=${scratch}/${RSE}_${run}_A.list
@@ -95,7 +98,7 @@ if [ "$unmerged_out_dir" != "" ]; then
     unmerged_part_config=${scratch}/RAL_unmerged_part.yaml
     cat > $unmerged_part_config << _EOF_
 rses: 
-    RAL:
+    "*":
         partitions: 1
         preprocess:
             filter:     "/store/unmerged/"
@@ -147,7 +150,8 @@ for attempt in $attempts; do
     echo Attempt $attempt ...
     rm -f ${site_dump_tmp}
     attempt_time=`date -u`
-    xrdcp ${dump_url} ${site_dump_tmp} > ${scratch}/${RSE}_xrdcp_${run}.stderr 2>&1
+    stderr=${scratch}/${RSE}_xrdcp_${run}.stderr
+    xrdcp ${dump_url} ${site_dump_tmp} 2> $stderr
     xrdcp_status=$?
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${site_dump_tmp} ]; then
 	    rm -f ${site_dump_tmp}
@@ -157,12 +161,20 @@ for attempt in $attempts; do
         python cmp3/json_file.py ${stats} set scanner.scanner.status -t failed
         python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
         python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
-        
-        echo sleeping ...
+        python cmp3/json_file.py ${stats} set scanner.scanner.stderr -t - < $stderr
+	
+        echo download failed:
+        cat $stderr
+	echo
+        echo sleeping $sleep_interval ...
         sleep $sleep_interval
     else
-        echo succeeded
+        echo download succeeded
+        echo partitioning ...
         n=`python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
+	echo $n files in the list
+
+
     	t1=`date +%s`
         downloaded="yes"
 
@@ -170,13 +182,16 @@ for attempt in $attempts; do
         python cmp3/json_file.py ${stats} set scanner.scanner.status -t "done"
         python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
         python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
+        python cmp3/json_file.py ${stats} set scanner.scanner.stderr -t ""
 
         python cmp3/json_file.py ${stats} set scanner.total_files $n
         
         
         # unmerged files list and stats
         if [ "$unmerged_out_dir" != "" ]; then
-            n=`python3 cmp3/partition.py -c $unmerged_part_config -r RAL -z -q -n 1 -o ${um_list_prefix} ${site_dump_tmp}`
+            echo making unmerged files list ...
+            n=`python3 cmp3/partition.py -c $unmerged_part_config -r $RSE -z -q -n 1 -o ${um_list_prefix} ${site_dump_tmp}`
+	    echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
                 python cmp3/json_file.py $um_stats set scanner.total_files $n
