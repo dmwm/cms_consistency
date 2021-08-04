@@ -122,6 +122,7 @@ class WMHandler(WPHandler):
         return json.dumps(stats), "text/json"
         
     def ls(self, request, relpath, rse=None, **args):
+        rse = rse or "*"
         lst = self.App.UMDataSource.ls(rse)
         return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"], d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
         
