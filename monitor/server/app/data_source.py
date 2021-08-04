@@ -118,6 +118,11 @@ class DataSource(object):
             out.append(d)
         return out
         
+    def open_stats_file(self, rse, run):
+        path = f"{self.Path}/{rse}_{run}_stats.json"
+        return open(path, "r")
+        
+        
 class UMDataSource(DataSource):
     
     def postprocess_stats(self, data):

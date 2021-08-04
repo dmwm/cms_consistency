@@ -3,11 +3,11 @@
 
 #
 # Usage:
-#   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> 
+#   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> [options ...]
+#   Options:
 #         -c <cert or proxy file> 
 #         -k <key file>
-#         -u <unmerged list output directory>
-#         -U <unmerged root path>           default: /store/unmerged/
+#         -u <unmerged config.yaml> <unmerged list output directory>
 #
 
 config=$1
@@ -18,6 +18,7 @@ out=$5
 key=""
 cert=""
 unmerged_out_dir=""
+unmerged_config=""
 
 # skip required args
 shift
@@ -38,6 +39,8 @@ while [ -n "$1" ]; do
         ;;
     -u)
         unmerged_out_dir=$2
+        unmerged_config=$3
+        shift
         shift
         ;;
     *)
@@ -95,8 +98,7 @@ site_dump_tmp=${scratch}/${RSE}_${run}_site_dump.gz
 if [ "$unmerged_out_dir" != "" ]; then
     um_stats=${unmerged_out_dir}/${RSE}_${run}_stats.json
     um_list_prefix=${unmerged_out_dir}/${RSE}_files.list
-    unmerged_part_config=${scratch}/RAL_unmerged_part.yaml
-    cat > $unmerged_part_config << _EOF_
+    cat > /tmp/$$.junk << _EOF_
 rses: 
     "*":
         partitions: 1
@@ -165,14 +167,14 @@ for attempt in $attempts; do
 	
         echo download failed:
         cat $stderr
-	echo
+	    echo
         echo sleeping $sleep_interval ...
         sleep $sleep_interval
     else
         echo download succeeded
         echo partitioning ...
         n=`python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
-	echo $n files in the list
+	    echo $n files in the list
 
 
     	t1=`date +%s`
@@ -190,8 +192,8 @@ for attempt in $attempts; do
         # unmerged files list and stats
         if [ "$unmerged_out_dir" != "" ]; then
             echo making unmerged files list ...
-            n=`python3 cmp3/partition.py -c $unmerged_part_config -r $RSE -z -q -n 1 -o ${um_list_prefix} ${site_dump_tmp}`
-	    echo $n files in the list
+            n=`python3 cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o ${um_list_prefix} ${site_dump_tmp}`
+	        echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
                 python cmp3/json_file.py $um_stats set scanner.total_files $n
