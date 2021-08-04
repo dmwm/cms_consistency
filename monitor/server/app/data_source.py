@@ -117,6 +117,7 @@ class DataSource(object):
                 d["error"] = str(e)
             out.append(d)
         print("ls: out:", out)
+        sys.stdout.flush()
         return out
         
     def open_stats_file(self, rse, run):
