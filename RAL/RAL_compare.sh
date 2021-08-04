@@ -80,7 +80,7 @@ echo timestamp: $timestamp
 dump_url=root://${server}/cms:${dump_path}/dump_${timestamp}.gz
 
 # HACK
-dump_url=root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/dump_20210730.gz
+# dump_url=root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/dump_20210730.gz
 
 echo dump_url: $dump_url
 
@@ -192,7 +192,7 @@ for attempt in $attempts; do
         # unmerged files list and stats
         if [ "$unmerged_out_dir" != "" ]; then
             echo making unmerged files list ...
-            n=`python3 cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o ${um_list_prefix} ${site_dump_tmp}`
+            n=`python3 cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $site_dump_tmp`
 	        echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
@@ -203,7 +203,7 @@ for attempt in $attempts; do
     fi
 done
 
-# HACK rm -f ${site_dump_tmp}
+rm -f $site_dump_tmp
 
 if [ "$downloaded" == "yes" ]; then
     python cmp3/json_file.py ${stats} set scanner.status -t "done"
