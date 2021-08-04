@@ -32,11 +32,15 @@ def main():
     nparts = None
     out_prefix = opts["-o"]
     rewrite_match = rewrite_out = filter_in = remove_prefix = add_prefix = starts_with = None
+    ignore_list = []
     if "-c" in opts:
         rse = opts["-r"]
         config = Config(opts.get("-c"))
         preprocess = config.rse_param(rse, "preprocess")
+        ignore_list = config.rse_param(rse, "ignore_list") or []
         if preprocess is not None:
+            ignore_list += preprocess.get("ignore_list", [])
+            ignore_list = list(set(ignore_list))        # remove duplicates
             filter_in = preprocess.get("filter")
             if filter_in is not None:
                 #print("filtering:", filter_in)
@@ -63,6 +67,9 @@ def main():
     
     for path in in_lst:
         if starts_with and not path.startswith(starts_with):    continue
+        for ignore_path in ignore_list:
+            if path.starts_with(ignore_path):
+                continue
         if filter_in is not None and not filter_in.search(path): continue
         if remove_prefix is not None:
             if not path.startswith(remove_prefix):
