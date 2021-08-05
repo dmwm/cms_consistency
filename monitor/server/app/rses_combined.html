@@ -71,7 +71,7 @@
         {% if um_summary is none %}
             <td></td><td></td><td></td><td></td>
         {% else %}
-            <td><a href="./unmerged/rse?rse={{rse}}">{{um_summary['start_time']|as_dt}}</a></td>
+            <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
             <td>{{um_summary["files"]|none_as_blank}}</td>
