@@ -340,7 +340,10 @@ class Handler(WPHandler):
         
         return json.dumps(counts), "text/json"
         
-
+    def ls(self, request, relpath, rse="*", **args):
+        lst = self.App.CCDataSource.ls(rse)
+        return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"] or "", d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
+        
 def as_dt(t):
     # datetim in UTC
     if t is None:

@@ -143,7 +143,7 @@ class WMHandler(WPHandler):
         
     def ls(self, request, relpath, rse="*", **args):
         lst = self.App.UMDataSource.ls(rse)
-        return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"], d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
+        return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"] or "", d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
         
     def raw_stats(self, request, relpath, rse=None, run=None):
         f = self.App.UMDataSource.open_stats_file(rse, run)

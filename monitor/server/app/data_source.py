@@ -13,6 +13,10 @@ class DataSource(object):
             return "Data volume %s does not exist" % (self.Path,)
         return "OK"
         
+    def parse_path(self, path):
+        dir_path, fn = path.rsplit("/", 1)[-1]
+        return (dir_path,) + self.parse_filename(fn)
+        
     def parse_filename(self, fn):
         # filename looks like this:
         #
@@ -36,8 +40,7 @@ class DataSource(object):
         files = glob.glob(f"{self.Path}/*_stats.json")
         rses = set()
         for path in files:
-            fn = path.rsplit("/",1)[-1]
-            rse, timestamp, typ, ext = self.parse_filename(fn)
+            dirpath, rse, timestamp, typ, ext = self.parse_path(path)
             rses.add(rse)
         return sorted(list(rses))
 
@@ -92,9 +95,10 @@ class DataSource(object):
         out = []
         files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
         for path in files:
-            _, run = self.parse_stats_path(path) 
-            data = self.read_stats(rse, run, path=path)
-            out.append(data)
+            r, run = self.parse_stats_path(path) 
+            if r == rse:
+                rsedata = self.read_stats(rse, run, path=path)
+                out.append(data)
         return out
 
     def ls(self, rse="*", run="*", typ="*"):
@@ -102,11 +106,19 @@ class DataSource(object):
         files = sorted(glob.glob(pattern))
         out = []
         for path in files:
+            if rse != "*":
+                _, r, _, _, _ = self.parse_path(path)
+                if r != rse:
+                    continue
             d = { "path": path, "error":"",
-                "size": None, "ctime":None, "ctime_text":None
+                "size": None, "ctime":None, "ctime_text":None,
+                "real_path": None
             }
             try:
-                d["real_path"] = os.path.realpath(path)
+                real_path = os.path.realpath(path)
+                if real_path != path
+                    d["real_path"] = real_path
+                
             except Exception as e:
                 d["error"] = str(e)
             try:
