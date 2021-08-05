@@ -140,7 +140,7 @@ class UMDataSource(DataSource):
 
     def run_summary(self, stats):
         summary = {k:stats.get(k) for k in [
-            "start_time", "end_time", "status", "error", "files"
+            "start_time", "end_time", "status", "error", "files", "run"
         ]}
         #print("UMDataSource.run_summary: stats['files']=", stats.get("files"), "   summary['files']=", summary["files"])
         if summary.get("start_time") and summary.get("end_time"):
