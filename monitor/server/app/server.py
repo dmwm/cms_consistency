@@ -145,7 +145,10 @@ class Handler(WPHandler):
         um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
         
         for r in um_runs:
-            r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
+            if "end_time" in r and "start_time" in r:
+                r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
+            else:
+                r["elapsed_time_hours"] = None
             r["start_time_milliseconds"] = int(r["start_time"]*1000)
         
         return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
