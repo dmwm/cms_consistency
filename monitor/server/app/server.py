@@ -140,7 +140,7 @@ class Handler(WPHandler):
         #print(infos)
         
         um_data_source = self.App.UMDataSource
-        um_runs = um_data_source.all_runs_for_rse(rse)
+        um_runs = um_data_source.all_stats_for_rse(rse)
         
         return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
 
