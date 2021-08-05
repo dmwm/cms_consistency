@@ -194,6 +194,14 @@ class UMDataSource(DataSource):
                     break
         return rse_stats
         
+    def files(self, rse, typ="*"):
+        files = sorted(glob.glob(f"{self.Path}/{rse}_*_{typ}.*"))
+        return files
+        
+    def open_file(self, relpath):
+        return open(self.Path+"/"+relpath, "r")
+
+        
 class CCDataSource(DataSource):
     
     def parse_filename(self, fn):
@@ -340,12 +348,6 @@ class CCDataSource(DataSource):
         else:
             return None
 
-    def files(self, rse, typ="*"):
-        files = sorted(glob.glob(f"{self.Path}/{rse}_{typ}.*"))
-        return files
-        
-    def open_file(self, relpath):
-        return open(self.Path+"/"+relpath, "r")
 
     COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
 
