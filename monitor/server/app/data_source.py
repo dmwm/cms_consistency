@@ -14,7 +14,7 @@ class DataSource(object):
         return "OK"
         
     def parse_path(self, path):
-        dir_path, fn = path.rsplit("/", 1)[-1]
+        dir_path, fn = path.rsplit("/", 1)
         return (dir_path,) + self.parse_filename(fn)
         
     def parse_filename(self, fn):
