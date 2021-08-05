@@ -13,6 +13,8 @@
 
 {% block content %}
 
+<h1>Consistency Checking</h1>
+
 <table class="placement">
 	<tr>
 		<td>
@@ -26,7 +28,7 @@
 			        <th>Detected</th><th>Acted</th><th>Action status</th>
 			        <th>Detected</th><th>Confirmed</th><th>Acted</th><th>Action status</th>
 			    </tr>
-			    {% for t, info in runs %}
+			    {% for t, info in cc_runs %}
 			        <tr>
 			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
 			            <td>{{info["start_time"]|as_dt}}</td>
@@ -87,6 +89,31 @@
 			</script>
 		</td>
 	</tr>
+</table>
+
+<h1>Unmerged Files</h1>
+
+<table class="placement">
+	<tr>
+		<td>
+			<table class="data">
+			    <tr>
+			        <th rowspan>Run</th><th rowspan>Start time</th><th rowspan>Status</th><th>Files</th>
+			    </tr>
+                {% for run, info in um_runs %}
+                    <tr>
+                        <td>{{run}}</td>
+                        <td>{{info["start_time"]|as_dt}}</td>
+                        <td class="{{info['status']}}">{{info["status"]}}</td>
+                        <td>{{info["files"]|none_as_blank}}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </td>
+        <td>
+            <!-- chart -->
+        </td>
+    </tr>
 </table>
 
 {% endblock %}

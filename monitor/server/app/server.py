@@ -120,7 +120,7 @@ class Handler(WPHandler):
         runs = data_source.list_runs(rse)
         runs = sorted(runs, reverse=True)
         
-        infos = []
+        cc_infos = []
         for run in runs:
             stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
             summary = data_source.run_summary(stats)
@@ -129,7 +129,7 @@ class Handler(WPHandler):
             if status == "failed":
                 status = summary["failed"] + " failed"
             running = summary.get("running")
-            infos.append((
+            cc_infos.append((
                 run, 
                 {
                     "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running,
@@ -138,7 +138,11 @@ class Handler(WPHandler):
                 }
             ))
         #print(infos)
-        return self.render_to_response("show_rse.html", rse=rse, runs=infos)
+        
+        um_data_source = self.App.UMDataSource
+        um_runs = um_data_source.all_runs_for_rse(rse)
+        
+        return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
 
     def common_paths(self, lst, space="&nbsp;"):
         lst = sorted(lst)
