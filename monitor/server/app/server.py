@@ -331,7 +331,7 @@ class Handler(WPHandler):
             um_total = len(um_stats)
             um_success = len([x for x in um_stats if x.get("status") == "done"])
             cc_total = len(cc_stats)
-            cc_success = len([x for x in cc_stats if x.get("status") == "done"])
+            cc_success = len([x for x in cc_stats if x.get("cmp3", {}).get("status") == "done"])
             
             counts[rse] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success)
         
