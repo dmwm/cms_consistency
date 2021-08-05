@@ -323,6 +323,7 @@ class Handler(WPHandler):
         counts = {}      # {rse -> (cc_total, um_total, cc_success, um_success)}
         
         for rse in rses:
+            if not rse: continue
             um_stats = um_data_source.all_stats_for_rse(rse)
             cc_stats = cc_data_source.all_stats_for_rse(rse)
             
