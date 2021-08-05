@@ -62,7 +62,8 @@
     				// runs is in reversed order
     				var data = [
     					{% for t, info in cc_runs|reverse %}
-                        ,[	    new Date({{info["start_time_milliseconds"]}}), 
+                        {{',' if not loop.first }}
+                        [	    new Date({{info["start_time_milliseconds"]}}), 
     							{{info["ndark"] if info["ndark"] is not none else "null"}},
     							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
     						]
