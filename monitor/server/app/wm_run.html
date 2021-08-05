@@ -13,37 +13,37 @@
 {% block content %}
 
 <table class="form">    
-    <tr>    <th>Run</th><td>{{latest_stats["run"]}}</td> </tr>
-    <tr>    <th>Server</th><td>{{latest_stats["server"]}}</td>  </tr>
-    <tr>    <th>Server root</th><td>{{latest_stats["server_root"]}}</td>  </tr>
-    <tr>    <th>Start time</th><td>{{latest_stats["start_time"]|as_dt}}</td>  </tr>
+    <tr>    <th>Run</th><td>{{run_stats["run"]}}</td> </tr>
+    <tr>    <th>Server</th><td>{{run_stats["server"]}}</td>  </tr>
+    <tr>    <th>Server root</th><td>{{run_stats["server_root"]}}</td>  </tr>
+    <tr>    <th>Start time</th><td>{{run_stats["start_time"]|as_dt}}</td>  </tr>
     
-    {% if latest_stats["error"] %}
-        <tr>    <th>Status</th><td>{{latest_stats["status"]}}</td>  </tr>
-        <tr>    <th>Error</th><td>{{latest_stats["error"] or ''}}</td>  </tr>
+    {% if run_stats["error"] %}
+        <tr>    <th>Status</th><td>{{run_stats["status"]}}</td>  </tr>
+        <tr>    <th>Error</th><td>{{run_stats["error"] or ''}}</td>  </tr>
     {% else %}
-        <tr>    <th>End time</th><td>{{latest_stats["end_time"]|as_dt}}</td>  </tr>
+        <tr>    <th>End time</th><td>{{run_stats["end_time"]|as_dt}}</td>  </tr>
         <tr>    <th>Elapsed time</th>
-                <td>{% if latest_stats["end_time"] and latest_stats["start_time"] -%} 
-                        {{(latest_stats["end_time"]-latest_stats["start_time"])|hms}} 
+                <td>{% if run_stats["end_time"] and run_stats["start_time"] -%} 
+                        {{(run_stats["end_time"]-run_stats["start_time"])|hms}} 
                     {%- endif -%}</td>  
         </tr>
-        <tr>    <th>Status</th><td>{{latest_stats["status"]}}</td>  </tr>
+        <tr>    <th>Status</th><td>{{run_stats["status"]}}</td>  </tr>
         <tr>    <th>Files</th>
-            <td>{{latest_stats["files"]}} 
+            <td>{{run_stats["files"]}} 
             <a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}&format=raw">gzip</a>
             <a href="./files/{{rse}}_wm_file_list.json?rse={{rse}}&format=json">json</a>
         </td>
         </tr>
-        <tr>    <th>Directories</th><td>{{latest_stats["directories"]}}</td>  </tr>
-        <tr>    <th>Empty directories</th><td>{{latest_stats["empty_directories"]}}</td>  </tr>
+        <tr>    <th>Directories</th><td>{{run_stats["directories"]}}</td>  </tr>
+        <tr>    <th>Empty directories</th><td>{{run_stats["empty_directories"]}}</td>  </tr>
     {% endif %}
 </table>
 
 <h3>Raw JSON statistics</h3>
 
 <pre class="code">
-    {{raw_latest_stats|as_json}}
+    {{raw_run_stats|as_json}}
 </pre>
 
                 
