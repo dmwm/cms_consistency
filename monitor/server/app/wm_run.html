@@ -30,9 +30,12 @@
         </tr>
         <tr>    <th>Status</th><td>{{run_stats["status"]}}</td>  </tr>
         <tr>    <th>Files</th>
-            <td>{{run_stats["files"]}} 
-            <a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}&format=raw">gzip</a>
-            <a href="./files/{{rse}}_wm_file_list.json?rse={{rse}}&format=json">json</a>
+            <td>
+                {{run_stats["files"]}} 
+                {% if is_latest_run %}
+                    <a href="./files/{{rse}}_wm_file_list.gz?rse={{rse}}&format=raw">gzip</a>
+                    <a href="./files/{{rse}}_wm_file_list.json?rse={{rse}}&format=json">json</a>
+                {% endif %}
         </td>
         </tr>
         <tr>    <th>Directories</th><td>{{run_stats["directories"]}}</td>  </tr>
