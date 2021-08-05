@@ -97,7 +97,7 @@ class DataSource(object):
         for path in files:
             r, run = self.parse_stats_path(path) 
             if r == rse:
-                rsedata = self.read_stats(rse, run, path=path)
+                data = self.read_stats(rse, run, path=path)
                 out.append(data)
         return out
 
