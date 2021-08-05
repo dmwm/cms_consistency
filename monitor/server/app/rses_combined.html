@@ -105,11 +105,16 @@
                 if( um_total > 0 )
                 {
                     var o = document.getElementById(rse+"_um_error_ratio");
+                    if( o == null )
+                        console.log("can not find UM td for rse "+rse);
                     o.innerHTML = "" +  um_errors + "/" + um_total + " (" + Math.round(um_errors/um_total * 100) + "%)";
                 }
+                
                 if( cc_total > 0 )
                 {
                     var o = document.getElementById(rse+"_cc_error_ratio");
+                    if( o == null )
+                        console.log("can not find CC td for rse "+rse);
                     o.innerHTML = "" +  cc_errors + "/" + cc_total + " (" + Math.round(cc_errors/cc_total * 100) + "%)";
                 }
             }
