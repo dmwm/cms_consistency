@@ -6,6 +6,7 @@ from data_source import CCDataSource, UMDataSource
 
 Version = "1.7.1"
 
+
 def display_file_list(lst):
     Indent = "    "
     last_items = []
