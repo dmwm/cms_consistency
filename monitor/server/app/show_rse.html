@@ -54,38 +54,37 @@
 			</table>
 		</td>
 		<td style="padding:1px 50px">
-			<div id="chart"></div>
+			<div id="cc_chart"></div>
 			<script type="text/javascript">
-		        google.charts.load('current', {'packages':['bar']});
-		        google.charts.setOnLoadCallback(drawChart);
-				// runs is in reversed order
-				var data = [
-					['Run', 'Detected dark', 'Detected missing']
-					{% for t, info in cc_runs|reverse %}
-                    ,[	    "{{info['start_time']|as_date}}", 
-							{{info["ndark"] if info["ndark"] is not none else "null"}},
-							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
-						]
-					{% endfor %}
-				];
-				
-				var options = {
-						  colors: ["#888", "FA8"],
-						  bar: {
-							  groupWidth: "90%"
-						  },
-                          //hAxis: {
-                          //    format:"MMM d, y"
-                          //},
-				          chart: {
-				            //title: 'Run history'
-				          }
-				        };
 						
-				function drawChart()
+				function drawCCChart()
 				{
+    				// runs is in reversed order
+    				var data = [
+    					['Run', 'Detected dark', 'Detected missing']
+    					{% for t, info in cc_runs|reverse %}
+                        ,[	    "{{info['start_time']|as_date}}", 
+    							{{info["ndark"] if info["ndark"] is not none else "null"}},
+    							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
+    						]
+    					{% endfor %}
+    				];
+				
+    				var options = {
+    						  colors: ["#888", "FA8"],
+    						  bar: {
+    							  groupWidth: "90%"
+    						  },
+                              //hAxis: {
+                              //    format:"MMM d, y"
+                              //},
+    				          chart: {
+    				            //title: 'Run history'
+    				          }
+    				        };
+                            
 					var dataTable = google.visualization.arrayToDataTable(data);
-					var chart = new google.charts.Bar(document.getElementById('chart'));
+					var chart = new google.charts.Bar(document.getElementById('cc_chart'));
 					chart.draw(dataTable, google.charts.Bar.convertOptions(options));
 				}
 			</script>
@@ -115,13 +114,10 @@
         </td>
         <td>
             <!-- chart -->
-                <div id="stats_chart"></div>
+                <div id="um_chart"></div>
                 
                 <script type="text/javascript">
-    		        google.charts.load('current', {'packages':['line', 'corechart']});
-    		        google.charts.setOnLoadCallback(drawChart);
-                    
-    				function drawChart()
+    				function drawUMChart()
     				{
 
                         var data = new google.visualization.DataTable();
@@ -167,15 +163,24 @@
                                 format: "M/d/yy"
                             }
                         };   
-                    
 
-
-    					var chart = new google.visualization.LineChart(document.getElementById('stats_chart'));
+    					var chart = new google.visualization.LineChart(document.getElementById('um_chart'));
     					chart.draw(data, options);
     				}
                 </script>
         </td>
     </tr>
 </table>
+
+
+<script type="text/javascript">
+    function drawCharts()
+    {
+        drawCCChart();
+        drawUMChart();
+    }
+    google.charts.load('current', {'packages':['line', 'bar', 'corechart']});
+    google.charts.setOnLoadCallback(drawCharts);
+</script>
 
 {% endblock %}
