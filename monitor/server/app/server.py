@@ -144,6 +144,7 @@ class Handler(WPHandler):
         um_runs = um_data_source.all_stats_for_rse(rse)
         um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
         um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
+ 
         
         try:
             for r in um_runs:
