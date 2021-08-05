@@ -85,8 +85,8 @@
                     data.addColumn('number', 'Detected missing');
                     data.addRows(data);
                     
-					var chart = new google.charts.Bar(document.getElementById('cc_chart'));
-					chart.draw(dataTable, google.charts.Bar.convertOptions(options));
+					var chart = new google.visualization.LineChart(document.getElementById('cc_chart'));
+					chart.draw(data, options);
 				}
 			</script>
 		</td>
