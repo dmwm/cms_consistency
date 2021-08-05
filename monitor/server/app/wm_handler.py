@@ -118,6 +118,18 @@ class WMHandler(WPHandler):
             raw_latest_stats = raw_latest_stats
         )
         
+    def show_run(self, request, relpath, rse=None, run=None, **args):
+        if not rse or not run:
+            return "RSE and run must be specified", 400
+        data_source = self.App.UMDataSource
+
+        run_stats = data_source.read_stats(rse, run)
+        raw_stats = data_source.read_stats(rse, run, raw=True)
+
+        return self.render_to_response("wm_run.html", rse=rse, run=run, run_stats=run_stats,
+            raw_stats = raw_stats
+        )
+        
     def stats(self, request, relpath, rse=None, run=None):
         if run:
             stats = self.App.UMDataSource.read_stats(rse, run)
