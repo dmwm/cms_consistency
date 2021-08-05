@@ -142,6 +142,7 @@ class Handler(WPHandler):
         
         um_data_source = self.App.UMDataSource
         um_runs = um_data_source.all_stats_for_rse(rse)
+        um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
         
         for r in um_runs:
             r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
