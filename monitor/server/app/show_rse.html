@@ -112,6 +112,65 @@
         </td>
         <td>
             <!-- chart -->
+                <div id="stats_chart"></div>
+                
+                <script type="text/javascript">
+    		        google.charts.load('current', {'packages':['line', 'corechart']});
+    		        google.charts.setOnLoadCallback(drawChart);
+                    
+    				function drawChart()
+    				{
+
+                        var data = new google.visualization.DataTable();
+                        data.addColumn('date', 'Date');
+                        data.addColumn('number', 'Files');
+                        data.addColumn('number', 'Elapsed time');
+                        data.addRows([
+                            {% for r in um_runs %}
+                                {{',' if not loop.first }}[new Date({{r["start_time_miliseconds"]}}), {{r["files"]}}, {{r["elapsed_time"]}}]
+                            {% endfor %}                    
+                        ]);
+                        //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
+                        //date_formatter.format(data, 0)
+                        var options = {
+                            title: 'Statistics by run',
+                            width: 600,
+                            height: 300,
+                            series: {
+                                0: {    targetAxisIndex: 0    }, 
+                                1: {    targetAxisIndex: 1   }
+                            },
+                            vAxes: {
+                                0: {    
+                                    title: "Number of files",
+                                    viewWindow:{
+                                        min:0
+                                    },
+                                    gridlines: {
+                                        color: "#222"
+                                    }
+                                },
+                                1: {    
+                                    title: "Elapsed time, hours",
+                                    viewWindow:{
+                                        min:0
+                                    },
+                                    gridlines: {
+                                        color: "#CCC"
+                                    }
+                                }
+                            },
+                            hAxis: {
+                                format: "M/d/yy"
+                            }
+                        };   
+                    
+
+
+    					var chart = new google.visualization.LineChart(document.getElementById('stats_chart'));
+    					chart.draw(data, options);
+    				}
+                </script>
         </td>
     </tr>
 </table>
