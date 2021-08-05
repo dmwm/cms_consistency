@@ -94,7 +94,7 @@
 <script type="text/javascript">
     var counts_receiver = {
         data_received: function(counts) {
-            for ( rse of counts )
+            for ( rse in counts )
             {
                 var info = counts[rse];
                 var um_total = info.um_total;
