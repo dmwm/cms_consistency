@@ -314,6 +314,29 @@ class Handler(WPHandler):
                 yield data
                 data = f.read(10240)
         return read_file(f), "text/plain"
+        
+    def success_ratios(self, request, relpath, **args):
+        um_data_source = self.App.UMDataSource
+        cc_data_source = self.App.CCDataSource
+        
+        rses = set(um_data_source.list_reses()) | set(cc_data_source.list_reses())
+        counts = {}      # {rse -> (cc_total, um_total, cc_success, um_success)}
+        
+        for rse in rses:
+            um_stats = um_data_source.all_stats_for_rse(rse)
+            cc_stats = cc_data_source.all_stats_for_rse(rse)
+            
+            um_total = um_success = cc_total = cc_success = 0
+            
+            um_total = len(um_stats)
+            um_success = len([x for x in um_stats if x.get("status") == "done"])
+            cc_total = len(cc_stats)
+            cc_success = len([x for x in cc_stats if x.get("status") == "done"])
+            
+            counts["rse"] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success)
+        
+        return json.dumps(counts), "text/json"
+        
 
 def as_dt(t):
     # datetim in UTC
