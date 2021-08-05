@@ -80,13 +80,13 @@
     				        };
                             
                     var dataTable = new google.visualization.DataTable();
-                    data.addColumn('date', 'Date');
-                    data.addColumn('number', 'Detected dark');
-                    data.addColumn('number', 'Detected missing');
-                    data.addRows(data);
+                    dataTable.addColumn('date', 'Date');
+                    dataTable.addColumn('number', 'Detected dark');
+                    dataTable.addColumn('number', 'Detected missing');
+                    dataTable.addRows(data);
                     
 					var chart = new google.visualization.LineChart(document.getElementById('cc_chart'));
-					chart.draw(data, options);
+					chart.draw(dataTable, options);
 				}
 			</script>
 		</td>
