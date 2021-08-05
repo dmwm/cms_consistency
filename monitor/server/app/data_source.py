@@ -150,7 +150,7 @@ class UMDataSource(DataSource):
         return summary
         
     def file_list_as_file(self, rse):
-        path = f"{self.Path}/{rse}_files.list.00000"
+        path = f"{self.Path}/{rse}_files.list"
         if os.path.isfile(path):
             f = open(path, "rb")
             type = "text/plain"
@@ -173,7 +173,7 @@ class UMDataSource(DataSource):
                 yield line
         
     def file_list_as_iterable(self, rse):
-        path = f"{self.Path}/{rse}_files.list.00000"
+        path = f"{self.Path}/{rse}_files.list"
         if os.path.isfile(path):
             f = open(path, "r")
         elif os.path.isfile(path + ".gz"):
