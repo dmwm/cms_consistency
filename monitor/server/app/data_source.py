@@ -124,6 +124,10 @@ class DataSource(object):
         path = f"{self.Path}/{rse}_{run}_stats.json"
         return open(path, "r")
         
+    def files(self, rse, typ="*"):
+        files = sorted(glob.glob(f"{self.Path}/{rse}_*_{typ}.*"))
+        return files
+        
         
 class UMDataSource(DataSource):
     
@@ -193,10 +197,6 @@ class UMDataSource(DataSource):
                         rse_stats[k] = r.get(k)
                     break
         return rse_stats
-        
-    def files(self, rse, typ="*"):
-        files = sorted(glob.glob(f"{self.Path}/{rse}_*_{typ}.*"))
-        return files
         
     def open_file(self, relpath):
         return open(self.Path+"/"+relpath, "r")
