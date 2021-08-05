@@ -27,12 +27,13 @@
     <th colspan=5>Unmerged Files</th>
 </tr>
 <tr>
-    <th rowspan=2>Error rate</th>
+    <th rowspan=2>Errors</th>
     <th rowspan=2>Last run</th>
     <th rowspan=2>Status</th>
     <th colspan=4>Dark files</th>
     <th colspan=3>Missing files</th>
-    <th rowspan=2>Error rate</th>
+
+    <th rowspan=2>Errors</th>
     <th rowspan=2>Last run</th>
     <th rowspan=2>Elapsed time</th>
     <th rowspan=2>Status</th>
@@ -107,7 +108,7 @@
                     var o = document.getElementById(rse+"_um_error_ratio");
                     if( o == null )
                         console.log("can not find UM td for rse "+rse);
-                    o.innerHTML = "" +  um_errors + "/" + um_total + " (" + Math.round(um_errors/um_total * 100) + "%)";
+                    o.innerHTML = "" +  um_errors + "/" + um_total;
                 }
                 
                 if( cc_total > 0 )
@@ -115,7 +116,7 @@
                     var o = document.getElementById(rse+"_cc_error_ratio");
                     if( o == null )
                         console.log("can not find CC td for rse "+rse);
-                    o.innerHTML = "" +  cc_errors + "/" + cc_total + " (" + Math.round(cc_errors/cc_total * 100) + "%)";
+                    o.innerHTML = "" +  cc_errors + "/" + cc_total;
                 }
             }
         }
