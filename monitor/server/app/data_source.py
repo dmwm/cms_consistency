@@ -116,7 +116,7 @@ class DataSource(object):
             }
             try:
                 real_path = os.path.realpath(path)
-                if real_path != path
+                if real_path != path:
                     d["real_path"] = real_path
                 
             except Exception as e:
