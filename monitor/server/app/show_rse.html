@@ -100,9 +100,9 @@
 			    <tr>
 			        <th rowspan>Run</th><th rowspan>Start time</th><th rowspan>Status</th><th>Files</th>
 			    </tr>
-                {% for run, info in um_runs %}
+                {% for info in um_runs %}
                     <tr>
-                        <td>{{run}}</td>
+                        <td>{{info["run"]}}</td>
                         <td>{{info["start_time"]|as_dt}}</td>
                         <td class="{{info['status']}}">{{info["status"]}}</td>
                         <td>{{info["files"]|none_as_blank}}</td>
