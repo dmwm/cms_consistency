@@ -99,18 +99,18 @@
                 var info = counts[rse];
                 var um_total = info.um_total;
                 var cc_total = info.cc_total;
-                var um_success = info.um_success;
-                var cc_success = info.cc_success;
+                var um_errors = um_total-info.um_success;
+                var cc_errors = cc_total-info.cc_success;
                 
                 if( um_total > 0 )
                 {
                     var o = document.getElementById(rse+"_um_error_ratio");
-                    o.innerHTML = "" + Math.round((um_total-um_success)/um_total * 100) + "%";
+                    o.innerHTML = "" +  um_errors + "/" + um_total + " (" + Math.round(um_errors/um_total * 100) + "%)";
                 }
                 if( cc_total > 0 )
                 {
                     var o = document.getElementById(rse+"_cc_error_ratio");
-                    o.innerHTML = "" + Math.round((cc_total-cc_success)/um_total * 100) + "%";
+                    o.innerHTML = "" +  cc_errors + "/" + cc_total + " (" + Math.round(cc_errors/cc_total * 100) + "%)";
                 }
             }
         }
