@@ -143,9 +143,9 @@ cat > $stats_update << _EOF_
     }
 _EOF_
 
-python cmp3/json_file.py -c $stats set scanner - < $stats_update
+python3 cmp3/json_file.py -c $stats set scanner - < $stats_update
 if [ "$um_stats" != "" ]; then
-    python cmp3/json_file.py -c $um_stats set scanner - < $stats_update
+    python3 cmp3/json_file.py -c $um_stats set scanner - < $stats_update
 fi   
 
 for attempt in $attempts; do
@@ -159,11 +159,11 @@ for attempt in $attempts; do
 	rm -f ${site_dump_tmp}
     	t1=`date +%s`
         
-        python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
-        python cmp3/json_file.py ${stats} set scanner.scanner.status -t failed
-        python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
-        python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
-        python cmp3/json_file.py ${stats} set scanner.scanner.stderr -t - < $stderr
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.status -t failed
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.stderr -t - < $stderr
 	
         echo download failed:
         cat $stderr
@@ -180,13 +180,13 @@ for attempt in $attempts; do
     	t1=`date +%s`
         downloaded="yes"
 
-        python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
-        python cmp3/json_file.py ${stats} set scanner.scanner.status -t "done"
-        python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
-        python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
-        python cmp3/json_file.py ${stats} set scanner.scanner.stderr -t ""
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.status -t "done"
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
+        python3 cmp3/json_file.py ${stats} set scanner.scanner.stderr -t ""
 
-        python cmp3/json_file.py ${stats} set scanner.total_files $n
+        python3 cmp3/json_file.py ${stats} set scanner.total_files $n
         
         
         # unmerged files list and stats
@@ -196,7 +196,7 @@ for attempt in $attempts; do
 	        echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
-                python cmp3/json_file.py $um_stats set scanner.files $n
+                python3 cmp3/json_file.py $um_stats set scanner.files $n
             fi   
         fi
         break
@@ -206,19 +206,19 @@ done
 rm -f $site_dump_tmp
 
 if [ "$downloaded" == "yes" ]; then
-    python cmp3/json_file.py ${stats} set scanner.status -t "done"
-    python cmp3/json_file.py ${stats} set scanner.end_time $t1
+    python3 cmp3/json_file.py ${stats} set scanner.status -t "done"
+    python3 cmp3/json_file.py ${stats} set scanner.end_time $t1
     if [ "$um_stats" != "" ]; then
-        python cmp3/json_file.py $um_stats set scanner.status -t "done"
-        python cmp3/json_file.py $um_stats set scanner.end_time $t1
+        python3 cmp3/json_file.py $um_stats set scanner.status -t "done"
+        python3 cmp3/json_file.py $um_stats set scanner.end_time $t1
     fi
 else
-    python cmp3/json_file.py ${stats} set scanner.status -t "failed"
-    python cmp3/json_file.py ${stats} set scanner.end_time $t1
+    python3 cmp3/json_file.py ${stats} set scanner.status -t "failed"
+    python3 cmp3/json_file.py ${stats} set scanner.end_time $t1
 
     if [ "$um_stats" != "" ]; then
-        python cmp3/json_file.py $um_stats set scanner.status -t "failed"
-        python cmp3/json_file.py $um_stats set scanner.end_time $t1
+        python3 cmp3/json_file.py $um_stats set scanner.status -t "failed"
+        python3 cmp3/json_file.py $um_stats set scanner.end_time $t1
     fi
     exit 1
 fi
