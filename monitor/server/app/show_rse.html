@@ -13,9 +13,11 @@
 
 {% block content %}
 
-<h1>Consistency Checking</h1>
-
 <table class="placement">
+    <tr>
+        <td colspan=2><h1>Consistency Checking</h1>
+        </td>
+    </tr>
 	<tr>
 		<td>
 			<table class="data">
@@ -59,7 +61,7 @@
 				// runs is in reversed order
 				var data = [
 					['Run', 'Detected dark', 'Detected missing']
-					{% for t, info in runs|reverse %}
+					{% for t, info in cc_runs|reverse %}
                     ,[	    "{{info['start_time']|as_date}}", 
 							{{info["ndark"] if info["ndark"] is not none else "null"}},
 							{{info["nmissing"] if info["nmissing"] is not none else "null"}}
@@ -89,11 +91,12 @@
 			</script>
 		</td>
 	</tr>
-</table>
 
-<h1>Unmerged Files</h1>
+    <tr>
+        <td colspan=2><h1>Unmerged Files</h1>
+        </td>
+    </tr>
 
-<table class="placement">
 	<tr>
 		<td>
 			<table class="data">
@@ -126,7 +129,7 @@
                         data.addColumn('number', 'Files');
                         data.addColumn('number', 'Elapsed time');
                         data.addRows([
-                            {% for r in um_runs %}
+                            {% for r in um_runs|reverse %}
                                 {{',' if not loop.first }}[new Date({{r["start_time_miliseconds"]}}), {{r["files"]}}, {{r["elapsed_time"]}}]
                             {% endfor %}                    
                         ]);
