@@ -102,7 +102,7 @@
 			    </tr>
                 {% for info in um_runs %}
                     <tr>
-                        <td>{{info["run"]}}</td>
+                        <td><a href="./unmerged/show_run?rse={{rse}}&run={{info['run']}}">{{info["run"]}}</td>
                         <td>{{info["start_time"]|as_dt}}</td>
                         <td class="{{info['status']}}">{{info["status"]}}</td>
                         <td>{{info["files"]|none_as_blank}}</td>
