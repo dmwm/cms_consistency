@@ -108,7 +108,10 @@
                     var o = document.getElementById(rse+"_um_error_ratio");
                     if( o == null )
                         console.log("can not find UM td for rse "+rse);
-                    o.innerHTML = "" +  um_errors + "/" + um_total;
+                    if( um_errors )
+                        o.innerHTML = "" +  um_errors + "/" + um_total;
+                    else
+                        o.innerHTML = "0";
                 }
                 
                 if( cc_total > 0 )
@@ -116,7 +119,10 @@
                     var o = document.getElementById(rse+"_cc_error_ratio");
                     if( o == null )
                         console.log("can not find CC td for rse "+rse);
-                    o.innerHTML = "" +  cc_errors + "/" + cc_total;
+                    if ( cc_errors )
+                        o.innerHTML = "" +  cc_errors + "/" + cc_total;
+                    else
+                        o.innerHTML = "0";
                 }
             }
         }
