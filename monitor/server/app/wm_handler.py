@@ -113,7 +113,7 @@ class WMHandler(WPHandler):
         for r in stats_by_run:
             r["elapsed_time"] = (r["end_time"] - r["start_time"])/3600
             r["start_time_miliseconds"] = int(r["start_time"]*1000)
-        raw_latest_stats = data.source.read_stats(rse, run, raw=True)
+        raw_latest_stats = data_source.read_stats(rse, run, raw=True)
         return self.render_to_response("wm_rse.html", rse=rse, latest_stats=latest_stats, stats_by_run=stats_by_run,
             raw_latest_stats = raw_latest_stats
         )
