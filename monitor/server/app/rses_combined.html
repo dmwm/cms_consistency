@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
 
+{% block html_head %}
+    <script type="text/javascript" src="./static/js/request.js"></script>
+{% endblock %}
+
+
 {% block content %}
 
 {#
@@ -18,14 +23,16 @@
 
 <tr>
     <th rowspan=3>RSE</th>
-    <th colspan=9>Data Consistency</th>
-    <th colspan=4>Unmerged Files</th>
+    <th colspan=10>Data Consistency</th>
+    <th colspan=5>Unmerged Files</th>
 </tr>
 <tr>
+    <th rowspan=2>Error rate</th>
     <th rowspan=2>Last run</th>
     <th rowspan=2>Status</th>
     <th colspan=4>Dark files</th>
     <th colspan=3>Missing files</th>
+    <th rowspan=2>Error rate</th>
     <th rowspan=2>Last run</th>
     <th rowspan=2>Elapsed time</th>
     <th rowspan=2>Status</th>
@@ -50,8 +57,9 @@
     <tr>
         <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
         {% if cc_summary is none %}
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
+            <td id="{{rse}}_cc_error_ratio"></td>
             <td><a href="./show_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["detected"]|none_as_blank}}</td>
@@ -69,8 +77,9 @@
         {% endif %}
         
         {% if um_summary is none %}
-            <td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td>
         {% else %}
+            <td id="{{rse}}_um_error_ratio"></td>
             <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
@@ -81,5 +90,38 @@
             
 </table>
 
+
+<script type="text/javascript">
+    var counts_receiver = {
+        data_received: function(counts) {
+            for ( rse of counts )
+            {
+                var info = counts[rse];
+                var um_total = info.um_total;
+                var cc_total = info.cc_total;
+                var um_success = info.um_success;
+                var cc_success = info.cc_success;
+                
+                if( um_total > 0 )
+                {
+                    var o = document.getElementById(rse+"_um_error_ratio");
+                    o.innerHTML = "" + Math.round((um_total-um_success)/um_total * 100) + "%";
+                }
+                if( cc_total > 0 )
+                {
+                    var o = document.getElementById(rse+"_cc_error_ratio");
+                    o.innerHTML = "" + Math.round((cc_total-cc_success)/um_total * 100) + "%";
+                }
+            }
+        }
+    };
+    
+    var request=HTTPRequest("./success_counts", counts_receiver, "json");
+    
+</script>
+    
+    
+    
+    
 
 {% endblock %}

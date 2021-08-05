@@ -36,6 +36,7 @@ class Handler(WPHandler):
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
         self.WM = self.unmerged = WMHandler(*params, **args)
+        self.static = WPStaticHandler(*params, **args)
         
     def __index(self, request, relpath, **args):
         #
@@ -315,7 +316,7 @@ class Handler(WPHandler):
                 data = f.read(10240)
         return read_file(f), "text/plain"
         
-    def success_ratios(self, request, relpath, **args):
+    def success_counts(self, request, relpath, **args):
         um_data_source = self.App.UMDataSource
         cc_data_source = self.App.CCDataSource
         
