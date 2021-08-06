@@ -44,6 +44,21 @@ class DataSource(object):
             rses.add(rse)
         return sorted(list(rses))
 
+    NLAST_RUNS = 10
+    
+    def list_runs(self, rse, nlast=NLAST_RUNS):
+        files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
+        runs = []
+        for path in files:
+            fn = path.rsplit("/",1)[-1]
+            if os.stat(path).st_size > 0:
+                r, timestamp, typ, ext = self.parse_filename(fn)
+                if r == rse:
+                    # if the RSE was X, then rses like X_Y will appear in this list too, 
+                    # so double check that we get the right RSE
+                    runs.append(timestamp)
+        return sorted(runs)[-nlast:]
+        
     def read_stats(self, rse, run, path=None, raw=False):
         path = path or f"{self.Path}/{rse}_{run}_stats.json"
         try:
@@ -91,7 +106,7 @@ class DataSource(object):
         else:
             return None
             
-    def all_stats_for_rse(self, rse):
+    def all_stats_for_rse(self, rse, limit=NLAST_RUNS):
         out = []
         files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
         for path in files:
@@ -99,6 +114,8 @@ class DataSource(object):
             if r == rse:
                 data = self.read_stats(rse, run, path=path)
                 out.append(data)
+        if limit is not None:
+            out = out[-limit:]
         return out
 
     def ls(self, rse="*", run="*", typ="*"):
@@ -249,21 +266,6 @@ class CCDataSource(DataSource):
                     break
         return rse_stats
 
-    NLAST_RUNS = 8
-    
-    def list_runs(self, rse, nlast=NLAST_RUNS):
-        files = glob.glob(f"{self.Path}/{rse}_*_stats.json")
-        runs = []
-        for path in files:
-            fn = path.rsplit("/",1)[-1]
-            if os.stat(path).st_size > 0:
-                r, timestamp, typ, ext = self.parse_filename(fn)
-                if r == rse:
-                    # if the RSE was X, then rses like X_Y will appear in this list too, 
-                    # so double check that we get the right RSE
-                    runs.append(timestamp)
-        return sorted(runs)[-nlast:]
-        
     def file_path(self, rse, run, typ):
         ext = "json" if typ == "stats" else "list"
         return f"{self.Path}/{rse}_{run}_{typ}.{ext}"
