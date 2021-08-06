@@ -134,7 +134,7 @@
             var color = colors[sts];
             if( color == null )
                 color="#AAA";
-            ctx.fillStyle(color);
+            ctx.fillStyle = color;
             ctx.fillRect(x,0,x+dx,dy);
             x += dx;
         }
