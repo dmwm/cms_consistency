@@ -113,7 +113,8 @@ class DataSource(object):
             r, run = self.parse_stats_path(path) 
             if r == rse:
                 data = self.read_stats(rse, run, path=path)
-                out.append(data)
+                if data:
+                    out.append(data)
         if limit is not None:
             out = out[-limit:]
         return out
