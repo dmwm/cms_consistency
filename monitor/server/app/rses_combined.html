@@ -159,7 +159,6 @@
                     else
                         o.innerHTML = "0";
                     
-                    make_status_chart(rse+"_cc_status_chart", info.cc_status);
                 }
                 
                 if( cc_total > 0 )
@@ -171,6 +170,7 @@
                         o.innerHTML = "" +  cc_errors + "/" + cc_total;
                     else
                         o.innerHTML = "0";
+                    make_status_chart(rse+"_cc_status_chart", info.cc_status);
                 }
             }
         }
