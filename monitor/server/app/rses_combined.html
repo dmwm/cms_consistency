@@ -80,7 +80,7 @@
         {% if um_summary is none %}
             <td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td id="{{rse}}_um_errors"></td>
+            <td><span id="{{rse}}_um_errors"></span> <canvas id="{{rse}}_um_status_chart" width=50 height=10></canvas></td>
             <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
