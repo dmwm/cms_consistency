@@ -60,7 +60,7 @@
         {% if cc_summary is none %}
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td><span id="{{rse}}_cc_errors"></span> <canvas id="{{rse}}_cc_status_chart" width=50 height=10></canvas></td>
+            <td><canvas id="{{rse}}_cc_status_chart" width=50 height=10></canvas></td>
             <td><a href="./show_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["detected"]|none_as_blank}}</td>
@@ -80,7 +80,7 @@
         {% if um_summary is none %}
             <td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td><span id="{{rse}}_um_errors"></span> <canvas id="{{rse}}_um_status_chart" width=50 height=10></canvas></td>
+            <td><canvas id="{{rse}}_um_status_chart" width=50 height=10></canvas></td>
             <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
@@ -136,26 +136,26 @@
                 
                 if( um_total > 0 )
                 {
-                    var o = document.getElementById(rse+"_um_errors");
-                    if( o == null )
-                        console.log("can not find UM td for rse "+rse);
-                    if( um_errors )
-                        o.innerHTML = "" +  um_errors + "/" + um_total;
-                    else
-                        o.innerHTML = "0";
+                    //var o = document.getElementById(rse+"_um_errors");
+                    //if( o == null )
+                    //    console.log("can not find UM td for rse "+rse);
+                    //if( um_errors )
+                    //    o.innerHTML = "" +  um_errors + "/" + um_total;
+                    //else
+                    //    o.innerHTML = "0";
                     make_status_chart(rse+"_um_status_chart", info.um_status);
                     
                 }
                 
                 if( cc_total > 0 )
                 {
-                    var o = document.getElementById(rse+"_cc_errors");
-                    if( o == null )
-                        console.log("can not find CC td for rse "+rse);
-                    if ( cc_errors )
-                        o.innerHTML = "" +  cc_errors + "/" + cc_total;
-                    else
-                        o.innerHTML = "0";
+                    //var o = document.getElementById(rse+"_cc_errors");
+                    //if( o == null )
+                    //    console.log("can not find CC td for rse "+rse);
+                    //if ( cc_errors )
+                    //    o.innerHTML = "" +  cc_errors + "/" + cc_total;
+                    //else
+                    //    o.innerHTML = "0";
                     make_status_chart(rse+"_cc_status_chart", info.cc_status);
                 }
             }
