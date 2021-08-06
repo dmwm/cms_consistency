@@ -60,7 +60,7 @@
         {% if cc_summary is none %}
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td><span id="{{rse}}_cc_errors"></span><canvas id="{{rse}}_cc_status_chart"></canvas></td>
+            <td><span id="{{rse}}_cc_errors"></span><canvas id="{{rse}}_cc_status_chart" width=0 height=10></canvas></td>
             <td><a href="./show_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["detected"]|none_as_blank}}</td>
@@ -135,6 +135,7 @@
             if( color == null )
                 color="#AAA";
             ctx.fillRect(x,0,x+dx,dy, color);
+            x += dx;
         }
     };
     
