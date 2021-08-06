@@ -130,6 +130,7 @@
                         data.addRows([
                             {% for r in um_runs|reverse %}
                                 {% if not r["start_time_milliseconds"] is none %}
+
                                     {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["elapsed_time_hours"] or 'null'}}]
                                 {% endif %}
                             {% endfor %}                    
