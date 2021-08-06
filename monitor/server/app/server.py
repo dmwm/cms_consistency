@@ -330,19 +330,19 @@ class Handler(WPHandler):
         
         for rse in rses:
             if not rse: continue
-            um_stats = um_data_source.all_stats_for_rse(rse)
-            cc_stats = cc_data_source.all_stats_for_rse(rse)
+            um_summaries = [um_data_source.run_summary(x) for x in um_data_source.all_stats_for_rse(rse)]
+            cc_summaries = [cc_data_source.run_summary(x) for x in cc_data_source.all_stats_for_rse(rse)]
             
             um_total = um_success = cc_total = cc_success = 0
             
             um_total = len(um_stats)
-            um_success = len([x for x in um_stats if x.get("status") == "done"])
+            um_success = len([x for x in um_summaries if x.get("status") == "done"])
             cc_total = len(cc_stats)
-            cc_success = len([x for x in cc_stats if x.get("cmp3", {}).get("status") == "done"])
+            cc_success = len([x for x in cc_summaries if x.get("status") == "done"])
             
             counts[rse] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success,
-                cc_status=[cc_data_source.run_summary(x).get("status") for x in cc_stats],
-                um_status=[x.get("status") for x in um_stats]
+                cc_status=[x.get("status") for x in cc_summaries],
+                um_status=[x.get("status") for x in um_summaries]
             )
         
         return json.dumps(counts), "text/json"
