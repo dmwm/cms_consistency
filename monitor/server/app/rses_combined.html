@@ -60,7 +60,7 @@
         {% if cc_summary is none %}
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td id="{{rse}}_cc_error_ratio"></td>
+            <td><span id="{{rse}}_cc_errors"></span><canvas id="{{rse}}_cc_status_chart"></canvas></td>
             <td><a href="./show_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["detected"]|none_as_blank}}</td>
@@ -80,7 +80,7 @@
         {% if um_summary is none %}
             <td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td id="{{rse}}_um_error_ratio"></td>
+            <td id="{{rse}}_um_errors"></td>
             <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
@@ -91,8 +91,53 @@
             
 </table>
 
+	td.started {
+		background-color: #FFC;
+	}
+
+	td.done {
+		background-color: #CFC;
+	}
+
+	td.failed {
+		background-color: #FCC;		
+	}
+
+	td.aborted {
+		background-color: #EDC;		
+	}
 
 <script type="text/javascript">
+    
+    function make_status_chart(canvas_id, status_list)
+    {
+        var canvas = document.getElementById(canvas_id);
+        if( canvas == null )
+            return;
+        var n = status_list.length;
+        var dx = 2;
+        var dy = 10;
+        canvas.setAttribute("height", dy);
+        canvas.setAttribute("width", dx*n);
+        
+        var colors={
+            "started": "#FFC", 
+            "done": "#CFC", 
+            "failed": "#FCC", 
+            "aborted": "#EDC", 
+        };
+        
+        var x = 0;
+        var ctx = canvas.getContext("2d");
+        for( sts of status_list )
+        {
+            var color = colors[sts];
+            if( color == null )
+                color="#AAA";
+            ctx.fillRect(x,0,x+dx,dy, color);
+        }
+    };
+    
     var counts_receiver = {
         data_received: function(counts) {
             for ( rse in counts )
@@ -105,18 +150,20 @@
                 
                 if( um_total > 0 )
                 {
-                    var o = document.getElementById(rse+"_um_error_ratio");
+                    var o = document.getElementById(rse+"_um_errors");
                     if( o == null )
                         console.log("can not find UM td for rse "+rse);
                     if( um_errors )
                         o.innerHTML = "" +  um_errors + "/" + um_total;
                     else
                         o.innerHTML = "0";
+                    
+                    make_status_chart(rse+"_cc_status_chart", info.cc_status);
                 }
                 
                 if( cc_total > 0 )
                 {
-                    var o = document.getElementById(rse+"_cc_error_ratio");
+                    var o = document.getElementById(rse+"_cc_errors");
                     if( o == null )
                         console.log("can not find CC td for rse "+rse);
                     if ( cc_errors )
