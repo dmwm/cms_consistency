@@ -129,7 +129,8 @@
                         data.addColumn('number', 'Elapsed time');
                         data.addRows([
                             {% for r in um_runs|reverse %}
-                                {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["elapsed_time_hours"]}}]
+                            {% if not r["start_time_milliseconds"] is none %}
+                                {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["elapsed_time_hours"] or 'null'}}]
                             {% endfor %}                    
                         ]);
                         //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
