@@ -54,8 +54,27 @@
 <script type="text/javascript">
 
     var DX = 5;
-    var DY = 10;
+    var DY0 = 4;
+    var DY = DY0*3;
     var N = 10;
+
+    var colors={
+        "started": "#FFC", 
+        "done": "#CFC", 
+        "failed": "#FCC", 
+        "aborted": "#EDC",
+        "null": "#FFF",
+        "other": "#DDD" 
+    };
+    
+    function cell_color(sts)
+    {
+        if( sts == null )   sts = "null";
+        var color = colors[sts];
+        if( color == null )
+            color=colors["other"];
+        return color;
+    }
     
     function display_status_chart(canvas_id, status_list)
     {
@@ -66,13 +85,15 @@
         var dx = 5;
         var dy = 10;
         canvas.setAttribute("height", DY);
-        canvas.setAttribute("width", DX*10);
+        canvas.setAttribute("width", DX*N);
         
         var colors={
             "started": "#FFC", 
             "done": "#CFC", 
             "failed": "#FCC", 
-            "aborted": "#EDC", 
+            "aborted": "#EDC",
+            "null": "#FFF",
+            "other": "#DDD" 
         };
         
         var x = 0;
@@ -80,12 +101,20 @@
         ctx.clearRect(0,0,DX*N,DY);      
         for( var i = 0; i < n; i++ )
         {
-            var sts = status_list[i];
-            var color = colors[sts];
-            if( color == null )
-                color="#DDD";
-            ctx.fillStyle = color;
-            ctx.fillRect(x,0,x+DX,DY);
+            var row = status_list[i];
+            var cc_color = cell_color(row.cc);
+            var dark_color = cell_color(row.dark);
+            var missing_color = cell_color(row.missing);
+            
+            ctx.fillStyle = cc_color;
+            ctx.fillRect(x,0,x+DX,DY0);
+            
+            ctx.fillStyle = missing_color;
+            ctx.fillRect(x,DY0,x+DX,2*DY0);
+            
+            ctx.fillStyle = dark_color;
+            ctx.fillRect(x,2*DY0,x+DX,3*DY0);
+            
             x += DX;
         }
     };

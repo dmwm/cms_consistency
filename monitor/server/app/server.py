@@ -321,12 +321,14 @@ class Handler(WPHandler):
                 data = f.read(10240)
         return read_file(f), "text/plain"
         
-    def success_counts(self, request, relpath, **args):
+    MAX_HISTORY = 10
+        
+    def status_history(self, request, relpath, **args):
         um_data_source = self.App.UMDataSource
         cc_data_source = self.App.CCDataSource
         
         rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
-        counts = {}      # {rse -> (cc_total, um_total, cc_success, um_success)}
+        data = {}      # {rse -> (cc_total, um_total, cc_success, um_success)}
         
         for rse in rses:
             if not rse: continue
@@ -340,12 +342,19 @@ class Handler(WPHandler):
             cc_total = len(cc_summaries)
             cc_success = len([x for x in cc_summaries if x.get("status") == "done"])
             
-            counts[rse] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success,
-                cc_status=[x.get("status") for x in cc_summaries],
-                um_status=[x.get("status") for x in um_summaries]
+            data[rse] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success,
+                cc_status_history=[
+                    {
+                        "cc":       x.get("status"),
+                        "missing":  x.get("missing_stats",{}).get("action_status"),
+                        "dark":     x.get("dark_stats",{}).get("action_status")
+                    }
+                    for x in cc_summaries
+                ][-self.MAX_HISTORY:],
+                um_status_history=[x.get("status") for x in um_summaries][-self.MAX_HISTORY:]
             )
         
-        return json.dumps(counts), "text/json"
+        return json.dumps(data), "text/json"
         
     def ls(self, request, relpath, rse="*", **args):
         lst = self.App.CCDataSource.ls(rse)
