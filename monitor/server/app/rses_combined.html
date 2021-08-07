@@ -50,6 +50,64 @@
     <th>Action status</th>
 </tr>
 
+
+<script type="text/javascript">
+
+    var DX = 5;
+    var DY = 10;
+    var N = 10;
+    
+    function display_status_chart(canvas_id, status_list)
+    {
+        var canvas = document.getElementById(canvas_id);
+        if( canvas == null )
+            return;
+        var n = Math.min(N, status_list.length);
+        var dx = 5;
+        var dy = 10;
+        canvas.setAttribute("height", DY);
+        canvas.setAttribute("width", DX*10);
+        
+        var colors={
+            "started": "#FFC", 
+            "done": "#CFC", 
+            "failed": "#FCC", 
+            "aborted": "#EDC", 
+        };
+        
+        var x = 0;
+        var ctx = canvas.getContext("2d");
+        for( var i = 0; i < n; i++ )
+        {
+            var sts = status_list[i];
+            var color = colors[sts];
+            if( color == null )
+                color="#DDD";
+            ctx.fillStyle = color;
+            ctx.fillRect(x,0,x+DX,DY);
+            x += DX;
+        }
+    };
+    
+    function init_status_chart(candas_id)
+    {
+        var canvas = document.getElementById(canvas_id);
+        if( canvas == null )
+            return;
+        
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#FFF";
+        ctx.fillRect(0,0,DX*N,DY);      
+        
+        var x = DX + DX/2;
+        var y = DY/2;
+        ctx.fillStyle = "#444";
+        for( var i = 1; i<N-1; i++ )
+            ctx.fillRect(x-1, x+1, y-1, y+1);
+    }
+    
+</script>
+
 {% for info in infos %}
     {% set rse = info["rse"] %}
     {% set cc_summary = info["cc_summary"] %}
@@ -61,6 +119,10 @@
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
             <td style="vertical-align: middle"><canvas id="{{rse}}_cc_status_chart" width=50 height=10></canvas></td>
+            <script type="text/javascript">
+                init_status_chart("{{rse}}_cc_status_chart");
+            </script>
+                
             <td><a href="./show_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_dt}}</a></td>
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             <td>{{cc_summary["dark_stats"]["detected"]|none_as_blank}}</td>
@@ -81,6 +143,10 @@
             <td></td><td></td><td></td><td></td><td></td>
         {% else %}
             <td style="vertical-align: middle"><canvas id="{{rse}}_um_status_chart" width=50 height=10></canvas></td>
+            <script type="text/javascript">
+                init_status_chart("{{rse}}_um_status_chart");
+            </script>
+
             <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_dt}}</a></td>
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
@@ -92,38 +158,6 @@
 </table>
 
 <script type="text/javascript">
-    
-    function make_status_chart(canvas_id, status_list)
-    {
-        var canvas = document.getElementById(canvas_id);
-        if( canvas == null )
-            return;
-        var n = status_list.length;
-        var dx = 5;
-        var dy = 10;
-        canvas.setAttribute("height", dy);
-        canvas.setAttribute("width", dx*10);
-        
-        var colors={
-            "started": "#FFC", 
-            "done": "#CFC", 
-            "failed": "#FCC", 
-            "aborted": "#EDC", 
-        };
-        
-        var x = 0;
-        var ctx = canvas.getContext("2d");
-        for( sts of status_list )
-        {
-            var color = colors[sts];
-            if( color == null )
-                color="#DDD";
-            ctx.fillStyle = color;
-            ctx.fillRect(x,0,x+dx,dy);
-            x += dx;
-        }
-    };
-    
     var counts_receiver = {
         data_received: function(counts) {
             for ( rse in counts )
@@ -143,7 +177,7 @@
                     //    o.innerHTML = "" +  um_errors + "/" + um_total;
                     //else
                     //    o.innerHTML = "0";
-                    make_status_chart(rse+"_um_status_chart", info.um_status);
+                    display_status_chart(rse+"_um_status_chart", info.um_status);
                     
                 }
                 
@@ -156,7 +190,7 @@
                     //    o.innerHTML = "" +  cc_errors + "/" + cc_total;
                     //else
                     //    o.innerHTML = "0";
-                    make_status_chart(rse+"_cc_status_chart", info.cc_status);
+                    display_status_chart(rse+"_cc_status_chart", info.cc_status);
                 }
             }
         }
