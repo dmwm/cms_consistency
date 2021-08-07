@@ -76,7 +76,7 @@
         return color;
     }
     
-    function display_status_chart(canvas_id, status_list)
+    function display_um_status_chart(canvas_id, status_list)
     {
         var canvas = document.getElementById(canvas_id);
         if( canvas == null )
@@ -87,14 +87,29 @@
         canvas.setAttribute("height", DY);
         canvas.setAttribute("width", DX*N);
         
-        var colors={
-            "started": "#FFC", 
-            "done": "#CFC", 
-            "failed": "#FCC", 
-            "aborted": "#EDC",
-            "null": "#FFF",
-            "other": "#DDD" 
-        };
+        var x = 0;
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0,0,DX*N,DY);      
+        for( var i = 0; i < n; i++ )
+        {
+            var sts = status_list[i];
+            var color = cell_color(sts);
+            ctx.fillStyle = color;
+            ctx.fillRect(x,0,x+DX,DY);
+            x += DX;
+        }
+    };
+    
+    function display_cc_status_chart(canvas_id, status_list)
+    {
+        var canvas = document.getElementById(canvas_id);
+        if( canvas == null )
+            return;
+        var n = Math.min(N, status_list.length);
+        var dx = 5;
+        var dy = 10;
+        canvas.setAttribute("height", DY);
+        canvas.setAttribute("width", DX*N);
         
         var x = 0;
         var ctx = canvas.getContext("2d");
@@ -201,7 +216,7 @@
                     //    o.innerHTML = "" +  um_errors + "/" + um_total;
                     //else
                     //    o.innerHTML = "0";
-                    display_status_chart(rse+"_um_status_chart", info.um_status_history.slice(-N));
+                    display_um_status_chart(rse+"_um_status_chart", info.um_status_history.slice(-N));
                     
                 }
                 
@@ -214,7 +229,7 @@
                     //    o.innerHTML = "" +  cc_errors + "/" + cc_total;
                     //else
                     //    o.innerHTML = "0";
-                    display_status_chart(rse+"_cc_status_chart", info.cc_status_history.slice(-N));
+                    display_cc_status_chart(rse+"_cc_status_chart", info.cc_status_history.slice(-N));
                 }
             }
         }
