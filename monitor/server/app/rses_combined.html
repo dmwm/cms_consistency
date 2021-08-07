@@ -172,7 +172,7 @@
                     //    o.innerHTML = "" +  um_errors + "/" + um_total;
                     //else
                     //    o.innerHTML = "0";
-                    display_status_chart(rse+"_um_status_chart", info.um_status);
+                    display_status_chart(rse+"_um_status_chart", info.um_status.slice(-N));
                     
                 }
                 
@@ -185,7 +185,7 @@
                     //    o.innerHTML = "" +  cc_errors + "/" + cc_total;
                     //else
                     //    o.innerHTML = "0";
-                    display_status_chart(rse+"_cc_status_chart", info.cc_status);
+                    display_status_chart(rse+"_cc_status_chart", info.cc_status.slice(-N));
                 }
             }
         }
