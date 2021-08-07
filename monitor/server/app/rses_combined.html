@@ -121,13 +121,13 @@
             var dark_color = cell_color(row.dark);
             var missing_color = cell_color(row.missing);
             
-            ctx.fillStyle = cc_color;
+            ctx.fillStyle = dark_color;
             ctx.fillRect(x,0,x+DX,DY0);
             
             ctx.fillStyle = missing_color;
             ctx.fillRect(x,DY0,x+DX,2*DY0);
             
-            ctx.fillStyle = dark_color;
+            ctx.fillStyle = cc_color;
             ctx.fillRect(x,2*DY0,x+DX,3*DY0);
             
             x += DX;
