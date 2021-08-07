@@ -82,12 +82,10 @@
         if( canvas == null )
             return;
         var n = Math.min(N, status_list.length);
-        var dx = 5;
-        var dy = 10;
         canvas.setAttribute("height", DY);
         canvas.setAttribute("width", DX*N);
         
-        var x = 0;
+        var x = DX*(N-n);
         var ctx = canvas.getContext("2d");
         ctx.clearRect(0,0,DX*N,DY);      
         for( var i = 0; i < n; i++ )
@@ -106,12 +104,10 @@
         if( canvas == null )
             return;
         var n = Math.min(N, status_list.length);
-        var dx = 5;
-        var dy = 10;
         canvas.setAttribute("height", DY);
         canvas.setAttribute("width", DX*N);
         
-        var x = 0;
+        var x = DX*(N-n);
         var ctx = canvas.getContext("2d");
         ctx.clearRect(0,0,DX*N,DY);      
         for( var i = 0; i < n; i++ )
@@ -158,7 +154,7 @@
         {% if cc_summary is none %}
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td style="vertical-align: middle"><canvas id="{{rse}}_cc_status_chart" width=50 height=10></canvas></td>
+            <td style="vertical-align: middle; text-align: right"><canvas id="{{rse}}_cc_status_chart" width=50 height=10></canvas></td>
             <script type="text/javascript">
                 init_status_chart("{{rse}}_cc_status_chart");
             </script>
@@ -182,7 +178,7 @@
         {% if um_summary is none %}
             <td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td style="vertical-align: middle"><canvas id="{{rse}}_um_status_chart" width=50 height=10></canvas></td>
+            <td style="vertical-align: middle; text-align: right"><canvas id="{{rse}}_um_status_chart" width=50 height=10></canvas></td>
             <script type="text/javascript">
                 init_status_chart("{{rse}}_um_status_chart");
             </script>
