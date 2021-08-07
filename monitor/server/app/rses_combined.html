@@ -95,7 +95,7 @@
             var sts = status_list[i];
             var color = cell_color(sts);
             ctx.fillStyle = color;
-            ctx.fillRect(x,0,x+DX,DY);
+            ctx.fillRect(x,0,DX,DY);
             x += DX;
         }
     };
@@ -122,13 +122,14 @@
             var missing_color = cell_color(row.missing);
             
             ctx.fillStyle = dark_color;
-            ctx.fillRect(x,0,x+DX,DY0);
+            ctx.fillRect(x,0,DX,DY0);
             
             ctx.fillStyle = missing_color;
-            ctx.fillRect(x,DY0,x+DX,2*DY0);
+            ctx.fillRect(x,DY0,DX,DY0);
             
             ctx.fillStyle = cc_color;
-            ctx.fillRect(x,2*DY0,x+DX,3*DY0);
+            ctx.fillRect(x,2*DY0,DX,DY0);
+            
             
             x += DX;
         }
