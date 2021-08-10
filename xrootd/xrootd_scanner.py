@@ -5,7 +5,7 @@ from part import PartitionedList
 from py3 import to_str
 from stats import Stats
 
-Version = "1.3"
+Version = "2.0"
 
 try:
     import tqdm
@@ -66,7 +66,7 @@ class Scanner(Task):
     MAX_ATTEMPTS_REC = 1
     MAX_ATTEMPTS_FLAT = 3
 
-    def __init__(self, master, server, location, recursive, timeout):
+    def __init__(self, master, server, location, recursive, timeout, include_sizes = True):
         Task.__init__(self)
         self.Server = server
         self.Master = master
@@ -79,6 +79,7 @@ class Scanner(Task):
         self.Elapsed = None
         self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
         self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
+        self.IncludeSizes = include_sizes
 
     def __str__(self):
         return "Scanner(%s)" % (self.Location,)
@@ -93,19 +94,44 @@ class Scanner(Task):
         if self.Subprocess is not None:
                 self.Killed = True
                 self.Subprocess.terminate()
+                
+    def parse_scan_line(self, line, with_meta):
+        """
+        returns (is_file, size, path)
+        
+        dr-x 2021-07-13 04:00:26        4096 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004
+        -r-- 2021-07-02 09:35:03   719124843 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004//1C576248-6EEF-B74F-A336-D1D5B8E41722.root
+        """
+        if with_meta:
+            words = line.split(None, 4)
+            if len(words) == 5:
+                is_file = words[0][0] != 'd'
+                size = float(words[3])/1024/1024/1024           # size in GB
+                path = words[4]
+            else:
+                return None
+        else:
+            path = line.strip()
+            is_file = '.' in path
+            size = None
+        return is_file, size, canonic_path(path)
 
-    def scan(self, recursive):
+    def scan(self, recursive, with_meta):
+        #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
         server = self.Server
         location = self.Location
         timeout = self.Timeout
-        lscommand = "xrdfs %s ls %s %s" % (server, "-R" if recursive else "", location)
-        
+        lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)        
         files = []
         dirs = []
         status = "OK"
         reason = ""
 
-        try:    retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+
+        try:    
+            #print(f"lscommand: {lscommand}")
+            retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+            #print(f"retcode: {retcode}")
         except RuntimeError:
             status = "timeout"
         else:
@@ -142,22 +168,30 @@ class Scanner(Task):
             else:
                 lines = [x.strip() for x in out.split("\n")]
                 for l in lines:
-                    if l:
-                        if not l.startswith(location):
-                            status = "failed"
-                            reason = "Invalid line in output: %s" % (l,)
-                            break
-                        last_word = l.rsplit("/",1)[-1]
-                        if '.' in last_word:
-                            path = l
-                            path = path if path.startswith(location) else location + "/" + path
-                            if not path.endswith("/."):
-                                    files.append(path)
-                        else:
-                            path = l
-                            path = path if path.startswith(location) else location + "/" + path
-                            dirs.append(path)
+                    if not l: continue
+                    tup = self.parse_scan_line(l, with_meta)
+                    if not tup or not tup[-1].startswith(location):
+                        status = "failed"
+                        reason = "Invalid line in output: %s" % (l,)
+                        break
+                    is_file, size, path = tup
+                    if path.endswith("/."):
+                        continue
+                    path if path.startswith(location) else location + "/" + path
+                    if is_file:
+                        files.append((path, size))
+                    else:
+                        dirs.append((path, size))
 
+        if False:
+            print("return from scan():")
+            print("  dirs:")
+            for d in dirs[:5]:
+                print("     ", d)
+            print("  files:")
+            for f in files[:5]:
+                print("     ", f)
+        
         return status, reason, dirs, files
 
     def run(self):
@@ -174,7 +208,7 @@ class Scanner(Task):
         stats = "r" if recursive else " "
         #self.message("start", stats)
 
-        status, reason, dirs, files = self.scan(recursive)
+        status, reason, dirs, files = self.scan(recursive, self.IncludeSizes)
         self.Elapsed = time.time() - self.Started
         #stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
         stats = "r" if recursive else " "
@@ -187,6 +221,9 @@ class Scanner(Task):
 
         else:
             counts = " %8d %-8d" % (len(files), len(dirs))
+            if self.IncludeSizes:
+                total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
+                counts += " %.3f" % (total_size,)
             self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
@@ -195,7 +232,7 @@ class Scanner(Task):
     @staticmethod
     def location_exists(server, location, timeout):
         s = Scanner(None, server, location, False, timeout)
-        status, reason, dirs, files = s.scan(False)
+        status, reason, dirs, files = s.scan(False, False)
         return status == "OK", reason or status
                 
 class ScannerMaster(PyThread):
@@ -203,7 +240,8 @@ class ScannerMaster(PyThread):
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, ignore_lists=([],[]), max_files = None):
+    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, ignore_patterns=([],[]), max_files = None,
+                include_sizes=True):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Server = server
@@ -231,14 +269,16 @@ class ScannerMaster(PyThread):
             self.LastV = 0
         self.NFiles = self.NDirectories = 0
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
-        self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_lists
+        self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_patterns
+        self.IncludeSizes = include_sizes
+        self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
     def run(self):
         #
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        scanner_task = Scanner(self, self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout)
+        scanner_task = Scanner(self, self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout, include_sizes=self.IncludeSizes)
         self.ScannerQueue.addTask(scanner_task)
         
         self.ScannerQueue.waitUntilEmpty()
@@ -288,7 +328,7 @@ class ScannerMaster(PyThread):
 
                 if self.MaxFiles is None or self.NFiles < self.MaxFiles:
                     self.ScannerQueue.addTask(
-                        Scanner(self, self.Server, path, recursive, self.Timeout)
+                        Scanner(self, self.Server, path, recursive, self.Timeout, include_sizes=self.IncludeSizes)
                     )
                     self.NToScan += 1
         
@@ -349,9 +389,18 @@ class ScannerMaster(PyThread):
                 self.RecursiveFailed[parent] = nfailed - 1      
         self.NScanned += 1
         if files:
-            self.addFiles(files)
+            paths, sizes = zip(*files)
+            self.addFiles(paths)
+            #for path, size in files:
+            #    print(f"path: {path}, size:{size}")
+            #print("total size (GB):", sum(sizes), location)
+            if self.IncludeSizes:
+                self.TotalSize += sum(sizes)
         if dirs:
-            self.addDirectories(dirs, not recursive)
+            paths, sizes = zip(*dirs)
+            self.addDirectories(paths, not recursive)
+            if self.IncludeSizes:
+                self.TotalSize += sum(sizes)
         self.show_progress()
 
     def files(self):
@@ -413,8 +462,9 @@ python xrootd_scanner.py [options] <rse>
     -n <nparts>
     -k                          - do not treat individual directories scan errors as overall scan failure
     -q                          - quiet - only print summary
+    -x                          - do not use metadata (ls -l), do not include file sizes
     -M <max_files>              - stop scanning the root after so many files were found
-    -s <stats_file>              - write final statistics to JSON file
+    -s <stats_file>             - write final statistics to JSON file
 """
 
 def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
@@ -442,7 +492,7 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
     
 
 def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list,
-    purge_empty_dirs, ignore_failed_directories):
+    purge_empty_dirs, ignore_failed_directories, include_sizes):
     
     failed = root_failed = False
     
@@ -491,13 +541,19 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             rewrite_path = re.compile(rewrite_path)
 
         print("Starting scan of %s:%s with:" % (server, top_path))
+        print("  Include sizes       = %s" % include_sizes)
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
-        print("  Timeout              = %s" % timeout)
-
-
+        print("  Timeout             = %s" % timeout)
+        
+        ignore_list = config.ignore_list(rse)
+        if ignore_list:
+            print("  Ignore list:")
+            for p in ignore_list:
+                print("    ", p)
+        
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
-            max_files = max_files, ignore_lists = config.ignore_lists(rse))
+            max_files = max_files, ignore_patterns = config.ignore_patterns(rse), include_sizes=include_sizes)
         master.start()
 
         path_prefix = server_root
@@ -534,6 +590,8 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         print("Directories:          %d" % (master.NDirectories,))
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
         print("Failed directories:   %d" % (len(master.GaveUp),))
+        if include_sizes:
+            print("Total size:           %.3f GB" % (master.TotalSize))
         t1 = time.time()
         elapsed = int(t1 - t0)
         s = elapsed % 60
@@ -548,7 +606,8 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             "directories": master.NDirectories,
             "empty_directories":len(master.EmptyDirs),
             "end_time":t1,
-            "elapsed_time": t1-t0
+            "elapsed_time": t1-t0,
+            "total_size_gb": master.TotalSize
         })
 
         if (not ignore_failed_directories) and master.GaveUp:
@@ -567,7 +626,7 @@ if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:vqM:s:S:zd:k")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:vqM:s:S:zd:kx")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -612,6 +671,7 @@ if __name__ == "__main__":
 
     server = config.scanner_server(rse)
     server_root = config.scanner_server_root(rse)
+    include_sizes = config.scanner_include_sizes(rse) and not "-x" in opts
     purge_empty_dirs = config.scanner_param(rse, "purge_empty_dirs", default=False)
     if not server_root:
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
@@ -640,7 +700,7 @@ if __name__ == "__main__":
         try:
             failed, root_failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
                     override_max_scanners, out_list, dir_list,
-                    purge_empty_dirs, ignore_directory_scan_errors)
+                    purge_empty_dirs, ignore_directory_scan_errors, include_sizes)
             all_roots_failed = all_roots_failed and root_failed
         except:
             exc = traceback.format_exc()

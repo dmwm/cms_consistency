@@ -105,15 +105,18 @@ class Config:
         def dbdump_param(self, rse_name, param, default=None):
             default = self.get_by_path("rses", "*", "dbdump", param, default=default)
             return self.get_by_path("rses", rse_name, "dbdump", param, default=default)
-
+            
         def dbdump_root(self, rse_name):
             return self.dbdump_param(rse_name, "path_roots", "/")
 
         def nparts(self, rse_name):
             return self.general_param(rse_name, "partitions", 10)
 
-        def ignore_lists(self, rse_name):
-            lst = self.general_param(rse_name, "ignore_list", [])       # list of absolute paths or regexp patterns, used by scanner and cmp3
+        def ignore_list(self, rse_name):
+            return self.general_param(rse_name, "ignore_list", [])       # list of absolute paths or regexp patterns, used by scanner and cmp3
+
+        def ignore_patterns(self, rse_name):
+            lst = self.ignore_list(rse_name)       # list of absolute paths or regexp patterns, used by scanner and cmp3
             dir_patterns = []
             for p in lst:
                 try:    p = re.compile("%s(/.*)?$" % (p,))
@@ -159,4 +162,7 @@ class Config:
 
         def scanner_recursion_threshold(self, rse_name, root):
             return self.scanner_param(rse_name, "recursion", root=root, default=3)
+
+        def scanner_include_sizes(self, rse_name, default=True):
+            return self.scanner_param(rse_name, "include_sizes", default=default)
 
