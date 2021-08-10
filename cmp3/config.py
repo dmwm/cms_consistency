@@ -160,6 +160,6 @@ class Config:
         def scanner_recursion_threshold(self, rse_name, root):
             return self.scanner_param(rse_name, "recursion", root=root, default=3)
 
-        def scanner_include_sizes(self, rse_name, default=False):
+        def scanner_include_sizes(self, rse_name, default=True):
             return self.scanner_param(rse_name, "include_sizes", default=default)
 
