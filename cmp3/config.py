@@ -112,8 +112,11 @@ class Config:
         def nparts(self, rse_name):
             return self.general_param(rse_name, "partitions", 10)
 
-        def ignore_lists(self, rse_name):
-            lst = self.general_param(rse_name, "ignore_list", [])       # list of absolute paths or regexp patterns, used by scanner and cmp3
+        def ignore_list(self, rse_name):
+            return self.general_param(rse_name, "ignore_list", [])       # list of absolute paths or regexp patterns, used by scanner and cmp3
+
+        def ignore_patterns(self, rse_name):
+            lst = self.ignore_list(rse_name)       # list of absolute paths or regexp patterns, used by scanner and cmp3
             dir_patterns = []
             for p in lst:
                 try:    p = re.compile("%s(/.*)?$" % (p,))
