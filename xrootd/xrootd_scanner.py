@@ -117,6 +117,7 @@ class Scanner(Task):
         return is_file, size, canonic_path(path)
 
     def scan(self, recursive, with_meta):
+        print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
         server = self.Server
         location = self.Location
         timeout = self.Timeout
@@ -184,6 +185,14 @@ class Scanner(Task):
                         path = path if path.startswith(location) else location + "/" + path
                         dirs.append((path, size))
 
+        print("return from scan():")
+        print("  dirs:")
+        for d in dirs[:5]:
+            print("     ", d)
+        print("  files:")
+        for f in files[:5]:
+            print("     ", f)
+        
         return status, reason, dirs, files
 
     def run(self):
