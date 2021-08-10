@@ -126,7 +126,11 @@ class Scanner(Task):
         status = "OK"
         reason = ""
 
-        try:    retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+
+        try:    
+            print(f"lscommand: {lscommand}")
+            retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+            print(f"retcode: {retcode}")
         except RuntimeError:
             status = "timeout"
         else:
