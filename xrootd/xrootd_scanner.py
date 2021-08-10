@@ -336,9 +336,6 @@ class ScannerMaster(PyThread):
         if not self.Failed:
             self.Results.append(('d', dirs))
             self.NDirectories += len(dirs)
-            if self.IncludeSizes:
-                # try to start scan the biggest directories first
-                dirs = sorted(dirs, key=lambda x: -x[1])
             for d in dirs:
                 d = canonic_path(d)
                 if not self.dir_ignored(d):
