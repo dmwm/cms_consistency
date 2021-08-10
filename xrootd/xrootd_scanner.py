@@ -240,7 +240,7 @@ class ScannerMaster(PyThread):
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, ignore_lists=([],[]), max_files = None,
+    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, ignore_patterns=([],[]), max_files = None,
                 include_sizes=True):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
@@ -269,7 +269,7 @@ class ScannerMaster(PyThread):
             self.LastV = 0
         self.NFiles = self.NDirectories = 0
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
-        self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_lists
+        self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_patterns
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
@@ -545,10 +545,15 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
         print("  Timeout             = %s" % timeout)
-
-
+        
+        ignore_list = config.ignore_list(rse)
+        if ignore_list:
+            print("  Ignore list:")
+            for p in ignore_list:
+                print("    ", p)
+        
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
-            max_files = max_files, ignore_lists = config.ignore_lists(rse), include_sizes=include_sizes)
+            max_files = max_files, ignore_patterns = config.ignore_patterns(rse), include_sizes=include_sizes)
         master.start()
 
         path_prefix = server_root
