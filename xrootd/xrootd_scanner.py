@@ -106,7 +106,7 @@ class Scanner(Task):
             words = line.split(None, 4)
             if len(words) == 5:
                 is_file = words[0][0] != 'd'
-                size = float(words[3])/1024/1024
+                size = float(words[3])/1024/1024/1024           # size in GB
                 path = words[4]
             else:
                 return None
@@ -117,7 +117,7 @@ class Scanner(Task):
         return is_file, size, canonic_path(path)
 
     def scan(self, recursive, with_meta):
-        print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
+        #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
         server = self.Server
         location = self.Location
         timeout = self.Timeout
@@ -129,9 +129,9 @@ class Scanner(Task):
 
 
         try:    
-            print(f"lscommand: {lscommand}")
+            #print(f"lscommand: {lscommand}")
             retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
-            print(f"retcode: {retcode}")
+            #print(f"retcode: {retcode}")
         except RuntimeError:
             status = "timeout"
         else:
@@ -175,23 +175,22 @@ class Scanner(Task):
                         reason = "Invalid line in output: %s" % (l,)
                         break
                     is_file, size, path = tup
-                    last_word = path.rsplit("/",1)[-1]
-                    if '.' in last_word:
-                        path = path if path.startswith(location) else location + "/" + path
-                        if not path.endswith("/."):
-                            files.append((path, size))
+                    if path.endswith("/."):
+                        continue
+                    path if path.startswith(location) else location + "/" + path
+                    if is_file:
+                        files.append((path, size))
                     else:
-                        path = l
-                        path = path if path.startswith(location) else location + "/" + path
                         dirs.append((path, size))
 
-        print("return from scan():")
-        print("  dirs:")
-        for d in dirs[:5]:
-            print("     ", d)
-        print("  files:")
-        for f in files[:5]:
-            print("     ", f)
+        if False:
+            print("return from scan():")
+            print("  dirs:")
+            for d in dirs[:5]:
+                print("     ", d)
+            print("  files:")
+            for f in files[:5]:
+                print("     ", f)
         
         return status, reason, dirs, files
 
@@ -222,6 +221,9 @@ class Scanner(Task):
 
         else:
             counts = " %8d %-8d" % (len(files), len(dirs))
+            if self.IncludeSizes:
+                total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
+                counts += " %.3f" % (total_size,)
             self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
@@ -389,6 +391,9 @@ class ScannerMaster(PyThread):
         if files:
             paths, sizes = zip(*files)
             self.addFiles(paths)
+            #for path, size in files:
+            #    print(f"path: {path}, size:{size}")
+            #print("total size (GB):", sum(sizes), location)
             self.TotalSize += sum(sizes)
         if dirs:
             paths, sizes = zip(*dirs)
@@ -576,7 +581,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         print("Directories:          %d" % (master.NDirectories,))
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
         print("Failed directories:   %d" % (len(master.GaveUp),))
-        print("Total size (MB):      %.2f" % (master.TotalSize))
+        print("Total size:           %.3f GB" % (master.TotalSize))
         t1 = time.time()
         elapsed = int(t1 - t0)
         s = elapsed % 60
@@ -592,7 +597,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             "empty_directories":len(master.EmptyDirs),
             "end_time":t1,
             "elapsed_time": t1-t0,
-            "total_size_mb": master.TotalSize
+            "total_size_gb": master.TotalSize
         })
 
         if (not ignore_failed_directories) and master.GaveUp:
