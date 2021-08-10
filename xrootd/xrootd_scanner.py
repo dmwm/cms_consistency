@@ -216,7 +216,7 @@ class Scanner(Task):
     @staticmethod
     def location_exists(server, location, timeout):
         s = Scanner(None, server, location, False, timeout)
-        status, reason, dirs, files = s.scan(False)
+        status, reason, dirs, files = s.scan(False, False)
         return status == "OK", reason or status
                 
 class ScannerMaster(PyThread):
