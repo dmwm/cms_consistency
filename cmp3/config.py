@@ -105,7 +105,7 @@ class Config:
         def dbdump_param(self, rse_name, param, default=None):
             default = self.get_by_path("rses", "*", "dbdump", param, default=default)
             return self.get_by_path("rses", rse_name, "dbdump", param, default=default)
-
+            
         def dbdump_root(self, rse_name):
             return self.dbdump_param(rse_name, "path_roots", "/")
 
@@ -159,4 +159,7 @@ class Config:
 
         def scanner_recursion_threshold(self, rse_name, root):
             return self.scanner_param(rse_name, "recursion", root=root, default=3)
+
+        def scanner_include_sizes(self, rse_name, default=False):
+            return self.scanner_param(rse_name, "include_sizes", default=default)
 
