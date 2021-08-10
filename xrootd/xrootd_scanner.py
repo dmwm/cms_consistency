@@ -113,7 +113,7 @@ class Scanner(Task):
         else:
             path = line.strip()
             is_file = '.' in path
-            size = 0.0
+            size = None
         return is_file, size, canonic_path(path)
 
     def scan(self, recursive, with_meta):
@@ -271,7 +271,7 @@ class ScannerMaster(PyThread):
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
         self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_lists
         self.IncludeSizes = include_sizes
-        self.TotalSize = 0.0                    # Megabytes
+        self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
     def run(self):
         #
@@ -394,11 +394,13 @@ class ScannerMaster(PyThread):
             #for path, size in files:
             #    print(f"path: {path}, size:{size}")
             #print("total size (GB):", sum(sizes), location)
-            self.TotalSize += sum(sizes)
+            if self.IncludeSizes:
+                self.TotalSize += sum(sizes)
         if dirs:
             paths, sizes = zip(*dirs)
             self.addDirectories(paths, not recursive)
-            self.TotalSize += sum(sizes)
+            if self.IncludeSizes:
+                self.TotalSize += sum(sizes)
         self.show_progress()
 
     def files(self):
@@ -539,9 +541,10 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             rewrite_path = re.compile(rewrite_path)
 
         print("Starting scan of %s:%s with:" % (server, top_path))
+        print("  Include sizes       = %s" % include_sizes)
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
-        print("  Timeout              = %s" % timeout)
+        print("  Timeout             = %s" % timeout)
 
 
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
