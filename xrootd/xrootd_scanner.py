@@ -163,6 +163,7 @@ class Scanner(Task):
             else:
                 lines = [x.strip() for x in out.split("\n")]
                 for l in lines:
+                    if not l: continue
                     tup = self.parse_scan_line(l, with_meta)
                     if not tup or not tup[-1].startswith(location):
                         status = "failed"
