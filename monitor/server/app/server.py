@@ -439,7 +439,7 @@ class App(WPApp):
             filters={
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
                 "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank,
-                "as_date":as_date, "format_byte_number":format_byte_number
+                "as_date":as_date, "format_gigabytes":format_gigabytes
             }
         )
         
