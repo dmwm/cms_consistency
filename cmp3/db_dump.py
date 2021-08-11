@@ -161,7 +161,7 @@ try:
     subdir = config.dbdump_root(rse_name) or "/"
     if not subdir.endswith("/"):    subdir = subdir + "/"
 
-    _, ignore_file_patterns = config.ignore_lists(rse_name)
+    _, ignore_file_patterns = config.ignore_patterns(rse_name)
 
     engine = create_engine(dbconfig.DBURL,  echo=verbose)
     Session = sessionmaker(bind=engine)
