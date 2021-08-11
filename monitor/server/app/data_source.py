@@ -170,6 +170,7 @@ class UMDataSource(DataSource):
         root_data = roots[0] if roots else {}
         out.update(scanner_data)
         out.update(root_data)
+        out.setdefault("total_size_gb", None)
         return out
 
     def run_summary(self, stats):

@@ -40,6 +40,7 @@
         </tr>
         <tr>    <th>Directories</th><td>{{run_stats["directories"]}}</td>  </tr>
         <tr>    <th>Empty directories</th><td>{{run_stats["empty_directories"]}}</td>  </tr>
+        <tr>    <th>Total size, GB</th><td>{{run_stats["total_size_gb"]|none_as_blank}}
     {% endif %}
 </table>
 
