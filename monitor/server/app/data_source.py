@@ -59,6 +59,11 @@ class DataSource(object):
                     runs.append(timestamp)
         return sorted(runs)[-nlast:]
         
+    def latest_run(self, rse):
+        runs = self.list_run(rse, 1)
+        if not runs:    return None
+        else: return runs[-1]
+        
     def read_stats(self, rse, run, path=None, raw=False):
         path = path or f"{self.Path}/{rse}_{run}_stats.json"
         try:

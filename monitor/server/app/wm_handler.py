@@ -100,23 +100,12 @@ class WMHandler(WPHandler):
         if not rse:
             return "RSE must be specified", 400
         data_source = self.App.UMDataSource
+        last_run = data_source.latest_run(latest_run)
 
-        stats_by_run = data_source.all_stats_for_rse(rse)
-        if not stats_by_run:
+        if not last_run:
             return f"Data for RSE {rse} not found", 404
-        latest_stats = stats_by_run[-1]
-        latest_run = latest_stats["run"]
-        
             
-        # filter out all errors
-        stats_by_run = [r for r in stats_by_run if r.get("status") == "done" and not r.get("error") and r.get("start_time") and r.get("end_time")]
-        for r in stats_by_run:
-            r["elapsed_time"] = (r["end_time"] - r["start_time"])/3600
-            r["start_time_miliseconds"] = int(r["start_time"]*1000)
-        raw_latest_stats = data_source.read_stats(rse, latest_run, raw=True)
-        return self.render_to_response("wm_rse.html", rse=rse, latest_stats=latest_stats, stats_by_run=stats_by_run,
-            raw_latest_stats = raw_latest_stats
-        )
+        self.redirect(f"./show_run?rse={rse}&run={last_run}")
         
     def show_run(self, request, relpath, rse=None, run=None, **args):
         if not rse or not run:
