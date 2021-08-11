@@ -23,7 +23,7 @@
             <td>{{info["directories"]}}</td>
             <td>{{info["empty_directories"]}}</td>
             <td>{% if not info["total_size_gb"] is none %}
-                    {{["total_size_gb"]}}
+                    {{info["total_size_gb"]|format_gigabytes}}
                 {% endif %}
             </td>
             <td>{{info["error"] or ''}}</td>
