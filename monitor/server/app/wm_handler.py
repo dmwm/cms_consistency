@@ -100,7 +100,7 @@ class WMHandler(WPHandler):
         if not rse:
             return "RSE must be specified", 400
         data_source = self.App.UMDataSource
-        last_run = data_source.latest_run(latest_run)
+        last_run = data_source.latest_run(rse)
 
         if not last_run:
             return f"Data for RSE {rse} not found", 404
