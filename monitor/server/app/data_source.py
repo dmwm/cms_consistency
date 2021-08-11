@@ -60,7 +60,7 @@ class DataSource(object):
         return sorted(runs)[-nlast:]
         
     def latest_run(self, rse):
-        runs = self.list_run(rse, 1)
+        runs = self.list_runs(rse, 1)
         if not runs:    return None
         else: return runs[-1]
         
