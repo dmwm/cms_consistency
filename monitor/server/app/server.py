@@ -424,7 +424,7 @@ def format_gigabytes(x):
         the_l, the_v = l, v
     x = x/the_v
     if the_l == " ": the_l = ""
-    return "%.3f%s" % (x, the_l)
+    return "%.1f%s" % (x, the_l)
 
 class App(WPApp):
 
