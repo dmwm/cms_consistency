@@ -189,7 +189,7 @@
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
             <td>{{um_summary["files"]|none_as_blank}}</td>
             <td>{% if not um_summary["total_size_gb"] is none %}
-                    {{"um_summary["total_size_gb"]|format_gigabytes}}
+                    {{um_summary["total_size_gb"]|format_gigabytes}}
                 {% endif %}
             </td>
         {% endif %}
