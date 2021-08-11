@@ -8,7 +8,7 @@
 
 <table class="data">    
     <tr>
-        <th>RSE</th><th>Last run</th><th>Elapsed time</th><th>Status</th><th>Error</th><th>Files</th><th>Directories</th><th>Empty directories</th>
+        <th>RSE</th><th>Last run</th><th>Elapsed time</th><th>Status</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Size</th><th>Error</th>
     </tr>
     {% for rse in rses %}
         {% set info = data[rse] %}
@@ -19,10 +19,14 @@
                     {%- endif -%}
             </td>
             <td>{{info["status"] or ''}}</td>
-            <td>{{info["error"] or ''}}</td>
             <td>{{info["files"]}}</td>
             <td>{{info["directories"]}}</td>
             <td>{{info["empty_directories"]}}</td>
+            <td>{% if not info["total_size_gb"] is none %}
+                {{["total_size_gb"]|format_gigabytes}}
+                {% endif %}
+            </td>
+            <td>{{info["error"] or ''}}</td>
         </tr>
     {% endfor %}    
 </table>
