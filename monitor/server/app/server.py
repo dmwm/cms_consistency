@@ -4,7 +4,7 @@ from datetime import datetime
 from wm_handler import WMHandler, UMDataSource
 from data_source import CCDataSource, UMDataSource
 
-Version = "1.7.8"
+Version = "1.8.0"
 
 
 def display_file_list(lst):
