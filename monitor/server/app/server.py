@@ -412,7 +412,17 @@ def none_as_blank(x):
         return ''
     else:
         return str(x)
-    
+        
+def format_gigabytes(x):
+    x = x * 1024**3 # back to bytes
+    mark_letters = " KMGTPX"
+    mark_values = [1024**i for i,c in enumerate(mark_letters)]
+    for l, v in zip(mark_letters, mark_values):
+        if x < v:
+            break
+    x = x/v
+    if l == " ": l = ""
+    return "%.3f%s" % (x, l)
 
 class App(WPApp):
 
@@ -429,7 +439,7 @@ class App(WPApp):
             filters={
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
                 "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank,
-                "as_date":as_date
+                "as_date":as_date, "format_byte_number":format_byte_number
             }
         )
         
