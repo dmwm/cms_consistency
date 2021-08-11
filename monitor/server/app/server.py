@@ -417,12 +417,14 @@ def format_gigabytes(x):
     x = x * 1024**3 # back to bytes
     mark_letters = " KMGTPX"
     mark_values = [1024**i for i,c in enumerate(mark_letters)]
+    the_l, the_v = "", 1
     for l, v in zip(mark_letters, mark_values):
         if x < v:
             break
-    x = x/v
-    if l == " ": l = ""
-    return "%.3f%s" % (x, l)
+        the_l, the_v = l, v
+    x = x/the_v
+    if the_l == " ": the_l = ""
+    return "%.3f%s" % (x, the_l)
 
 class App(WPApp):
 
