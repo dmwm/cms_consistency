@@ -188,7 +188,10 @@
             <td>{{um_summary['elapsed_time']|hms}}</td>
             <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
             <td>{{um_summary["files"]|none_as_blank}}</td>
-            <td>{{um_summary["total_size_gb"]|none_as_blank}}</td>
+            <td>{% if not um_summary["total_size_gb"] is none %}
+                    {{"%.3f"|format(um_summary["total_size_gb"])}}
+                {% endif %}
+            </td>
         {% endif %}
     </tr>
 {% endfor %}
