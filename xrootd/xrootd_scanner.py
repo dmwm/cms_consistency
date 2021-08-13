@@ -7,6 +7,8 @@ from stats import Stats
 
 Version = "2.0"
 
+GB = 1024*1024*1024
+
 try:
     import tqdm
     Use_tqdm = True
@@ -252,8 +254,7 @@ class Scanner(Task):
             counts = " %8d %-8d" % (len(files), len(dirs))
             if self.IncludeSizes:
                 total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
-                total_size = total_size/1024/1024/2024  # -> GB
-                counts += " %.3f" % (total_size,)
+                counts += " %.3f" % (total_size/GB,)
             self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, recursive, files, dirs)
@@ -631,7 +632,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         if (not ignore_failed_directories) and master.GaveUp:
             failed = True
 
-        total_size = None if failed else master.TotalSize
+        total_size = None if failed else master.TotalSize/GB
 
         root_stats.update({
             "root_failed": master.RootFailed,
@@ -642,7 +643,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             "empty_directories":len(master.EmptyDirs),
             "end_time":t1,
             "elapsed_time": t1-t0,
-            "total_size_gb": master.TotalSize
+            "total_size_gb": total_size
         })
 
         root_failed = master.RootFailed
