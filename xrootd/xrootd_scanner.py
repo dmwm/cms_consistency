@@ -192,7 +192,7 @@ class Scanner(Task):
                         line = line.strip()
                         if line.startswith("Flags:"):
                             if not ("IsDir" in line):
-                                files = [location]
+                                files = [(location, None)]
                                 status = "OK"
                                 reason = ""
                             break
@@ -424,7 +424,7 @@ class ScannerMaster(PyThread):
             self.addFiles(paths)
             #for path, size in files:
             #    print(f"path: {path}, size:{size}")
-            #print("total size (GB):", sum(sizes), location)
+            print("total size (GB):", sum(sizes), location)
             if self.IncludeSizes:
                 self.TotalSize += sum(sizes)
         if dirs:
