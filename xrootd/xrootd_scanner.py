@@ -95,23 +95,24 @@ class Scanner(Task):
                 self.Killed = True
                 self.Subprocess.terminate()
                 
-    Line_Pattern_1 = re.compile(r"""
-        (?P<mask>[dxwx-]{4})\s+
-        \d{4}-\d{2}-\d{2}\s+
-        \d{2}:\d{2}:\d{2}\s+
-        (?P<szie>\d+)\s+
-        (?P<path>[^ ]+)
-    """, re.VERBOSE)
+    Line_Patterns = [
+        r"""
+                (?P<mask>[dxwx-]{4})\s+
+                \d{4}-\d{2}-\d{2}\s+
+                \d{2}:\d{2}:\d{2}\s+
+                (?P<szie>\d+)\s+
+                (?P<path>[^ ]+)
+            """,
+        r"""
+                (?P<mask>[dxwx-]{4})\s+
+                \d{4}-\d{2}-\d{2}\s+
+                \d{2}:\d{2}:\d{2}\s+
+                (?P<szie>\d+)\s+
+                (?P<path>[^ ]+)
+            """
+    ]
     
-    Line_Pattern_2 = re.compile(r"""
-        (?P<mask>[dxwx-]{10})\s+
-        \w+\s+
-        \w+\s+
-        (?P<szie>\d+)\s+
-        \d{4}-\d{2}-\d{2}\s+
-        \d{2}:\d{2}:\d{2}\s+
-        (?P<path>[^ ]+)
-    """, re.VERBOSE)
+    Line_Patterns = [re.compile(p, re.VERBOSE) for p in Line_Patterns]
 
     def parse_scan_line(self, line, with_meta):
         """
@@ -125,7 +126,7 @@ class Scanner(Task):
         if with_meta:
             line = line.strip()
             is_file = size = path = None
-            for p in (Line_Pattern_1, Line_Pattern_2):
+            for p in self.Line_Patterns:
                 m = p.match(line)
                 if m:
                     is_file = m.group("mask")[0] != 'd'
