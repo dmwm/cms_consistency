@@ -45,11 +45,16 @@
         return color;
     }
     
-    function display_um_status_chart(canvas_id, status_list)
+    function display_um_status_chart(id_prefix, status_list)
     {
-        var canvas = document.getElementById(canvas_id);
-        if( canvas == null )
+        var td = document.getElementById(id_prefix+"_td");
+        if ( td == null )
             return;
+        
+        var loading_img = document.getElementById(id_prefix+"_loading");
+        td.removeChild(loading_img);
+        
+        var canvas = document.createElement("canvas");
         var n = Math.min(N, status_list.length);
         canvas.setAttribute("height", DY);
         canvas.setAttribute("width", DX*N);
@@ -65,6 +70,7 @@
             ctx.fillRect(x,0,DX,DY);
             x += DX;
         }
+        td.appendChild(canvas);
     };
     
     function display_cc_status_chart(id_prefix, status_list)
@@ -124,7 +130,7 @@
         
         var td = document.getElementById(id_prefix + "_td");
         td.appendChild(img);
-    }
+    };
     
 </script>
 
@@ -232,29 +238,10 @@
                 var cc_errors = cc_total-info.cc_success;
                 
                 if( um_total > 0 )
-                {
-                    //var o = document.getElementById(rse+"_um_errors");
-                    //if( o == null )
-                    //    console.log("can not find UM td for rse "+rse);
-                    //if( um_errors )
-                    //    o.innerHTML = "" +  um_errors + "/" + um_total;
-                    //else
-                    //    o.innerHTML = "0";
-                    display_um_status_chart(rse+"_um_status_chart", info.um_status_history.slice(-N));
-                    
-                }
+                    display_um_status_chart(rse+"_um_status", info.um_status_history.slice(-N));
                 
                 if( cc_total > 0 )
-                {
-                    //var o = document.getElementById(rse+"_cc_errors");
-                    //if( o == null )
-                    //    console.log("can not find CC td for rse "+rse);
-                    //if ( cc_errors )
-                    //    o.innerHTML = "" +  cc_errors + "/" + cc_total;
-                    //else
-                    //    o.innerHTML = "0";
-                    display_cc_status_chart(rse+"_cc_status_chart", info.cc_status_history.slice(-N));
-                }
+                    display_cc_status_chart(rse+"_cc_status", info.cc_status_history.slice(-N));
             }
         }
     };
