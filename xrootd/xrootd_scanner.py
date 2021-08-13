@@ -135,9 +135,10 @@ class Scanner(Task):
             else:
                 return None
         else:
-            is_file = '.' in path
             size = None
             path = line.strip()
+            last_item = path.rsplit("/",1)[-1]
+            is_file = (not last_item in (".", "..")) and "." in last_item
         return is_file, size, canonic_path(path)
 
     def scan(self, recursive, with_meta):
