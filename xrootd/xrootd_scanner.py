@@ -142,6 +142,7 @@ class Scanner(Task):
             path = line.strip()
             last_item = path.rsplit("/",1)[-1]
             is_file = (not last_item in (".", "..")) and "." in last_item
+        print("parse:", line,"->",is_file, size, canonic_path(path))
         return is_file, size, canonic_path(path)
 
     def scan(self, recursive, with_meta):
@@ -251,6 +252,7 @@ class Scanner(Task):
             counts = " %8d %-8d" % (len(files), len(dirs))
             if self.IncludeSizes:
                 total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
+                total_size = total_size/1024/1024/2024  # -> GB
                 counts += " %.3f" % (total_size,)
             self.message("done", stats+counts)
             if self.Master is not None:
