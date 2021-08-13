@@ -95,25 +95,49 @@ class Scanner(Task):
                 self.Killed = True
                 self.Subprocess.terminate()
                 
+    Line_Pattern_1 = re.compile(r"""
+        (?P<mask>[dxwx-]{4})\s+
+        \d{4}-\d{2}-\d{2}\s+
+        \d{2}:\d{2}:\d{2}\s+
+        (?P<szie>\d+)\s+
+        (?P<path>[^ ]+)
+    """, re.VERBOSE)
+    
+    Line_Pattern_2 = re.compile(r"""
+        (?P<mask>[dxwx-]{10})\s+
+        \w+\s+
+        \w+\s+
+        (?P<szie>\d+)\s+
+        \d{4}-\d{2}-\d{2}\s+
+        \d{2}:\d{2}:\d{2}\s+
+        (?P<path>[^ ]+)
+    """, re.VERBOSE)
+
     def parse_scan_line(self, line, with_meta):
         """
         returns (is_file, size, path)
         
         dr-x 2021-07-13 04:00:26        4096 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004
         -r-- 2021-07-02 09:35:03   719124843 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004//1C576248-6EEF-B74F-A336-D1D5B8E41722.root
+        
+        drwxrwxr-x root root 0 2021-06-23 23:21:46 /store/unmerged/HINPbPbSpring21MiniAOD
         """
         if with_meta:
-            words = line.split(None, 4)
-            if len(words) == 5:
-                is_file = words[0][0] != 'd'
-                size = float(words[3])/1024/1024/1024           # size in GB
-                path = words[4]
+            line = line.strip()
+            is_file = size = path = None
+            for p in (Line_Pattern_1, Line_Pattern_2):
+                m = p.match(line)
+                if m:
+                    is_file = m.group("mask")[0] != 'd'
+                    size = int(m.group("size"))
+                    path = canonic_path(m.group("path"))
+                    break
             else:
                 return None
         else:
-            path = line.strip()
             is_file = '.' in path
             size = None
+            path = line.strip()
         return is_file, size, canonic_path(path)
 
     def scan(self, recursive, with_meta):
@@ -597,6 +621,11 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         s = elapsed % 60
         m = elapsed // 60
         print("Elapsed time:         %dm %02ds\n" % (m, s))
+        
+        if (not ignore_failed_directories) and master.GaveUp:
+            failed = True
+
+        total_size = None if failed else master.TotalSize
 
         root_stats.update({
             "root_failed": master.RootFailed,
@@ -610,8 +639,6 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
             "total_size_gb": master.TotalSize
         })
 
-        if (not ignore_failed_directories) and master.GaveUp:
-            failed = True
         root_failed = master.RootFailed
             
     del my_stats["scanning"]
