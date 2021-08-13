@@ -95,21 +95,23 @@ class Scanner(Task):
                 self.Killed = True
                 self.Subprocess.terminate()
                 
+    #dr-x 2021-06-23 23:21:46           0 /store/unmerged/HINPbPbSpring21MiniAOD
+
     Line_Patterns = [
         r"""
                 (?P<mask>[dxwx-]{4})\s+
                 \d{4}-\d{2}-\d{2}\s+
                 \d{2}:\d{2}:\d{2}\s+
-                (?P<szie>\d+)\s+
+                (?P<size>\d+)\s+
                 (?P<path>[^ ]+)
-            """,
+        """,
         r"""
                 (?P<mask>[dxwx-]{4})\s+
                 \d{4}-\d{2}-\d{2}\s+
                 \d{2}:\d{2}:\d{2}\s+
-                (?P<szie>\d+)\s+
+                (?P<size>\d+)\s+
                 (?P<path>[^ ]+)
-            """
+        """
     ]
     
     Line_Patterns = [re.compile(p, re.VERBOSE) for p in Line_Patterns]
