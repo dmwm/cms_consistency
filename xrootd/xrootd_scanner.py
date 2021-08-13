@@ -424,7 +424,7 @@ class ScannerMaster(PyThread):
             self.addFiles(paths)
             #for path, size in files:
             #    print(f"path: {path}, size:{size}")
-            print("total size (GB):", sum(sizes), location)
+            #print("total size:", sum(sizes), location)
             if self.IncludeSizes:
                 self.TotalSize += sum(sizes)
         if dirs:
@@ -622,7 +622,7 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
         print("Failed directories:   %d" % (len(master.GaveUp),))
         if include_sizes:
-            print("Total size:           %.3f GB" % (master.TotalSize))
+            print("Total size:           %.3f GB" % (master.TotalSize/GB))
         t1 = time.time()
         elapsed = int(t1 - t0)
         s = elapsed % 60
