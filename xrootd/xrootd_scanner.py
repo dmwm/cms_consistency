@@ -142,7 +142,7 @@ class Scanner(Task):
             path = line.strip()
             last_item = path.rsplit("/",1)[-1]
             is_file = (not last_item in (".", "..")) and "." in last_item
-        print("parse:", line,"->",is_file, size, canonic_path(path))
+        #print("parse:", line,"->",is_file, size, canonic_path(path))
         return is_file, size, canonic_path(path)
 
     def scan(self, recursive, with_meta):
