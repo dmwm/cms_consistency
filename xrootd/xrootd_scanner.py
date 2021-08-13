@@ -99,14 +99,14 @@ class Scanner(Task):
 
     Line_Patterns = [
         r"""
-                (?P<mask>[dxwx-]{4})\s+
+                (?P<mask>[drwx-]{4})\s+
                 \d{4}-\d{2}-\d{2}\s+
                 \d{2}:\d{2}:\d{2}\s+
                 (?P<size>\d+)\s+
                 (?P<path>[^ ]+)
         """,
         r"""
-                (?P<mask>[dxwx-]{4})\s+
+                (?P<mask>[drwx-]{4})\s+
                 \d{4}-\d{2}-\d{2}\s+
                 \d{2}:\d{2}:\d{2}\s+
                 (?P<size>\d+)\s+
