@@ -430,8 +430,8 @@ class ScannerMaster(PyThread):
         if dirs:
             paths, sizes = zip(*dirs)
             self.addDirectories(paths, not recursive)
-            if self.IncludeSizes:
-                self.TotalSize += sum(sizes)
+            #if self.IncludeSizes:
+            #    self.TotalSize += sum(sizes)
         self.show_progress()
 
     def files(self):
