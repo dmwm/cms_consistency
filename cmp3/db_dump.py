@@ -227,7 +227,8 @@ try:
         n += 1
         if n % batch == 0:
                 print(n)
-    out_list.close()
+    for out_list in outputs.values():
+        out_list.close()
     sys.stderr.write("Found %d files in %d directories\n" % (n, len(dirs)))
     t1 = time.time()
     t = int(t1 - t0)
