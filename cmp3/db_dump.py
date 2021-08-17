@@ -36,6 +36,7 @@ python db_dump.py [options] -c <config.yaml> <rse_name>
     -z -- produce gzipped output
     -s <stats file> -- write stats into JSON file
        -S <key> -- add dump stats to stats under the key
+    -m <N files> -- stop after N files
 """
 
 
@@ -87,7 +88,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "f:c:ln:vd:s:S:z")
+opts, args = getopt.getopt(sys.argv[1:], "f:c:ln:vd:s:S:zm:")
 
 filters = {}
 all_states = set()
@@ -109,6 +110,7 @@ out_prefix = opts.get("-o")
 zout = "-z" in opts
 stats_file = opts.get("-s")
 stats_key = opts.get("-S", "db_dump")
+stop_after = int(opts.get("-m", 0)) or None
 
 rse_name = args[0]
 
@@ -227,6 +229,9 @@ try:
         n += 1
         if n % batch == 0:
                 print(n)
+        if stop_after is not None and n >= stop_after:
+            print(f"stopped after {stop_after} files", file=sys.stderr)
+            break
     for out_list in outputs.values():
         out_list.close()
     sys.stderr.write("Found %d files in %d directories\n" % (n, len(dirs)))
