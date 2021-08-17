@@ -100,13 +100,17 @@ class Scanner(Task):
     #dr-x 2021-06-23 23:21:46           0 /store/unmerged/HINPbPbSpring21MiniAOD
 
     Line_Patterns = [
+        # UNIX FS ls -l style
         r"""
-                (?P<mask>[drwx-]{4})\s+
+                (?P<mask>[drwx-]{10})\s+
+                \w+\s+
+                \w+\s+
+                (?P<size>\d+)\s+
                 \d{4}-\d{2}-\d{2}\s+
                 \d{2}:\d{2}:\d{2}\s+
-                (?P<size>\d+)\s+
                 (?P<path>[^ ]+)
         """,
+        # xrdfs ls -l style
         r"""
                 (?P<mask>[drwx-]{4})\s+
                 \d{4}-\d{2}-\d{2}\s+
