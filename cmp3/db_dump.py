@@ -198,32 +198,35 @@ try:
     if filter_re:
         filter_re = re.compile(filter_re)
     for r in replicas:
-                    path = r.name
+        path = r.name
+        state = r.state
 
-                    if not path.startswith(subdir):
-                            continue
+        if not path.startswith(subdir):
+                continue
 
-                    if filter_re is not None:
-                        if not filter_re.search(path):
-                            continue
-                        
-                    if any(p.match(path) for p in ignore_file_patterns):
-                        continue
+        if filter_re is not None:
+            if not filter_re.search(path):
+                continue
+            
+        if any(p.match(path) for p in ignore_file_patterns):
+            continue
+            
+        words = path.rsplit("/", 1)
+        if len(words) == 1:
+                dirp = "/"
+        else:
+                dirp = words[0]
+        dirs.add(dirp)
 
-                    words = path.rsplit("/", 1)
-                    if len(words) == 1:
-                            dirp = "/"
-                    else:
-                            dirp = words[0]
-                    dirs.add(dirp)
-
-                    if long_output:
-                        out_list.add("%s\t%s\t%s\t%s\t%s" % (rse_name, r.scope, r.name, path or "null", r.state))
-                    else:
-                        out_list.add(path or "null")
-                    n += 1
-                    if n % batch == 0:
-                            print(n)
+        for s, out_list in outputs.items():
+            if state in s or s == '*':
+                if long_output:
+                    out_list.add("%s\t%s\t%s\t%s\t%s" % (rse_name, r.scope, r.name, path or "null", r.state))
+                else:
+                    out_list.add(path or "null")
+        n += 1
+        if n % batch == 0:
+                print(n)
     out_list.close()
     sys.stderr.write("Found %d files in %d directories\n" % (n, len(dirs)))
     t1 = time.time()
