@@ -28,8 +28,10 @@ python db_dump.py [options] -c <config.yaml> <rse_name>
     -d <db config file> -- required - uses rucio.cfg format. Must contain "default" and "schema" under [databse]
     -v -- verbose
     -n <nparts>
-    -o <prefix> -- output file prefix
-    -a -- include all replicas, otherwise active only (state='A')
+    -f <state>:<prefix> -- filter files with given state to the files set with prefix
+        state can be either combination of capital letters or "*" 
+        can be repeated  ( -f A:/path1 -f CD:/path2 )
+        use "*" for state to send all the files to the output set ( -f *:/path )
     -l -- include more columns, otherwise physical path only, automatically on if -a is used
     -z -- produce gzipped output
     -s <stats file> -- write stats into JSON file
@@ -85,7 +87,16 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "o:c:lan:vd:s:S:z")
+opts, args = getopt.getopt(sys.argv[1:], "f:c:ln:vd:s:S:z")
+
+filters = {}
+all_states = set()
+for opt, val in opts:
+    if opt == '-f':
+        states, prefix = val.split(':')
+        filters[states] = prefix
+        all_states |= set(states)
+
 opts = dict(opts)
 
 if not args or (not "-c" in opts and not "-d" in opts):
@@ -93,8 +104,7 @@ if not args or (not "-c" in opts and not "-d" in opts):
         sys.exit(2)
 
 verbose = "-v" in opts
-all_replicas = "-a" in opts
-long_output = "-l" in opts or all_replicas
+long_output = "-l"
 out_prefix = opts.get("-o")
 zout = "-z" in opts
 stats_file = opts.get("-s")
@@ -149,15 +159,6 @@ try:
     else:
             nparts = config.nparts(rse_name) or 1
 
-    if nparts > 1:
-            if out_prefix is None:
-                    print("Output file path must be specified if partitioning is requested")
-                    sys.exit(1)
-
-    out_list = None
-    if out_prefix is not None:
-        out_list = PartitionedList.create(nparts, out_prefix, zout)
-
     subdir = config.dbdump_root(rse_name) or "/"
     if not subdir.endswith("/"):    subdir = subdir + "/"
 
@@ -178,15 +179,19 @@ try:
 
     batch = 100000
 
+    outputs = {
+        states:PartitionedList.create(nparts, prefix, zout) for states, prefix in filters.items()
+    }
+
+    all_replicas = '*' in all_states
+
+    replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(batch)
+
     if all_replicas:
             sys.stderr.write("including all replias\n")
-            replicas = session.query(Replica).filter(Replica.rse_id==rse_id).yield_per(batch)
-    else:
-            sys.stderr.write("including active replias only\n")
-            replicas = session.query(Replica)       \
-                    .filter(Replica.rse_id==rse_id) \
-                    .filter(Replica.state=='A')     \
-                    .yield_per(batch)
+    else:            
+            print("including replicas in states:", list(all_states), file=sys.stderr)
+            replicas = replicas.filter(Replica.state.in_(list(all_states)))
     dirs = set()
     n = 0
     filter_re = config.dbdump_param(rse, "filter")
