@@ -38,9 +38,13 @@ if [ ! -d ${scratch} ]; then
 	exit 1
 fi
 
-a_prefix=${scratch}/${RSE}_A.list
-b_prefix=${scratch}/${RSE}_B.list
-r_prefix=${scratch}/${RSE}_R.list
+a_prefix=${scratch}/${RSE}_A
+b_prefix=${scratch}/${RSE}_B
+am_prefix=${a_prefix}_M
+ad_prefix=${a_brefix}_D
+bm_prefix=${b_prefix}_M
+bd_prefix=${b_brefix}_D
+r_prefix=${scratch}/${RSE}_R
 
 now=`date -u +%Y_%m_%d_%H_%M`
 timestamp=`date -u +%s`
@@ -81,8 +85,10 @@ _EOF_
 
 
 # 0. delete old lists
-rm -f ${a_prefix}*
-rm -f ${b_prefix}*
+rm -f ${am_prefix}*
+rm -f ${ad_prefix}*
+rm -f ${bd_prefix}*
+rm -f ${bm_prefix}*
 rm -f ${r_prefix}*
 
 # 1. DB dump "before"
@@ -96,7 +102,7 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-$python cmp3/db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -f A:${bm_prefix} -f "*:{bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
 
 sleep 10
 
@@ -123,7 +129,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_log}
-$python cmp3/db_dump.py -o ${a_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -f A:${am_prefix} -f "*:{ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
 
 # 4. cmp3
 
@@ -131,7 +137,11 @@ echo
 echo Comparing ...
 echo
 
-$python cmp3/cmp3.py -z -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
+$python cmp3/cmp5.py -z -s ${stats} \
+    ${bm_prefix} ${bd_prefix} \
+    ${r_prefix} \
+    ${am_prefix} ${ad_prefix} \
+    ${d_out} ${m_out}
 
 echo "Dark list:    " `gunzip ${d_out} | wc -l`
 echo "Missing list: " `gunzip ${m_out} | wc -l`

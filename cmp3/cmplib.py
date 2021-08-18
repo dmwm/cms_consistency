@@ -22,7 +22,31 @@ def cmp3(a, r, b):
                     m.add(x)
     #print("memory utilization at the end of cmp3, MB:", getMemory())
     return list(d), list(m)
-
+    
+def cmp3_missing(a, r, b):
+    #       M = A*B-R
+    m = set()    
+    a_set = set(a)    
+    for x in b:
+        if x in a_set:
+            m.add(x)
+    del a_set                   # release memory
+    for x in r:
+        if x in m:
+            m.remove(x)
+    return list(m)
+    
+def cmp3_dark(a, r, b):
+    #       D = R-A-B = (R-A)-B
+    d = set(r)     
+    for x in a:
+        try:    d.remove(x)
+        except KeyError: pass
+    for x in b:
+        try:    d.remove(x)
+        except KeyError: pass
+    return list(d)
+            
 def lines(f):
     l = f.readline()
     while l:
@@ -43,7 +67,7 @@ def cmp3_lists(a_list, r_list, b_list):
             print("Partition %d compared: dark:%d missing:%d" % (i, len(d), len(m))) 
     return d_list, m_list
 
-def cmp3_generator(a_list, r_list, b_list):
+def cmp3_generator(a_list, r_list, b_list, stream=None):
 
     assert a_list.NParts == r_list.NParts and r_list.NParts == b_list.NParts, "Inconsistent number of parts: B:%d, R:%d, A:%d" % (
         b_list.NParts, r_list.NParts, a_list.NParts)
@@ -51,11 +75,14 @@ def cmp3_generator(a_list, r_list, b_list):
     d_list, m_list = [], []
     for i, (af, rf, bf) in enumerate(zip(a_list.files(), r_list.files(), b_list.files())):
             #print("Comparing %s %s %s..." % (an, rn, bn))
-            d, m = cmp3(lines(af), lines(rf), lines(bf))
-            for f in d:
-                yield ('d', f)
-            for f in m:
-                yield ('m', f)
+            if stream is None:
+                d, m = cmp3(lines(af), lines(rf), lines(bf))
+                yield from (('d',f) for f in d)
+                yield from (('m',f) for f in m)
+            elif stream == 'd':
+                yield from cmp3_dark(lines(af), lines(rf), lines(bf))
+            elif stream == 'm':
+                yield from cmp3_missing(lines(af), lines(rf), lines(bf))
 
 def cmp3_parts(a_prefix, r_prefix, b_prefix):
     a_list = PartitionedList.open(a_prefix)
