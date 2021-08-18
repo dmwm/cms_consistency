@@ -32,18 +32,20 @@ export PYTHONPATH=`pwd`/cmp3:`pwd`
 
 echo will use python: $python
 
-mkdir -p ${scratch}
-if [ ! -d ${scratch} ]; then
-	echo Scratch directory does not exist and can not be created
-	exit 1
+if [ ! -d ${scratch} ] && [ ! -L ${scratch} ]; then
+        mkdir -p ${scratch}
+	if [ $? ]; then
+		echo Scratch directory does not exist and can not be created
+		exit 1
+	fi
 fi
 
 a_prefix=${scratch}/${RSE}_A
 b_prefix=${scratch}/${RSE}_B
 am_prefix=${a_prefix}_M
-ad_prefix=${a_brefix}_D
+ad_prefix=${a_prefix}_D
 bm_prefix=${b_prefix}_M
-bd_prefix=${b_brefix}_D
+bd_prefix=${b_prefix}_D
 r_prefix=${scratch}/${RSE}_R
 
 now=`date -u +%Y_%m_%d_%H_%M`
@@ -85,11 +87,11 @@ _EOF_
 
 
 # 0. delete old lists
-rm -f ${am_prefix}*
-rm -f ${ad_prefix}*
-rm -f ${bd_prefix}*
-rm -f ${bm_prefix}*
-rm -f ${r_prefix}*
+#rm -f ${am_prefix}*
+#rm -f ${ad_prefix}*
+#rm -f ${bd_prefix}*
+#rm -f ${bm_prefix}*
+#rm -f ${r_prefix}*
 
 # 1. DB dump "before"
 echo
@@ -102,7 +104,7 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-$python cmp3/db_dump.py -f A:${bm_prefix} -f "*:{bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
+$python cmp3/db_dump.py -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
 
 sleep 10
 
@@ -129,7 +131,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_log}
-$python cmp3/db_dump.py -f A:${am_prefix} -f "*:{ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
+$python cmp3/db_dump.py -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
 
 # 4. cmp3
 

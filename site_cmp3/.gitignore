@@ -6,3 +6,5 @@
 config.yaml
 .*
 !.gitignore
+data
+*.errors

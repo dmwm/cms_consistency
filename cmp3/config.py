@@ -107,7 +107,7 @@ class Config:
             return self.get_by_path("rses", rse_name, "dbdump", param, default=default)
             
         def dbdump_root(self, rse_name):
-            return self.dbdump_param(rse_name, "path_roots", "/")
+            return self.dbdump_param(rse_name, "path_root", "/")
 
         def nparts(self, rse_name):
             return self.general_param(rse_name, "partitions", 10)

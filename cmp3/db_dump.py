@@ -105,7 +105,7 @@ if not args or (not "-c" in opts and not "-d" in opts):
         sys.exit(2)
 
 verbose = "-v" in opts
-long_output = "-l"
+long_output = "-l" in opts
 out_prefix = opts.get("-o")
 zout = "-z" in opts
 stats_file = opts.get("-s")
@@ -163,6 +163,7 @@ try:
 
     subdir = config.dbdump_root(rse_name) or "/"
     if not subdir.endswith("/"):    subdir = subdir + "/"
+    print(f"Filtering files under {subdir} only")
 
     _, ignore_file_patterns = config.ignore_patterns(rse_name)
 
