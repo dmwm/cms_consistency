@@ -53,10 +53,7 @@ class PartitionedList(object):
     def create(nparts, prefix, compressed=False):
         # create new set
         gz = ".gz" if compressed else ""
-        if nparts == 1:
-            files = ["%s%s" % (prefix, gz)]
-        else:
-            files = ["%s.%05d%s" % (prefix, i, gz) for i in range(nparts)]
+        files = ["%s.%05d%s" % (prefix, i, gz) for i in range(nparts)]
         return PartitionedList("w", files, compressed)
         
     @staticmethod
