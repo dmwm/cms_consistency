@@ -54,7 +54,6 @@ def lines(f):
         l = f.readline()
 
 def cmp3_lists(a_list, r_list, b_list):
-
     assert a_list.NParts == r_list.NParts and r_list.NParts == b_list.NParts, "Inconsistent number of parts: B:%d, R:%d, A:%d" % (
         b_list.NParts, r_list.NParts, a_list.NParts)
 
