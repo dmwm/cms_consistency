@@ -49,7 +49,8 @@ def main():
 
         a_m_list = PartitionedList.open(a_m_prefix)
         a_d_list = PartitionedList.open(a_d_prefix)
-        r_list = PartitionedList.open(r_prefix)
+        r_m_list = PartitionedList.open(r_prefix)
+        r_d_list = PartitionedList.open(r_prefix)
         b_m_list = PartitionedList.open(b_m_prefix)
         b_d_list = PartitionedList.open(b_d_prefix)
 
@@ -74,13 +75,13 @@ def main():
                 "b_m_files": b_m_list.FileNames,
                 "a_d_files": a_d_list.FileNames,
                 "b_d_files": b_d_list.FileNames,
-                "r_files": r_list.FileNames,
 
                 "a_m_nfiles": a_m_list.NParts,
                 "b_m_nfiles": b_m_list.NParts,
                 "a_d_nfiles": a_d_list.NParts,
                 "b_d_nfiles": b_d_list.NParts,
-                "r_nfiles": r_list.NParts,
+                
+                "r_nfiles": r_d_list.NParts,
 
                 "status": "started"
             }
@@ -97,14 +98,14 @@ def main():
             fd = open(out_dark, "w")
             fm = open(out_missing, "w")
 
-        diffs_m = cmp3_generator(a_m_list, r_list, b_m_list, 'm')
+        diffs_m = cmp3_generator(a_m_list, r_m_list, b_m_list, 'm')
         nm = nd = 0
         for path in diffs_m:
             fm.write(path)
             nm += 1
         fm.close()
 
-        diffs_d = cmp3_generator(a_d_list, r_list, b_d_list, 'd')
+        diffs_d = cmp3_generator(a_d_list, r_d_list, b_d_list, 'd')
         for path in diffs_d:
             fd.write(path)
             nd += 1
