@@ -105,7 +105,7 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-$python cmp3/db_dump.py -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
+$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
 
 sleep 10
 
@@ -115,7 +115,7 @@ echo Site dump ...
 echo
 
 echo "Site scan..." > ${scanner_errors}
-$python xrootd_scanner.py -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
+$python xrootd_scanner.py -z -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then
     echo "Site scan failed. Status code: $scanner_status" >> ${scanner_errors}
@@ -140,7 +140,7 @@ echo
 echo Comparing ...
 echo
 
-$python cmp3/cmp5.py -z -s ${stats} \
+$python cmp3/cmp5.py -s ${stats} \
     ${bm_prefix} ${bd_prefix} \
     ${r_prefix} \
     ${am_prefix} ${ad_prefix} \
