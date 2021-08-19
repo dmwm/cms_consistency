@@ -87,11 +87,11 @@ _EOF_
 
 
 # 0. delete old lists
-#rm -f ${am_prefix}*
-#rm -f ${ad_prefix}*
-#rm -f ${bd_prefix}*
-#rm -f ${bm_prefix}*
-#rm -f ${r_prefix}*
+rm -f ${am_prefix}.*
+rm -f ${ad_prefix}.*
+rm -f ${bd_prefix}.*
+rm -f ${bm_prefix}.*
+rm -f ${r_prefix}.*
 
 # 1. DB dump "before"
 echo
