@@ -58,7 +58,7 @@ def cmp3_lists(a_list, r_list, b_list):
         b_list.NParts, r_list.NParts, a_list.NParts)
 
     d_list, m_list = [], []
-    for i, (af, rf, bf) in enumerate(zip(a_list.files(), r_list.files(), b_list.files())):
+    for i, (ap, rp, bp) in enumerate(zip(a_list.partitions, r_list.partitions, b_list.partitions)):
             #print("Comparing %s %s %s..." % (an, rn, bn))
             d, m = cmp3(lines(af), lines(rf), lines(bf))
             d_list += d
@@ -72,16 +72,16 @@ def cmp3_generator(a_list, r_list, b_list, stream=None):
         b_list.NParts, r_list.NParts, a_list.NParts)
 
     d_list, m_list = [], []
-    for i, (af, rf, bf) in enumerate(zip(a_list.files(), r_list.files(), b_list.files())):
+    for i, (ap, rp, bp) in enumerate(zip(a_list.partitions, r_list.partitions, b_list.partitions)):
             #print("Comparing %s %s %s..." % (an, rn, bn))
             if stream is None:
-                d, m = cmp3(lines(af), lines(rf), lines(bf))
+                d, m = cmp3(ap, rp, bp)
                 yield from (('d',f) for f in d)
                 yield from (('m',f) for f in m)
             elif stream == 'd':
-                yield from cmp3_dark(lines(af), lines(rf), lines(bf))
+                yield from cmp3_dark(ap, rp, bp)
             elif stream == 'm':
-                yield from cmp3_missing(lines(af), lines(rf), lines(bf))
+                yield from cmp3_missing(ap, rp, bp)
 
 def cmp3_parts(a_prefix, r_prefix, b_prefix):
     a_list = PartitionedList.open(a_prefix)

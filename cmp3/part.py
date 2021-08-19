@@ -11,8 +11,9 @@ def part(nparts, path):
         
 class _Partition(object):
     
-    def __init__(self, f):
+    def __init__(self, f, path):
         self.F = f
+        self.Path = path
         
     def __iter__(self):
         return self
@@ -75,7 +76,8 @@ class PartitionedList(object):
     def files(self):
         return self.Files
         
-    def parts(self):
+    @property
+    def partitions(self):
         for f in self.Files:
             yield(_Partition(f))
         
