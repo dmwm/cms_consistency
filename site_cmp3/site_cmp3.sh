@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="1.3"
+version="2.0"
 
 echo site_cmp3 version: $version
 
@@ -71,6 +71,7 @@ now_date_time=`date -u`
 python_version=`$python -V`
 cat > ${stats} <<_EOF_
 {
+    "driver_script_version": "$version",
     "start_time":   ${timestamp}.0,
     "start_date_time_utc":  "${now_date_time}",
     "run":          "${now}",
