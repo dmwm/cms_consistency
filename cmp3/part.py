@@ -81,7 +81,7 @@ class PartitionedList(object):
         
     @property
     def partitions(self):
-        return [_Partition(f, path) for f, path in zip(self.Files, self.Filenames)]
+        return [_Partition(f, path) for f, path in zip(self.Files, self.FileNames)]
         
     def items(self):
         assert self.Mode == "r"
