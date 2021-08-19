@@ -24,6 +24,9 @@ class _Partition(object):
             raise StopIteration
         return l.strip()
         
+    def rewind(self):
+        self.F.seek(0,0)
+        
 class PartitionedList(object):
     
     def __init__(self, mode, filenames, compressed=False):
@@ -78,8 +81,7 @@ class PartitionedList(object):
         
     @property
     def partitions(self):
-        for f in self.Files:
-            yield(_Partition(f))
+        return [_Partition(f, path) for f, path in zip(self.Files, self.Filenames)]
         
     def items(self):
         assert self.Mode == "r"
