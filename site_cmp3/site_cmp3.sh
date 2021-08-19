@@ -51,8 +51,8 @@ r_prefix=${scratch}/${RSE}_R
 now=`date -u +%Y_%m_%d_%H_%M`
 timestamp=`date -u +%s`
 
-d_out=${out}/${RSE}_${now}_D.list.gz
-m_out=${out}/${RSE}_${now}_M.list.gz
+d_out=${out}/${RSE}_${now}_D.list
+m_out=${out}/${RSE}_${now}_M.list
 stats=${out}/${RSE}_${now}_stats.json
 scanner_errors=${out}/${RSE}_${now}_scanner.errors
 dbdump_errors=${out}/${RSE}_${now}_dbdump.errors
@@ -132,7 +132,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_errors}
-$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
+$python cmp3/db_dump.py -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors} && \
 
 # 4. cmp3
 
