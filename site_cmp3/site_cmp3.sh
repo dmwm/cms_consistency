@@ -146,8 +146,8 @@ $python cmp3/cmp5.py -s ${stats} \
     ${am_prefix} ${ad_prefix} \
     ${d_out} ${m_out}
 
-echo "Dark list:    " `gunzip ${d_out} | wc -l`
-echo "Missing list: " `gunzip ${m_out} | wc -l`
+echo "Dark list:    " `wc -l ${d_out}`
+echo "Missing list: " `wc -l ${m_out}`
 
 end_time=`date -u +%s`
 
