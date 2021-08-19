@@ -101,13 +101,13 @@ def main():
         diffs_m = cmp3_generator(a_m_list, r_m_list, b_m_list, 'm')
         nm = nd = 0
         for path in diffs_m:
-            fm.write(path)
+            fm.write(path+"\n")
             nm += 1
         fm.close()
 
         diffs_d = cmp3_generator(a_d_list, r_d_list, b_d_list, 'd')
         for path in diffs_d:
-            fd.write(path)
+            fd.write(path+"\n")
             nd += 1
         fd.close()
 
