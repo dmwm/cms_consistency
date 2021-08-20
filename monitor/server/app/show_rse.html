@@ -15,11 +15,11 @@
 
 <table class="placement">
     <tr>
-        <td colspan=2 style="padding-top: 30px"><h1>Consistency Checking</h1>
+        <td colspan=3 style="padding-top: 30px"><h1>Consistency Checking</h1>
         </td>
     </tr>
 	<tr>
-		<td>
+		<td colspan=2>
 			<table class="data">
     
     
@@ -95,7 +95,7 @@
 	</tr>
 
     <tr>
-        <td colspan=2 style="padding-top: 30px"><h1>Unmerged Files</h1>
+        <td colspan=3 style="padding-top: 30px"><h1>Unmerged Files</h1>
         </td>
     </tr>
 
@@ -115,30 +115,31 @@
                 {% endfor %}
             </table>
         </td>
+        
         <td>
             <!-- chart -->
-                <div id="um_chart"></div>
+                <div id="um_chart_space"></div>
                 
                 <script type="text/javascript">
-    				function drawUMChart()
+    				function drawUMSpaceChart()
     				{
 
                         var data = new google.visualization.DataTable();
                         data.addColumn('date', 'Date');
                         data.addColumn('number', 'Files');
-                        data.addColumn('number', 'Elapsed time');
+                        data.addColumn('number', 'Size');
                         data.addRows([
                             {% for r in um_runs|reverse %}
                                 {% if not r["start_time_milliseconds"] is none %}
 
-                                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["elapsed_time_hours"] or 'null'}}]
+                                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["total_size_gb"] or 'null'}}]
                                 {% endif %}
                             {% endfor %}                    
                         ]);
                         //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
                         //date_formatter.format(data, 0)
                         var options = {
-                            title: 'Statistics by run',
+                            title: '',
                             width: 600,
                             height: 300,
                             legend: { position: "top" },
@@ -157,7 +158,7 @@
                                     }
                                 },
                                 1: {    
-                                    title: "Elapsed time, hours",
+                                    title: "Space occupied",
                                     viewWindow:{
                                         min:0
                                     },
@@ -167,6 +168,56 @@
                                 }
                             },
                             hAxis: {
+                                title: "Date",
+                                format: "M/d/yy"
+                            }
+                        };   
+
+    					var chart = new google.visualization.LineChart(document.getElementById('um_chart'));
+    					chart.draw(data, options);
+    				}
+                </script>
+        </td>
+        
+        <td>
+            <!-- chart -->
+                <div id="um_chart"></div>
+                
+                <script type="text/javascript">
+    				function drawUMTimeChart()
+    				{
+
+                        var data = new google.visualization.DataTable();
+                        data.addColumn('date', 'Date');
+                        data.addColumn('number', 'Elapsed time');
+                        data.addRows([
+                            {% for r in um_runs|reverse %}
+                                {% if not r["start_time_milliseconds"] is none %}
+
+                                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["elapsed_time_hours"] or 'null'}}]
+                                {% endif %}
+                            {% endfor %}                    
+                        ]);
+                        //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
+                        //date_formatter.format(data, 0)
+                        var options = {
+                            title: 'Elapsed scan time',
+                            width: 600,
+                            height: 300,
+                            legend: { position: "top" },
+                            vAxis: {
+                                0: {    
+                                    title: "Time, hours",
+                                    viewWindow:{
+                                        min:0
+                                    },
+                                    gridlines: {
+                                        color: "#CCC"
+                                    }
+                                }
+                            },
+                            hAxis: {
+                                title: "Date",
                                 format: "M/d/yy"
                             }
                         };   

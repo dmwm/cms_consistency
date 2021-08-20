@@ -154,6 +154,7 @@ class Handler(WPHandler):
                     r["start_time_milliseconds"] = int(r["start_time"]*1000)
                     if r.get("end_time"):
                         r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
+                r.setdefault("total_size_gb", None)
                 
         except KeyError:
             raise ValueError(f"key error in: {r}")
