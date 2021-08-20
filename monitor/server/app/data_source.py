@@ -152,7 +152,7 @@ class DataSource(object):
                 d["error"] = str(e)
             out.append(d)
         #print("ls: out:", out)
-        sys.stdout.flush()
+        #sys.stdout.flush()
         return out
         
     def open_stats_file(self, rse, run):
@@ -163,6 +163,8 @@ class DataSource(object):
         files = sorted(glob.glob(f"{self.Path}/{rse}_*_{typ}.*"))
         return files
         
+    def open_file(self, path):
+        return open(self.Path+"/"+path, "r")
         
 class UMDataSource(DataSource):
     
