@@ -147,8 +147,11 @@
         data.addRows([
             {% for r in um_runs|reverse %}
                 {% if not r["start_time_milliseconds"] is none %}
-
-                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["total_size_gb"] or 'null'}}/1024]
+                    {{',' if not loop.first -}}
+                    [
+                        new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, 
+                        {%- if r["total_size_gb"] is none %}null{% else %}{{r["total_size_gb"]/1024.0}}{% endif %}
+                    ]
                 {% endif %}
             {% endfor %}                    
         ]);
