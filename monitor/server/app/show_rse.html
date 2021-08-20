@@ -73,7 +73,10 @@
                         <td>{{info["start_time"]|as_dt}}</td>
                         <td class="{{info['status']}}">{{info["status"]}}</td>
                         <td>{{info["files"]|none_as_blank}}</td>
-                        <td>{% if info["total_size_gb"] is none %}{% else %}{{info["total_size_gb"]/1024.0}}{% endif %}</td>
+                        <td>{% if not info["total_size_gb"] is none %}
+                                {{"%.3f"|format(info["total_size_gb"]/1024.0)}}
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </table>
