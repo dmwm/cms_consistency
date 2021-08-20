@@ -146,13 +146,17 @@
         //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
         //date_formatter.format(data, 0)
         var options = {
-            title: '',
+            title: 'Space',
             width: 400,
             height: 300,
             legend: { position: "top" },
             series: {
-                0: {    targetAxisIndex: 0    }, 
-                1: {    targetAxisIndex: 1   }
+                0: {    targetAxisIndex: 0,    
+                    color: "#822";
+                }, 
+                1: {    targetAxisIndex: 1,
+                    color: "#228";
+                   }
             },
             vAxes: {
                 0: {    
@@ -162,17 +166,17 @@
                     //    min:0
                     //},
                     gridlines: {
-                        color: "#222"
+                        color: "#FCC"
                     }
                 },
                 1: {    
-                    title: "Space occupied",
+                    title: "Space occupied, GB",
                     logScale: true,
                     //viewWindow:{
                     //    min:0
                     //},
                     gridlines: {
-                        color: "#CCC"
+                        color: "#CCF"
                     }
                 }
             },
@@ -203,7 +207,7 @@
         //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
         //date_formatter.format(data, 0)
         var options = {
-            title: 'Elapsed scan time',
+            title: 'Scan time',
             width: 400,
             height: 300,
             legend: { position: "top" },
