@@ -81,6 +81,7 @@
         
         var loading_img = document.getElementById(id_prefix+"_loading");
         td.removeChild(loading_img);
+        td.style["text-align"] = "right";
         
         var canvas = document.createElement("canvas");
         var n = Math.min(N, status_list.length);
@@ -179,10 +180,8 @@
         {% if cc_summary is none %}
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         {% else %}
-            <td id="{{rse}}_cc_status_td">
-                <div id="{{rse}}_cc_status_loading" style="vertical-align: middle; text-align: center; height:100%">
-                    <img src="./static/images/loading.gif" height=4/>
-                </div>
+            <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
+                <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
             </td>
             <script type="text/javascript">
                 init_status_chart("{{rse}}_cc_status");
