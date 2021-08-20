@@ -15,11 +15,11 @@
 
 <table class="placement">
     <tr>
-        <td colspan=3 style="padding-top: 30px"><h1>Consistency Checking</h1>
+        <td style="padding-top: 30px"><h1>Consistency Checking</h1>
         </td>
     </tr>
 	<tr>
-		<td colspan=2>
+		<td>
 			<table class="data">
     
     
@@ -95,7 +95,7 @@
 	</tr>
 
     <tr>
-        <td colspan=3 style="padding-top: 30px"><h1>Unmerged Files</h1>
+        <td style="padding-top: 30px"><h1>Unmerged Files</h1>
         </td>
     </tr>
 
@@ -117,121 +117,118 @@
         </td>
         
         <td>
-            <!-- chart -->
+                <!-- UM charts -->
                 <div id="um_space_chart"></div>
-                
-                <script type="text/javascript">
-    				function drawUMSpaceChart()
-    				{
-
-                        var data = new google.visualization.DataTable();
-                        data.addColumn('date', 'Date');
-                        data.addColumn('number', 'Files');
-                        data.addColumn('number', 'Size');
-                        data.addRows([
-                            {% for r in um_runs|reverse %}
-                                {% if not r["start_time_milliseconds"] is none %}
-
-                                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["total_size_gb"] or 'null'}}]
-                                {% endif %}
-                            {% endfor %}                    
-                        ]);
-                        //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
-                        //date_formatter.format(data, 0)
-                        var options = {
-                            title: '',
-                            width: 600,
-                            height: 300,
-                            legend: { position: "top" },
-                            series: {
-                                0: {    targetAxisIndex: 0    }, 
-                                1: {    targetAxisIndex: 1   }
-                            },
-                            vAxes: {
-                                0: {    
-                                    title: "Number of files",
-                                    viewWindow:{
-                                        min:0
-                                    },
-                                    gridlines: {
-                                        color: "#222"
-                                    }
-                                },
-                                1: {    
-                                    title: "Space occupied",
-                                    viewWindow:{
-                                        min:0
-                                    },
-                                    gridlines: {
-                                        color: "#CCC"
-                                    }
-                                }
-                            },
-                            hAxis: {
-                                title: "Date",
-                                format: "M/d/yy"
-                            }
-                        };   
-
-    					var chart = new google.visualization.LineChart(document.getElementById('um_space_chart'));
-    					chart.draw(data, options);
-    				}
-                </script>
-        </td>
-        
-        <td>
-            <!-- chart -->
                 <div id="um_time_chart"></div>
                 
-                <script type="text/javascript">
-    				function drawUMTimeChart()
-    				{
-
-                        var data = new google.visualization.DataTable();
-                        data.addColumn('date', 'Date');
-                        data.addColumn('number', 'Elapsed time');
-                        data.addRows([
-                            {% for r in um_runs|reverse %}
-                                {% if not r["start_time_milliseconds"] is none %}
-
-                                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["elapsed_time_hours"] or 'null'}}]
-                                {% endif %}
-                            {% endfor %}                    
-                        ]);
-                        //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
-                        //date_formatter.format(data, 0)
-                        var options = {
-                            title: 'Elapsed scan time',
-                            width: 600,
-                            height: 300,
-                            legend: { position: "top" },
-                            vAxis: {
-                                0: {    
-                                    title: "Time, hours",
-                                    viewWindow:{
-                                        min:0
-                                    },
-                                    gridlines: {
-                                        color: "#CCC"
-                                    }
-                                }
-                            },
-                            hAxis: {
-                                title: "Date",
-                                format: "M/d/yy"
-                            }
-                        };   
-
-    					var chart = new google.visualization.LineChart(document.getElementById('um_time_chart'));
-    					chart.draw(data, options);
-    				}
-                </script>
         </td>
+        
     </tr>
 </table>
 
 
 <script type="text/javascript">
+	function drawUMSpaceChart()
+	{
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Date');
+        data.addColumn('number', 'Files');
+        data.addColumn('number', 'Size');
+        data.addRows([
+            {% for r in um_runs|reverse %}
+                {% if not r["start_time_milliseconds"] is none %}
+
+                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["total_size_gb"] or 'null'}}]
+                {% endif %}
+            {% endfor %}                    
+        ]);
+        //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
+        //date_formatter.format(data, 0)
+        var options = {
+            title: '',
+            width: 600,
+            height: 150,
+            legend: { position: "top" },
+            series: {
+                0: {    targetAxisIndex: 0    }, 
+                1: {    targetAxisIndex: 1   }
+            },
+            vAxes: {
+                0: {    
+                    title: "Number of files",
+                    logScale: true,
+                    //viewWindow:{
+                    //    min:0
+                    //},
+                    gridlines: {
+                        color: "#222"
+                    }
+                },
+                1: {    
+                    title: "Space occupied",
+                    logScale: true,
+                    //viewWindow:{
+                    //    min:0
+                    //},
+                    gridlines: {
+                        color: "#CCC"
+                    }
+                }
+            },
+            hAxis: {
+                title: "Date",
+                format: "M/d/yy"
+            }
+        };   
+
+		var chart = new google.visualization.LineChart(document.getElementById('um_space_chart'));
+		chart.draw(data, options);
+	}
+
+	function drawUMTimeChart()
+	{
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Date');
+        data.addColumn('number', 'Elapsed time');
+        data.addRows([
+            {% for r in um_runs|reverse %}
+                {% if not r["start_time_milliseconds"] is none %}
+
+                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["elapsed_time_hours"] or 'null'}}]
+                {% endif %}
+            {% endfor %}                    
+        ]);
+        //var date_formatter = new google.visualization.DateFormat({formatType: 'short', timeZone: 0});
+        //date_formatter.format(data, 0)
+        var options = {
+            title: 'Elapsed scan time',
+            width: 600,
+            height: 150,
+            legend: { position: "top" },
+            vAxis: {
+                0: {    
+                    title: "Time, hours",
+                    //viewWindow:{
+                    //    min:0
+                    //},
+                    gridlines: {
+                        color: "#CCC"
+                    },
+                    logScale: true
+                }
+            },
+            hAxis: {
+                title: "Date",
+                format: "M/d/yy"
+            }
+        };   
+
+		var chart = new google.visualization.LineChart(document.getElementById('um_time_chart'));
+		chart.draw(data, options);
+	}
+
     function drawCharts()
     {
         drawCCChart();
