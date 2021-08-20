@@ -65,7 +65,7 @@
 		<td>
 			<table class="data">
 			    <tr>
-			        <th rowspan>Run</th><th rowspan>Start time</th><th rowspan>Status</th><th>Files</th>
+			        <th rowspan>Run</th><th rowspan>Start time</th><th rowspan>Status</th><th>Files</th><th>Size, TB</th>
 			    </tr>
                 {% for info in um_runs %}
                     <tr>
@@ -73,6 +73,7 @@
                         <td>{{info["start_time"]|as_dt}}</td>
                         <td class="{{info['status']}}">{{info["status"]}}</td>
                         <td>{{info["files"]|none_as_blank}}</td>
+                        <td>{% if info["total_size_gb"] is null %}{% else %}{{info["total_size_gb"]/1024.0}}{% endif %}</td>
                     </tr>
                 {% endfor %}
             </table>
@@ -137,12 +138,12 @@
         var data = new google.visualization.DataTable();
         data.addColumn('date', 'Date');
         data.addColumn('number', 'Files');
-        data.addColumn('number', 'Size');
+        data.addColumn('number', 'Size, TB');
         data.addRows([
             {% for r in um_runs|reverse %}
                 {% if not r["start_time_milliseconds"] is none %}
 
-                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["total_size_gb"] or 'null'}}]
+                    {{',' if not loop.first }}[new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, {{r["total_size_gb"] or 'null'}}/1024]
                 {% endif %}
             {% endfor %}                    
         ]);
@@ -173,7 +174,7 @@
                     }
                 },
                 1: {    
-                    title: "Space occupied, GB",
+                    title: "Space occupied, TB",
                     logScale: true,
                     //viewWindow:{
                     //    min:0
