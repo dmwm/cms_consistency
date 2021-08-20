@@ -118,7 +118,7 @@
         
         <td>
             <!-- chart -->
-                <div id="um_chart_space"></div>
+                <div id="um_space_chart"></div>
                 
                 <script type="text/javascript">
     				function drawUMSpaceChart()
@@ -173,7 +173,7 @@
                             }
                         };   
 
-    					var chart = new google.visualization.LineChart(document.getElementById('um_chart'));
+    					var chart = new google.visualization.LineChart(document.getElementById('um_space_chart'));
     					chart.draw(data, options);
     				}
                 </script>
@@ -181,7 +181,7 @@
         
         <td>
             <!-- chart -->
-                <div id="um_chart"></div>
+                <div id="um_time_chart"></div>
                 
                 <script type="text/javascript">
     				function drawUMTimeChart()
@@ -222,7 +222,7 @@
                             }
                         };   
 
-    					var chart = new google.visualization.LineChart(document.getElementById('um_chart'));
+    					var chart = new google.visualization.LineChart(document.getElementById('um_time_chart'));
     					chart.draw(data, options);
     				}
                 </script>
@@ -235,7 +235,8 @@
     function drawCharts()
     {
         drawCCChart();
-        drawUMChart();
+        drawUMTimeChart();
+        drawUMSpaceChart();
     }
     google.charts.load('current', {'packages':['line', 'bar', 'corechart']});
     google.charts.setOnLoadCallback(drawCharts);
