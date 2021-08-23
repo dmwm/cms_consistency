@@ -21,6 +21,9 @@ cert=""
 unmerged_out_dir=""
 unmerged_config=""
 
+python=${PYTHON:-python3}
+
+
 # skip required args
 shift
 shift
@@ -85,9 +88,13 @@ dump_url=root://${server}/cms:${dump_path}/dump_${timestamp}.gz
 
 echo dump_url: $dump_url
 
-b_prefix=${scratch}/${RSE}_${run}_B.list
-a_prefix=${scratch}/${RSE}_${run}_A.list
-r_prefix=${scratch}/${RSE}_${run}_R.list
+b_prefix=${scratch}/${RSE}_${run}_B
+a_prefix=${scratch}/${RSE}_${run}_A
+r_prefix=${scratch}/${RSE}_${run}_R
+am_prefix=${a_prefix}_M
+ad_prefix=${a_prefix}_D
+bm_prefix=${b_prefix}_M
+bd_prefix=${b_prefix}_D
 stats=${out}/${RSE}_${run}_stats.json
 stats_update=${scratch}/${RSE}_update.json
 
@@ -144,9 +151,9 @@ cat > $stats_update << _EOF_
     }
 _EOF_
 
-python3 cmp3/json_file.py -c $stats set scanner - < $stats_update
+$python cmp3/json_file.py -c $stats set scanner - < $stats_update
 if [ "$um_stats" != "" ]; then
-    python3 cmp3/json_file.py -c $um_stats set scanner - < $stats_update
+    $python cmp3/json_file.py -c $um_stats set scanner - < $stats_update
 fi   
 
 for attempt in $attempts; do
@@ -160,11 +167,11 @@ for attempt in $attempts; do
 	rm -f ${site_dump_tmp}
     	t1=`date +%s`
         
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.status -t failed
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.stderr -t - < $stderr
+        $python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
+        $python cmp3/json_file.py ${stats} set scanner.scanner.status -t failed
+        $python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
+        $python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
+        $python cmp3/json_file.py ${stats} set scanner.scanner.stderr -t - < $stderr
 	
         echo download failed:
         cat $stderr
@@ -174,30 +181,30 @@ for attempt in $attempts; do
     else
         echo download succeeded
         echo partitioning ...
-        n=`python3 cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
+        n=`$python cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
 	    echo $n files in the list
 
 
     	t1=`date +%s`
         downloaded="yes"
 
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.status -t "done"
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
-        python3 cmp3/json_file.py ${stats} set scanner.scanner.stderr -t ""
+        $python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
+        $python cmp3/json_file.py ${stats} set scanner.scanner.status -t "done"
+        $python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
+        $python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
+        $python cmp3/json_file.py ${stats} set scanner.scanner.stderr -t ""
 
-        python3 cmp3/json_file.py ${stats} set scanner.total_files $n
+        $python cmp3/json_file.py ${stats} set scanner.total_files $n
         
         
         # unmerged files list and stats
         if [ "$unmerged_out_dir" != "" ]; then
             echo making unmerged files list ...
-            n=`python3 cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $site_dump_tmp`
+            n=`$python cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $site_dump_tmp`
 	        echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
-                python3 cmp3/json_file.py $um_stats set scanner.files $n
+                $python cmp3/json_file.py $um_stats set scanner.files $n
             fi   
         fi
         break
@@ -207,19 +214,19 @@ done
 rm -f $site_dump_tmp
 
 if [ "$downloaded" == "yes" ]; then
-    python3 cmp3/json_file.py ${stats} set scanner.status -t "done"
-    python3 cmp3/json_file.py ${stats} set scanner.end_time $t1
+    $python cmp3/json_file.py ${stats} set scanner.status -t "done"
+    $python cmp3/json_file.py ${stats} set scanner.end_time $t1
     if [ "$um_stats" != "" ]; then
-        python3 cmp3/json_file.py $um_stats set scanner.status -t "done"
-        python3 cmp3/json_file.py $um_stats set scanner.end_time $t1
+        $python cmp3/json_file.py $um_stats set scanner.status -t "done"
+        $python cmp3/json_file.py $um_stats set scanner.end_time $t1
     fi
 else
-    python3 cmp3/json_file.py ${stats} set scanner.status -t "failed"
-    python3 cmp3/json_file.py ${stats} set scanner.end_time $t1
+    $python cmp3/json_file.py ${stats} set scanner.status -t "failed"
+    $python cmp3/json_file.py ${stats} set scanner.end_time $t1
 
     if [ "$um_stats" != "" ]; then
-        python3 cmp3/json_file.py $um_stats set scanner.status -t "failed"
-        python3 cmp3/json_file.py $um_stats set scanner.end_time $t1
+        $python cmp3/json_file.py $um_stats set scanner.status -t "failed"
+        $python cmp3/json_file.py $um_stats set scanner.end_time $t1
     fi
     exit 1
 fi
@@ -233,13 +240,18 @@ echo
 echo DB dump after ...
 echo
 
-python3 cmp3/db_dump.py -o ${a_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+#$python cmp3/db_dump.py -o ${a_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
+$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
                 
 echo
 echo Comparing ...
 echo
 
-python3 cmp3/cmp3.py -s ${stats} ${b_prefix} ${r_prefix} ${a_prefix} ${d_out} ${m_out}
+$python cmp3/cmp5.py -s ${stats} \
+    ${bm_prefix} ${bd_prefix} \
+    ${r_prefix} \
+    ${am_prefix} ${ad_prefix} \
+    ${d_out} ${m_out}
 
 echo Dark list:    `wc -l ${d_out}`
 echo Missing list: `wc -l ${m_out}`

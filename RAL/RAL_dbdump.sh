@@ -5,18 +5,23 @@
 #   RAL_dbdump.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir>
 #
 
-config_file=$1
+config=$1
 rucio_config_file=$2
 RSE=$3
 scratch=$4
 out=$5
+
+python=${PYTHON:-python3}
 
 export PYTHONPATH=`pwd`/cmp3:`pwd`
 
 
 today=`date -u +%Y_%m_%d_00_00`
 
-b_prefix=${scratch}/${RSE}_${today}_B.list
+b_prefix=${scratch}/${RSE}_${today}_B
+bm_prefix=${b_prefix}_M
+bd_prefix=${b_prefix}_D
+
 stats=${out}/${RSE}_${today}_stats.json
     
 echo
@@ -29,7 +34,8 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 rm -rf ${b_prefix}*
-python3 cmp3/db_dump.py -o ${b_prefix} -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
+#$python cmp3/db_dump.py -o ${b_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
+$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors}
 
 exit=$?
 if [ "$exit" != "0" ]; then
