@@ -324,11 +324,15 @@ class Handler(WPHandler):
         
     MAX_HISTORY = 10
         
-    def status_history(self, request, relpath, **args):
+    def status_history(self, request, relpath, rses=None, **args):
         um_data_source = self.App.UMDataSource
         cc_data_source = self.App.CCDataSource
-        
-        rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
+
+        if rses is None:
+            rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
+        else:
+            rses = rses.split(",")
+            
         data = {}      # {rse -> (cc_total, um_total, cc_success, um_success)}
         
         for rse in rses:

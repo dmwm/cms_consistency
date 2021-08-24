@@ -133,6 +133,8 @@
         td.appendChild(img);
     };
     
+    var rse_list = [];
+    
 </script>
 
 
@@ -172,6 +174,11 @@
 
 {% for info in infos %}
     {% set rse = info["rse"] %}
+    
+    <script type="text/javascript">
+        rse_list.push("{{rse}}");
+    </script>
+    
     {% set cc_summary = info["cc_summary"] %}
     {% set um_summary = info["um_summary"] %}
 
@@ -228,11 +235,11 @@
 </table>
 
 <script type="text/javascript">
-    var counts_receiver = {
-        data_received: function(counts) {
-            for ( rse in counts )
+    var history_receiver = {
+        data_received: function(hist) {
+            for ( rse in hist )
             {
-                var info = counts[rse];
+                var info = hist[rse];
                 var um_total = info.um_total;
                 var cc_total = info.cc_total;
                 var um_errors = um_total-info.um_success;
@@ -247,7 +254,35 @@
         }
     };
     
-    var request=HTTPRequest("./status_history", counts_receiver, null, "json");
+    function request_history_info(rse_lst)
+    {
+        var batch_size = 5;
+        var batch = [];
+        var requests = [];
+
+        function request_batch(rse_batch)
+        {
+            var url = "./status_history?rses=" + rse_batch.join(",");
+            return HTTPRequest(url, history_receiver, null, "json");
+        }
+    
+        
+        for( rse of rse_lst )
+        {
+            batch.push(rse);
+            if( batch.length >= batch_size )
+            {
+                requests.push(request_batch(batch));
+                batch = [];
+            }   
+        }
+        if( batch.length > 0 )
+            requests.push(request_batch(batch));
+        return requests;
+    }
+    
+    var requests=request_history_info(rse_list);
+    //HTTPRequest("./status_history", history_receiver, null, "json");
     
 </script>
     
