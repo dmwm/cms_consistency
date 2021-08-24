@@ -266,6 +266,7 @@
             return HTTPRequest(url, history_receiver, null, "json");
         }
     
+        rse_lst = rse_lst.sort(() => Math.random() - 0.5);
         
         for( rse of rse_lst )
         {
