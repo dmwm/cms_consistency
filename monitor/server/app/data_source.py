@@ -175,6 +175,8 @@ class UMDataSource(DataSource):
         scanner_data = data.get("scanner", {})
         roots = scanner_data.get("roots",[])
         root_data = roots[0] if roots else {}
+        if root_data.get("status") != "done":
+            root_data["files"] = None
         out.update(scanner_data)
         out.update(root_data)
         out.setdefault("total_size_gb", None)
