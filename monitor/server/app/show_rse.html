@@ -149,8 +149,9 @@
                 {% if not r["start_time_milliseconds"] is none %}
                     {{',' if not loop.first -}}
                     [
-                        new Date({{r["start_time_milliseconds"]}}), {{r["files"]}}, 
-                        {%- if r["total_size_gb"] is none %}null{% else %}{{r["total_size_gb"]/1024.0}}{% endif %}
+                        new Date({{r["start_time_milliseconds"]}}), 
+                            {%- if r["files"] is none %}null{% else %}{{r["files"]}}{% endif %}, 
+                            {%- if r["total_size_gb"] is none %}null{% else %}{{r["total_size_gb"]/1024.0}}{% endif %}
                     ]
                 {% endif %}
             {% endfor %}                    
