@@ -241,7 +241,7 @@ echo DB dump after ...
 echo
 
 #$python cmp3/db_dump.py -o ${a_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
-$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE}
                 
 echo
 echo Comparing ...
