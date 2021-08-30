@@ -80,8 +80,8 @@ run=`date -u +%Y_%m_%d_00_00`
 timestamp=`date -u +%Y%m%d`
 
 # hack
-run=2021_08_27_00_00
-timestamp=20210827
+#run=2021_08_27_00_00
+#timestamp=20210827
 
 echo run: $run
 echo timestamp: $timestamp

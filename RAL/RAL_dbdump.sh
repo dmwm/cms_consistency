@@ -19,7 +19,7 @@ export PYTHONPATH=`pwd`/cmp3:`pwd`
 today=`date -u +%Y_%m_%d_00_00`
 
 # hack
-today=2021_08_27_00_00
+#today=2021_08_27_00_00
 
 b_prefix=${scratch}/${RSE}_${today}_B
 bm_prefix=${b_prefix}_M
