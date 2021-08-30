@@ -78,6 +78,11 @@ attempts="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
 
 run=`date -u +%Y_%m_%d_00_00`
 timestamp=`date -u +%Y%m%d`
+
+# hack
+run=2021_08_27_00_00
+timestamp=20210827
+
 echo run: $run
 echo timestamp: $timestamp
 
@@ -164,7 +169,7 @@ for attempt in $attempts; do
     xrdcp ${dump_url} ${site_dump_tmp} 2> $stderr
     xrdcp_status=$?
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${site_dump_tmp} ]; then
-	rm -f ${site_dump_tmp}
+	    rm -f ${site_dump_tmp}
     	t1=`date +%s`
         
         $python cmp3/json_file.py ${stats} set scanner.scanner.attempt $attempt
