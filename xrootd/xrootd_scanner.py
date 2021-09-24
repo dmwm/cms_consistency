@@ -654,8 +654,8 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
     my_stats["roots"].append(root_stats)
     if stats is not None:
         stats[stats_key] = my_stats
-    if failed:
-        stats["error"] = root_stats.get("error")
+        if failed:
+            stats["error"] = root_stats.get("error")
     return failed, root_failed
     
 if __name__ == "__main__":
