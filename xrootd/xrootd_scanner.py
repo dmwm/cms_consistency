@@ -74,7 +74,8 @@ class Scanner(Task):
         self.Master = master
         self.Location = canonic_path(location)
         self.Timeout = timeout
-        self.WasRecursive = self.Recursive = recursive
+        self.ForcedFlat = not recursive
+        self.WasRecursive = recursive
         self.Subprocess = None
         self.Killed = False
         self.Started = None
@@ -261,7 +262,7 @@ class Scanner(Task):
                 counts += " %.3f" % (total_size/GB,)
             self.message("done", stats+counts)
             if self.Master is not None:
-                self.Master.scanner_succeeded(location, recursive, files, dirs)
+                self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs)
         
                 
     @staticmethod
@@ -342,7 +343,7 @@ class ScannerMaster(PyThread):
         else:
             return parts[0]
             
-    def addDirectory(self, path, scan):
+    def addDirectory(self, path, scan, allow_recursive):
         if not self.Failed:
             if scan:
                 assert path.startswith(self.Root)
@@ -354,30 +355,28 @@ class ScannerMaster(PyThread):
                 reldepth = 0 if not relpath else len(relpath.split('/'))
                 
                 parent = self.parent(path)
-                
-                recursive = (self.RecursiveThreshold is not None 
+
+                allow_recursive = allow_recursive and (self.RecursiveThreshold is not None 
                     and reldepth >= self.RecursiveThreshold 
                 )
-                #if use_recursive:
-                #    print("Use recursive for %s" % (path,))
 
                 if self.MaxFiles is None or self.NFiles < self.MaxFiles:
                     self.ScannerQueue.addTask(
-                        Scanner(self, self.Server, path, recursive, self.Timeout, include_sizes=self.IncludeSizes)
+                        Scanner(self, self.Server, path, allow_recursive, self.Timeout, include_sizes=self.IncludeSizes)
                     )
                     self.NToScan += 1
-        
-    def addDirectories(self, dirs, scan=True):
+
+    def addDirectories(self, dirs, scan=True, allow_recursive=True):
         if not self.Failed:
             self.Results.append(('d', dirs))
             self.NDirectories += len(dirs)
             for d in dirs:
                 d = canonic_path(d)
                 if not self.dir_ignored(d):
-                    self.addDirectory(d, scan)
+                    self.addDirectory(d, scan, allow_recursive)
             self.show_progress()
             self.report()
-            
+
     @synchronized
     def report(self):
         if time.time() > self.LastReport + self.REPORT_INTERVAL:
@@ -388,16 +387,13 @@ class ScannerMaster(PyThread):
     @synchronized
     def scanner_failed(self, scanner, error):
         path = scanner.Location
-        if scanner.WasRecursive:
-            with self:
+        with self:
+            # update error counts
+            if scanner.WasRecursive:
                 parent = self.parent(path)
-                nfailed = self.RecursiveFailed.get(parent, 0)
-                self.RecursiveFailed[parent] = nfailed + 1
-                
-        if not scanner.WasRecursive:
-            with self:
-                nerrors = self.Errors.setdefault(path, 0)
-                nerrors = self.Errors[path] = nerrors + 1
+                self.RecursiveFailed[parent] = self.RecursiveFailed.get(parent, 0) + 1
+            else:
+                self.Errors[path] = self.Errors.get(path, 0) + 1
                 
         retry = (scanner.RecAttempts > 0) or (scanner.FlatAttempts > 0)
         if retry:
@@ -411,14 +407,14 @@ class ScannerMaster(PyThread):
             self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
         
     @synchronized
-    def scanner_succeeded(self, location, recursive, files, dirs):
+    def scanner_succeeded(self, location, was_recursive, files, dirs):
         with self:
-            if len(files) == 0 and (recursive or len(dirs) == 0):
+            if len(files) == 0 and (was_recursive or len(dirs) == 0):
                 self.EmptyDirs.add(location)
             else:
                 if location in self.EmptyDirs:
                     self.EmptyDirs.remove(location)
-            if recursive:
+            if was_recursive:
                 parent = self.parent(location)
                 nfailed = self.RecursiveFailed.get(parent, 0)
                 self.RecursiveFailed[parent] = nfailed - 1      
@@ -433,7 +429,9 @@ class ScannerMaster(PyThread):
                 self.TotalSize += sum(sizes)
         if dirs:
             paths, sizes = zip(*dirs)
-            self.addDirectories(paths, not recursive)
+            scan = not was_recursive
+            allow_recursive = scan and len(dirs) > 1
+            self.addDirectories(paths, scan, allow_recursive)
             #if self.IncludeSizes:
             #    self.TotalSize += sum(sizes)
         self.show_progress()
