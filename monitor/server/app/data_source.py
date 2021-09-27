@@ -456,5 +456,5 @@ class CCDataSource(DataSource):
                     summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_dark_files")       # there used to be a typo in older versions 
                 summary["missing_stats"]["action_status"] = stats["cc_miss"].get("status", "").lower() or None
                 summary["missing_stats"]["aborted_reason"] = stats["cc_miss"].get("aborted_reason", "")
-        print("summary:", summary)
+        #print("summary:", summary)
         return summary
