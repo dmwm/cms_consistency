@@ -41,11 +41,18 @@
                         </td>
 			            <td>{{info["nmissing"]|none_as_blank}}</td>
                         <td>{{info["acted_missing"]|none_as_blank}}</td>
-                        <td class="{{info['missing_status']|none_as_blank}}">{{info["missing_status"]|none_as_blank}}</td>
+                        <td class="{{info['missing_status']|none_as_blank}}">
+                            {{info["missing_status"]|none_as_blank}}
+                            {%- if info["missing_status_reason"] %}: {{info["missing_status_reason"]}}
+                            {%- endif -%}
+                        </td>
 			            <td>{{info["ndark"]|none_as_blank}}</td>
 			            <td>{{info["confirmed_dark"]|none_as_blank}}</td>
                         <td>{{info["acted_dark"]|none_as_blank}}</td>
-                        <td class="{{info['dark_status']|none_as_blank}}">{{info["dark_status"]|none_as_blank}}</td>
+                        <td class="{{info['dark_status']|none_as_blank}}">{{info["dark_status"]|none_as_blank}}
+                            {%- if info["dark_status_reason"] %}: {{info["dark_status_reason"]}}
+                            {%- endif -%}
+                        </td>
 			        </tr>
 			    {% endfor %}
     
