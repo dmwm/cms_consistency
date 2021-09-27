@@ -448,11 +448,13 @@ class CCDataSource(DataSource):
             if "cc_dark" in stats:
                 summary["dark_stats"]["acted_on"] = stats["cc_dark"].get("confirmed_dark_files")
                 summary["dark_stats"]["action_status"] = stats["cc_dark"].get("status", "").lower() or None
+                summary["dark_stats"]["aborted_reason"] = stats["cc_dark"].get("aborted_reason", "")
                 
             if "cc_miss" in stats:
                 summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_miss_files")
                 if summary["missing_stats"]["acted_on"] is None:
                     summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_dark_files")       # there used to be a typo in older versions 
                 summary["missing_stats"]["action_status"] = stats["cc_miss"].get("status", "").lower() or None
+                summary["missing_stats"]["aborted_reason"] = stats["cc_miss"].get("aborted_reason", "")
         
         return summary
