@@ -203,10 +203,12 @@
             <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
                 {{dark_stats['action_status']|none_as_blank}}
+                {#
                 {%- if dark_stats['action_status'] == "aborted" and 
                         dark_stats['aborted_reason'] -%}
                         : {{ dark_stats['aborted_reason'] }}
                 {%- endif %}
+                #}
             </td>
             
             {% set missing_stats = cc_summary["missing_stats"] %}
@@ -214,10 +216,12 @@
             <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{missing_stats['action_status']|none_as_blank}}">
                 {{missing_stats['action_status']|none_as_blank}}
+                {#
                 {%- if missing_stats['action_status'] == "aborted" and 
                         missing_stats['aborted_reason'] -%}
                         : {{ missing_stats['aborted_reason'] }}
                 {%- endif %}
+                #}
             </td>
         {% endif %}
         
