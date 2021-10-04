@@ -4,7 +4,7 @@ from datetime import datetime
 from wm_handler import WMHandler, UMDataSource
 from data_source import CCDataSource, UMDataSource
 
-Version = "1.9.4"
+Version = "1.9.7"
 
 
 def display_file_list(lst):
@@ -134,9 +134,16 @@ class Handler(WPHandler):
             cc_infos.append((
                 run, 
                 {
-                    "start_time":start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running,
-                    "confirmed_dark":summary["dark_stats"]["confirmed"], "acted_dark":summary["dark_stats"]["acted_on"], "dark_status":summary["dark_stats"]["action_status"],
-                    "acted_missing":summary["missing_stats"]["acted_on"], "missing_status":summary["missing_stats"]["action_status"],
+                    "start_time":       start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running,
+
+                    "confirmed_dark":   summary["dark_stats"]["confirmed"], 
+                    "acted_dark":       summary["dark_stats"]["acted_on"], 
+                    "dark_status":      summary["dark_stats"]["action_status"],
+                    "dark_status_reason": summary["dark_stats"].get("aborted_reason", ""),
+                    
+                    "acted_missing":summary["missing_stats"]["acted_on"], 
+                    "missing_status":summary["missing_stats"]["action_status"],
+                    "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
                     "start_time_milliseconds":int(start_time*1000)
                 }
             ))
