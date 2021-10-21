@@ -204,14 +204,9 @@ class UMDataSource(DataSource):
         return summary
         
     def open_file_list(self, rse, binary=True):
-        patt1 = f"{self.Path}/{rse}_files.*list"
-        patt2 = patt1 + ".gz"
-        
-        for patt in [patt1, patt2]:
-            files = glob.glob(patt)
-            if files:
-                path = files[0]
-                break
+        files = glob.glob(f"{self.Path}/{rse}_files.list*")
+        if files:
+            path = files[0]
         else:
             raise FileNotFoundError("not found")
         
