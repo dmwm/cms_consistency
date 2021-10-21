@@ -193,20 +193,32 @@ class UMDataSource(DataSource):
             summary["elapsed_time"] = None
         return summary
         
-    def file_list_as_file(self, rse):
-        path = f"{self.Path}/{rse}_files.list"
-        if os.path.isfile(path):
-            f = open(path, "rb")
-            type = "text/plain"
-        elif os.path.isfile(path + ".gz"):
-            f = open(path + ".gz", "rb")
-            type = "application/x-gzip"
+    def open_file_list(self, rse, binary=True):
+        patt1 = f"{self.Path}/{rse}_files.*list"
+        patt2 = patt1 + ".gz"
+        
+        for patt in [patt1, patt2]:
+            files = glob.glob(patt)
+            if files:
+                path = files[0]
+                break
         else:
             raise FileNotFoundError("not found")
+        
+        type = "text/plain"
+        if binary:
+            if path.endswith(".gz"):
+                f = open(path, "rb")
+                type = "application/x-gzip"
+            else:
+                f = open(path, "rb")
+        else:
+            if path.endswith(".gz"):
+                f = gzip.open(path, "rt")
+            else:
+                f = open(path, "r")
         return f, type
         
-    file_list = file_list_as_file
-    
     def line_iterator(self, f):
         while True:
             line = f.readline()
@@ -217,13 +229,7 @@ class UMDataSource(DataSource):
                 yield line
         
     def file_list_as_iterable(self, rse):
-        path = f"{self.Path}/{rse}_files.list"
-        if os.path.isfile(path):
-            f = open(path, "r")
-        elif os.path.isfile(path + ".gz"):
-            f = gzip.open(path + ".gz", "rt")
-        else:
-            raise FileNotFoundError("not found")
+        f, _ = self.open_file_list(rse, binary=False)
         return self.line_iterator(f)
         
     def fill_missing_scanner_parts(self, rse_info):

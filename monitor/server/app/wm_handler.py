@@ -66,7 +66,7 @@ class WMHandler(WPHandler):
         ds = self.App.UMDataSource
         try:
             if format == "raw":
-                f, type = ds.file_list_as_file(rse)
+                f, type = ds.open_file_list(rse, binary=True)
                 headers = {
                     "Content-Type":type,
                     "Content-Disposition":"attachment"
