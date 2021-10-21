@@ -1,4 +1,4 @@
-import os, glob, json, time, os, gzip, os.path, sys
+import os, glob, json, time, os, gzip, os.path, sys, re
 
 class DataSource(object):
     
@@ -17,18 +17,23 @@ class DataSource(object):
         dir_path, fn = path.rsplit("/", 1)
         return (dir_path,) + self.parse_filename(fn)
         
+    FileNameRE = re.compile(r"""
+            (?P<rse>\w+?)
+            (_(?P<timestamp>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}))?
+            _(?P<type>[A-Za-z]+)
+            \.(?P<ext>.+)
+        """, re.VERBOSE)
+        
     def parse_filename(self, fn):
         # filename looks like this:
         #
         #   <rse>_%Y_%m_%d_%H_%M_<type>.<extension>
+        #   <rse>_<type>.<extension>
         #
-        fn, ext = fn.rsplit(".",1)
-        parts = fn.split("_")
-        typ = parts[-1]
-        timestamp_parts = parts[-6:-1]
-        timestamp = "_".join(timestamp_parts)
-        rse = "_".join(parts[:-6])
-        return rse, timestamp, typ, ext
+        m = self.FileNameRE.match(fn)
+        if not m:
+            return None, None, None, None
+        return m["rse"], m["timestamp"], m["type"], m["ext"]
         
     def parse_stats_path(self, path):
         fn = path.split("/")[-1]
@@ -126,7 +131,12 @@ class DataSource(object):
 
     def ls(self, rse="*", run="*", typ="*"):
         pattern = f"{self.Path}/{rse}_{run}_{typ}.*"
-        files = sorted(glob.glob(pattern))
+        files = set(glob.glob(pattern))
+        if run == "*":
+            files |= set(glob.glob(f"{self.Path}/{rse}_{typ}.*"))
+            if typ == "*":
+                files |= set(glob.glob(f"{self.Path}/{rse}_*"))
+        files = sorted(list(files))
         out = []
         for path in files:
             if rse != "*":
@@ -250,19 +260,6 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
-    def parse_filename(self, fn):
-        # filename looks like this:
-        #
-        #   <rse>_%Y_%m_%d_%H_%M_<type>.<extension>
-        #
-        fn, ext = fn.rsplit(".",1)
-        parts = fn.split("_")
-        typ = parts[-1]
-        timestamp_parts = parts[-6:-1]
-        timestamp = "_".join(timestamp_parts)
-        rse = "_".join(parts[:-6])
-        return rse, timestamp, typ, ext
-        
     def is_mounted(self):
         return os.path.isdir(self.Path)
 
