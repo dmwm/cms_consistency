@@ -213,7 +213,7 @@ class Scanner(Task):
                     is_file, size, path = tup
                     if path.endswith("/."):
                         continue
-                    path if path.startswith(location) else location + "/" + path
+                    path if path.startswith(location) else location + "/" + path     # ????
                     if is_file:
                         files.append((path, size))
                     else:
