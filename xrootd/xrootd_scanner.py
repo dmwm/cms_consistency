@@ -41,7 +41,13 @@ def canonic_path(path):
     if path != "/" and path.endswith("/"):
         path = path[:-1]
     return path
-
+    
+def relative_path(root, path):
+    # returns part relative to the root. Returned relative path does NOT have leading slash
+    # if the argument path does not start with root, returns the path unchanged
+    path = canonic_path(path)
+    relative = canonic_path(path).removeprefix(root + "/")
+    return relative
 
 class RMDir(Task):
     
@@ -277,7 +283,7 @@ class ScannerMaster(PyThread):
     REPORT_INTERVAL = 10.0
     
     def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, ignore_patterns=([],[]), max_files = None,
-                include_sizes=True):
+                include_sizes=True, ignore_subdirs=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Server = server
@@ -306,6 +312,7 @@ class ScannerMaster(PyThread):
         self.NFiles = self.NDirectories = 0
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
         self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_patterns
+        self.IgnoreSubdirs = ignore_subdirs
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
@@ -324,11 +331,15 @@ class ScannerMaster(PyThread):
         
     def dir_ignored(self, path):
         # path is expected to be canonic here
-        return any(p.match(path) is not None for p in self.IgnoreDirPatterns)
+        relpath = relative_path(self.Root, path)
+        return any(pattern.match(path) for pattern in self.IgnoreDirPatterns) or \
+            any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreSubdirs)
 
     def file_ignored(self, path):
         # path is expected to be canonic here
-        return any(p.match(path) is not None for p in self.IgnoreFilePatterns)
+        relpath = relative_path(self.Root, path)
+        return any(pattern.match(path) for pattern in self.IgnoreFilePatterns) or \
+            any(relpath.startswith(subdir+"/") for subdir in self.IgnoreSubdirs)
 
     @synchronized
     def addFiles(self, files):
@@ -524,7 +535,8 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
     return path
     
 
-def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, override_max_scanners, file_list, dir_list,
+def scan_root(rse, server_root, root, config, my_stats, stats, stats_key, 
+    override_recursive_threshold, override_max_scanners, file_list, dir_list,
     purge_empty_dirs, ignore_failed_directories, include_sizes):
     
     failed = root_failed = False
@@ -578,21 +590,22 @@ def scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
         print("  Timeout             = %s" % timeout)
-        
+
         ignore_list = config.ignore_list(rse)
         if ignore_list:
             print("  Ignore list:")
             for p in ignore_list:
                 print("    ", p)
-        
+
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
-            max_files = max_files, ignore_patterns = config.ignore_patterns(rse), include_sizes=include_sizes)
+            max_files = max_files, ignore_patterns = config.ignore_patterns(rse), include_sizes=include_sizes,
+            ignore_subdirs = config.ignore_subdirs(rse, root))
         master.start()
 
         path_prefix = server_root
         if not path_prefix.endswith("/"):
             path_prefix += "/"
-            
+
         for t, path in master.paths():
             if t == 'f':
                 path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
@@ -734,7 +747,7 @@ if __name__ == "__main__":
     all_roots_failed = True
     for root in config.scanner_roots(rse):
         try:
-            failed, root_failed = scan_root(rse, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
+            failed, root_failed = scan_root(rse, server_root, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
                     override_max_scanners, out_list, dir_list,
                     purge_empty_dirs, ignore_directory_scan_errors, include_sizes)
             all_roots_failed = all_roots_failed and root_failed
