@@ -545,7 +545,7 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
     failed = root_failed = False
     
     timeout = override_timeout or config.scanner_timeout(rse)
-    top_path = root if root.startswith("/") else server_root + "/" + root
+    top_path = canonic_path(root if root.startswith("/") else server_root + "/" + root)
     recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
     max_scanners = override_max_scanners or config.scanner_workers(rse)
 
