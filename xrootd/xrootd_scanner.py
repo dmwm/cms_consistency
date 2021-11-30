@@ -46,8 +46,9 @@ def relative_path(root, path):
     # returns part relative to the root. Returned relative path does NOT have leading slash
     # if the argument path does not start with root, returns the path unchanged
     path = canonic_path(path)
-    relative = canonic_path(path).removeprefix(root + "/")
-    return relative
+    if path.startswith(root + "/"):
+        path = path[len(root):]
+    return path
 
 class RMDir(Task):
     
