@@ -47,7 +47,7 @@ def relative_path(root, path):
     # if the argument path does not start with root, returns the path unchanged
     path = canonic_path(path)
     if path.startswith(root + "/"):
-        path = path[len(root):]
+        path = path[len(root)+1:]
     return path
 
 class RMDir(Task):
@@ -314,6 +314,7 @@ class ScannerMaster(PyThread):
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
         self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_patterns
         self.IgnoreSubdirs = ignore_subdirs
+        self.IgnoredFiles = self.IgnoredDirs = 0
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
@@ -333,8 +334,9 @@ class ScannerMaster(PyThread):
     def dir_ignored(self, path):
         # path is expected to be canonic here
         relpath = relative_path(self.Root, path)
-        return any(pattern.match(path) for pattern in self.IgnoreDirPatterns) or \
+        ignore =  any(pattern.match(path) for pattern in self.IgnoreDirPatterns) or \
             any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreSubdirs)
+        return ignore
 
     def file_ignored(self, path):
         # path is expected to be canonic here
@@ -356,8 +358,7 @@ class ScannerMaster(PyThread):
             return parts[0]
             
     def addDirectory(self, path, scan, allow_recursive):
-        if not self.Failed:
-            if scan:
+        if scan and not self.Failed:
                 assert path.startswith(self.Root)
                 relpath = path[len(self.Root):]
                 while relpath and relpath[0] == '/':
@@ -385,7 +386,9 @@ class ScannerMaster(PyThread):
             for d in dirs:
                 d = canonic_path(d)
                 if self.dir_ignored(d):
-                    print("ignored directory:", d)
+                    if scan:
+                        print(d, " - ignored")
+                        self.IgnoredDirs += 1
                 else:
                     self.addDirectory(d, scan, allow_recursive)
             self.show_progress()
@@ -458,7 +461,9 @@ class ScannerMaster(PyThread):
             if lst and (type is None or type == t):
                 for path in lst:
                     path = canonic_path(path)
-                    if not self.file_ignored(path):
+                    if self.file_ignored(path):
+                        self.IgnoredFiles += 1
+                    else:
                         if type is None:
                             yield t, path
                         else:
@@ -548,6 +553,7 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
     top_path = canonic_path(root if root.startswith("/") else server_root + "/" + root)
     recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
     max_scanners = override_max_scanners or config.scanner_workers(rse)
+    ignore_subdirs = config.ignore_subdirs(rse, root)
 
     t0 = time.time()
     root_stats = {
@@ -555,7 +561,8 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
        "start_time":t0,
        "timeout":timeout,
        "recursive_threshold":recursive_threshold,
-       "max_scanners":max_scanners
+       "max_scanners":max_scanners,
+       "ignore_subdirectories": ignore_subdirs
     }
 
     my_stats["scanning"] = root_stats
@@ -600,9 +607,14 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
             for p in ignore_list:
                 print("    ", p)
 
+        if ignore_subdirs:
+            print("  Ignore subdirectories:")
+            for p in ignore_subdirs:
+                print("    ", p)
+
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, ignore_patterns = config.ignore_patterns(rse), include_sizes=include_sizes,
-            ignore_subdirs = config.ignore_subdirs(rse, root))
+            ignore_subdirs = ignore_subdirs)
         master.start()
 
         path_prefix = server_root
@@ -634,7 +646,9 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
                 sys.stderr.write(f"{path}: {error}\n")
 
         print("Files:                %d" % (master.NFiles,))
+        print("Files ignored:        %d" % (master.IgnoredFiles,))
         print("Directories found:    %d" % (master.NToScan,))
+        print("Directories ignored:  %d" % (master.IgnoredDirs,))
         print("Directories scanned:  %d" % (master.NScanned,))
         print("Directories:          %d" % (master.NDirectories,))
         print("  empty directories:  %d" % (len(master.EmptyDirs,)))
@@ -658,10 +672,13 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
             "failed_subdirectories": master.GaveUp,
             "files": master.NFiles,
             "directories": master.NDirectories,
-            "empty_directories":len(master.EmptyDirs),
+            "empty_directories": len(master.EmptyDirs),
+            "directories_ignored": master.IgnoredDirs,
+            "files_ignored": master.IgnoredFiles,
             "end_time":t1,
             "elapsed_time": t1-t0,
-            "total_size_gb": total_size
+            "total_size_gb": total_size,
+            "ignored_subdirectories": ignore_subdirs
         })
 
         root_failed = master.RootFailed
