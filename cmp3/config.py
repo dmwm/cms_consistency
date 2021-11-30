@@ -129,6 +129,9 @@ class Config:
                 file_patterns.append(p)
             return dir_patterns, file_patterns
             
+        def ignore_subdirs(self, rse_name, root):
+            return self.scanner_param(rse_name, "ignore", root=root, default=[])
+            
         def scanner_server_root(self, rse_name):
             return self.scanner_param(rse_name, "server_root")
 
