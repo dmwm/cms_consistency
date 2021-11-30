@@ -384,7 +384,9 @@ class ScannerMaster(PyThread):
             self.NDirectories += len(dirs)
             for d in dirs:
                 d = canonic_path(d)
-                if not self.dir_ignored(d):
+                if self.dir_ignored(d):
+                    print("ignored directory:", d)
+                else:
                     self.addDirectory(d, scan, allow_recursive)
             self.show_progress()
             self.report()
