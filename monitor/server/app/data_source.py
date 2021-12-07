@@ -1,4 +1,4 @@
-import os, glob, json, time, os, gzip, os.path, sys
+import os, glob, json, time, os, gzip, os.path, sys, re
 
 class DataSource(object):
     
@@ -17,18 +17,23 @@ class DataSource(object):
         dir_path, fn = path.rsplit("/", 1)
         return (dir_path,) + self.parse_filename(fn)
         
+    FileNameRE = re.compile(r"""
+            (?P<rse>\w+?)
+            (_(?P<timestamp>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}))?
+            _(?P<type>[A-Za-z]+)
+            \.(?P<ext>.+)
+        """, re.VERBOSE)
+        
     def parse_filename(self, fn):
         # filename looks like this:
         #
         #   <rse>_%Y_%m_%d_%H_%M_<type>.<extension>
+        #   <rse>_<type>.<extension>
         #
-        fn, ext = fn.rsplit(".",1)
-        parts = fn.split("_")
-        typ = parts[-1]
-        timestamp_parts = parts[-6:-1]
-        timestamp = "_".join(timestamp_parts)
-        rse = "_".join(parts[:-6])
-        return rse, timestamp, typ, ext
+        m = self.FileNameRE.match(fn)
+        if not m:
+            return None, None, None, None
+        return m["rse"], m["timestamp"], m["type"], m["ext"]
         
     def parse_stats_path(self, path):
         fn = path.split("/")[-1]
@@ -126,7 +131,12 @@ class DataSource(object):
 
     def ls(self, rse="*", run="*", typ="*"):
         pattern = f"{self.Path}/{rse}_{run}_{typ}.*"
-        files = sorted(glob.glob(pattern))
+        files = set(glob.glob(pattern))
+        if run == "*":
+            files |= set(glob.glob(f"{self.Path}/{rse}_{typ}.*"))
+            if typ == "*":
+                files |= set(glob.glob(f"{self.Path}/{rse}_*"))
+        files = sorted(list(files))
         out = []
         for path in files:
             if rse != "*":
@@ -193,20 +203,27 @@ class UMDataSource(DataSource):
             summary["elapsed_time"] = None
         return summary
         
-    def file_list_as_file(self, rse):
-        path = f"{self.Path}/{rse}_files.list"
-        if os.path.isfile(path):
-            f = open(path, "rb")
-            type = "text/plain"
-        elif os.path.isfile(path + ".gz"):
-            f = open(path + ".gz", "rb")
-            type = "application/x-gzip"
+    def open_file_list(self, rse, binary=True):
+        files = glob.glob(f"{self.Path}/{rse}_files.list*")
+        if files:
+            path = files[0]
         else:
             raise FileNotFoundError("not found")
+        
+        type = "text/plain"
+        if binary:
+            if path.endswith(".gz"):
+                f = open(path, "rb")
+                type = "application/x-gzip"
+            else:
+                f = open(path, "rb")
+        else:
+            if path.endswith(".gz"):
+                f = gzip.open(path, "rt")
+            else:
+                f = open(path, "r")
         return f, type
         
-    file_list = file_list_as_file
-    
     def line_iterator(self, f):
         while True:
             line = f.readline()
@@ -217,13 +234,7 @@ class UMDataSource(DataSource):
                 yield line
         
     def file_list_as_iterable(self, rse):
-        path = f"{self.Path}/{rse}_files.list"
-        if os.path.isfile(path):
-            f = open(path, "r")
-        elif os.path.isfile(path + ".gz"):
-            f = gzip.open(path + ".gz", "rt")
-        else:
-            raise FileNotFoundError("not found")
+        f, _ = self.open_file_list(rse, binary=False)
         return self.line_iterator(f)
         
     def fill_missing_scanner_parts(self, rse_info):
@@ -244,19 +255,6 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
-    def parse_filename(self, fn):
-        # filename looks like this:
-        #
-        #   <rse>_%Y_%m_%d_%H_%M_<type>.<extension>
-        #
-        fn, ext = fn.rsplit(".",1)
-        parts = fn.split("_")
-        typ = parts[-1]
-        timestamp_parts = parts[-6:-1]
-        timestamp = "_".join(timestamp_parts)
-        rse = "_".join(parts[:-6])
-        return rse, timestamp, typ, ext
-        
     def is_mounted(self):
         return os.path.isdir(self.Path)
 

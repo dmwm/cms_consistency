@@ -12,7 +12,6 @@ WORKDIR /root
 ADD start.sh ./start.sh
 RUN mkdir app samples
 ADD app ./app
-ADD samples ./samples
 
 EXPOSE 8400
 
