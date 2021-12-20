@@ -283,7 +283,7 @@ class ScannerMaster(PyThread):
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, ignore_patterns=([],[]), max_files = None,
+    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
                 include_sizes=True, ignore_subdirs=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
@@ -312,7 +312,6 @@ class ScannerMaster(PyThread):
             self.LastV = 0
         self.NFiles = self.NDirectories = 0
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
-        self.IgnoreDirPatterns, self.IgnoreFilePatterns = ignore_patterns
         self.IgnoreSubdirs = ignore_subdirs
         self.IgnoredFiles = self.IgnoredDirs = 0
         self.IncludeSizes = include_sizes
@@ -334,15 +333,13 @@ class ScannerMaster(PyThread):
     def dir_ignored(self, path):
         # path is expected to be canonic here
         relpath = relative_path(self.Root, path)
-        ignore =  any(pattern.match(path) for pattern in self.IgnoreDirPatterns) or \
-            any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreSubdirs)
+        ignore =  any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreSubdirs)
         return ignore
 
     def file_ignored(self, path):
         # path is expected to be canonic here
         relpath = relative_path(self.Root, path)
-        return any(pattern.match(path) for pattern in self.IgnoreFilePatterns) or \
-            any(relpath.startswith(subdir+"/") for subdir in self.IgnoreSubdirs)
+        return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreSubdirs)
 
     @synchronized
     def addFiles(self, files):
@@ -613,7 +610,7 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
                 print("    ", p)
 
         master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
-            max_files = max_files, ignore_patterns = config.ignore_patterns(rse), include_sizes=include_sizes,
+            max_files = max_files, include_sizes=include_sizes,
             ignore_subdirs = ignore_subdirs)
         master.start()
 
