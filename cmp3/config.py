@@ -108,6 +108,9 @@ class Config:
             
         def dbdump_root(self, rse_name):
             return self.dbdump_param(rse_name, "path_root", "/")
+            
+        def dbdump_ignore(self, rse_name):
+            return self.dbdump_param(rse_name, "ignore", [])
 
         def nparts(self, rse_name):
             return self.general_param(rse_name, "partitions", 10)

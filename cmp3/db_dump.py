@@ -165,7 +165,7 @@ try:
     if not subdir.endswith("/"):    subdir = subdir + "/"
     print(f"Filtering files under {subdir} only")
 
-    _, ignore_file_patterns = config.ignore_patterns(rse_name)
+    ignore_list = config.dbdump_ignore(rse_name)
 
     engine = create_engine(dbconfig.DBURL,  echo=verbose)
     Session = sessionmaker(bind=engine)
@@ -211,7 +211,7 @@ try:
             if not filter_re.search(path):
                 continue
             
-        if any(p.match(path) for p in ignore_file_patterns):
+        if any(path.starts_with(ignore_prefix) for ignore_prefix in ignore_list):
             continue
             
         words = path.rsplit("/", 1)

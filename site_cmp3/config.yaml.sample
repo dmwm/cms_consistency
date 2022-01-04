@@ -6,80 +6,61 @@ database:		# optional. rucio.cfg can be used instead
         user:           cms_rucio_int_r
         password:       "password"
 
-rses: 
-        "*": # default
-                partitions:     5
-                scanner:
-                        recursion:      3
-                        nworkers:        5
-                        timeout:        30
-                dbdump:
-                        path_root:   /  # default
-                        filter:     NANOAOD     # RE, will search for pattern in the path, icluding subdirectoies
-
-        T2_US_Purdue_Test:
-                scanner: 
-                        recursion:      3       # defaults for all roots
-                        nworkers:        5
-                        timeout:        30
-                        server:         xrootd.rcac.purdue.edu
-                        server_root:    /store/test/rucio/int/cms/store
-                        remove_prefix:  /            # should end with "/",  can be used in simple cases instead of REs in "rewrite"
-                        add_prefix:     /store/       # should be terminated with /
-
-                        # filter: .*                 # default
-                        # filter: NANOAOD            # only paths where the patern is found will pass
-                                                     # if exact match is needed, use ^
-                        
-                        # more flexible alternative to remove/add prefix, using regexp:
-                        # rewrite:                  # Path to LFN mapping, will be applied *after* remove/add prefix
-                        #    path: "^/(.*)"
-                        #    out: "/store/($1)"
-
-                        roots:   
-                            -   path: mc            # always relative to server_root
-                                recursion:      2   # root specific settings
-                            -   path: data          # always relative to server_root
-                dbdump:
-                        path_root:   /  # default
-                        filter:     NANOAOD     # RE, will search for pattern in the path, icluding subdirectoies
-                        
-        RAL:
-                preprocess:
-                    filter:     "^path=/eos/ctareadonly/cmstest/cms/store/(data|mc|generator|hidata|himc|lhe|lumi|relval|results)/"
-                    rewrite:
-                        match:  "^path=/eos/ctareadonly/cmstest/cms(/store/[^ ]+).*"
-                        out:    \1
-                        
-        T0_CH_CERN_Tape:
-                partitions: 100
-                preprocess:
-                    starts_with: "path=/eos/ctareadonly/cmstest/cms/store/" 
-                    filter:     "^path=/eos/ctareadonly/cmstest/cms/store/(data|mc|generator|hidata|himc|lumi|relval|results)/"
-                    remove_prefix: "path=/eos/ctareadonly/cmstest/cms"
-                    rewrite:
-                        match:  "^([^ ]+).*"
-                        out:    \1
-                        
-                            
-        ProtoDUNE_NP04:
-                scanner: 
-                        server: eospublic.cern.ch
-                        roots:   
-                            -   path: /eos/experiment/neutplatform/protodune/rawdata/np04
-                                
-        ProtoDUNE_NP02:
-                scanner: 
-                        server: eospublic.cern.ch
-                        root:   /eos/experiment/neutplatform/protodune/rawdata/np02
-        FNAL_dCache:
-                scanner:
-                        server: cmsdcadisk.fnal.gov
-                        root: /dcache/uscmsdisk/store/mc
-                        recursion:      2
-                        workers:        5
-                        timeout:        30
-                        remove_prefix: /dcache/uscmsdisk
-
-
-
+rses:
+  "*": # default
+    include_sizes: no
+    partitions:     5
+    scanner:
+      recursion:      1
+      nworkers:        8
+      timeout:        300
+      server_root: /store/
+      remove_prefix: /
+      add_prefix: /store/
+      roots:
+      - path: express
+        ignore:
+            - path/relative/to/root
+      - path: mc
+      - path: data
+      - path: generator
+      - path: results
+      - path: hidata
+      - path: himc
+      - path: relval
+    dbdump:
+      path_root:   /
+      ignore:
+          - /path1
+          - /path2
+  T0_CH_CERN_Disk:
+    scanner:
+      server: eoscms.cern.ch
+      server_root: /eos/cms/tier0/store/
+  T1_DE_KIT_Disk:
+    scanner:
+      server: cmsxrootd-kit.gridka.de:1094
+  T1_ES_PIC_Disk:
+    scanner:
+      server: xrootd-cmst1-door.pic.es
+  T1_FR_CCIN2P3_Disk:
+    scanner:
+      server: ccxrdcms.in2p3.fr:1094
+      server_root: /pnfs/in2p3.fr/data/cms/disk/data/store/
+  T1_IT_CNAF_Disk:
+    scanner:
+      server: xs-302.cr.cnaf.infn.it
+  T1_RU_JINR_Disk:
+    scanner:
+      server: xrootd01.jinr-t1.ru:1094
+      server_root: /pnfs/jinr-t1.ru/data/cms/store/
+  T1_US_FNAL_Disk:
+    scanner:
+      server: cmsdcadisk.fnal.gov
+      server_root: /dcache/uscmsdisk/store/
+      roots:
+      - path: express
+        ignore:
+            - path/relative/to/root
+      - path: mc
+      - path: data
