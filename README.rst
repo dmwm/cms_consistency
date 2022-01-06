@@ -7,9 +7,9 @@ The XRootD Scanner is a tool designed to produce the list of files physically fo
 The output of the Scanner is a partitioned list of LFNs for the files found under the set of site "root" directories, recursively.
 The Scanner configuration includes:
     
-    * list of ``root`` directories for the site (typically the same for all sites)
-    * specification of the conversion from physical path to LFN
-    * for each ``root``, list of subdirectories to ignore, i.e. not to scan and not to include their contents in the output LFN list
+* list of ``root`` directories for the site (typically the same for all sites)
+* specification of the conversion from physical path to LFN
+* for each ``root``, list of subdirectories to ignore, i.e. not to scan and not to include their contents in the output LFN list
 
 Database Replica Dump
 ---------------------
