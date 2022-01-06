@@ -136,6 +136,8 @@ if stats:
         "elapsed":None,
         "directories":None,
         "exception":[]  
+        "ignored_files":0,
+        "ignore_list":None
     }
     
 try:
@@ -169,7 +171,7 @@ try:
     if ignore_list:
         print("Ignore list:")
         for path in ignore_list:
-            print(" ", path2)
+            print(" ", path)
 
     engine = create_engine(dbconfig.DBURL,  echo=verbose)
     Session = sessionmaker(bind=engine)
@@ -254,7 +256,8 @@ except:
         stats[stats_key].update({
             "status":"failed",
             "end_time":t1,
-            "exception":lines
+            "exception":lines,
+            "ignore_list":ignore_list
         })
         stats.save()
     raise
@@ -266,7 +269,8 @@ else:
             "files":n,
             "ignored_files":ignored_files,
             "elapsed":t1-t0,
-            "directories":len(dirs)
+            "directories":len(dirs),
+            "ignore_list":ignore_list
         })
         stats.save()
 
