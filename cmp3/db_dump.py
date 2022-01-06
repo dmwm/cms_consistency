@@ -166,6 +166,10 @@ try:
     print(f"Filtering files under {subdir} only")
 
     ignore_list = config.dbdump_ignore(rse_name)
+    if ignore_list:
+        print("Ignore list:")
+        for path in ignore_list:
+            print(" ", path2)
 
     engine = create_engine(dbconfig.DBURL,  echo=verbose)
     Session = sessionmaker(bind=engine)
@@ -198,6 +202,7 @@ try:
     dirs = set()
     n = 0
     filter_re = config.dbdump_param(rse, "filter")
+    ignored_files = 0
     if filter_re:
         filter_re = re.compile(filter_re)
     for r in replicas:
@@ -211,7 +216,8 @@ try:
             if not filter_re.search(path):
                 continue
             
-        if any(path.starts_with(ignore_prefix) for ignore_prefix in ignore_list):
+        if any(path.startswith(ignore_prefix) for ignore_prefix in ignore_list):
+            ignored_files += 1
             continue
             
         words = path.rsplit("/", 1)
@@ -251,12 +257,14 @@ except:
             "exception":lines
         })
         stats.save()
+    raise
 else:    
     if stats is not None:
         stats[stats_key].update({
             "status":"done",
             "end_time":t1,
             "files":n,
+            "ignored_files":ignored_files,
             "elapsed":t1-t0,
             "directories":len(dirs)
         })
