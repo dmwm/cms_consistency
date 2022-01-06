@@ -8,9 +8,9 @@ database:		# optional. rucio.cfg can be used instead
 
 rses:
   "*": # default
-    include_sizes: no
     partitions:     5
     scanner:
+      include_sizes: yes
       recursion:      1
       nworkers:        8
       timeout:        300
@@ -31,10 +31,11 @@ rses:
     dbdump:
       path_root:   /
       ignore:
-          - /path1
-          - /path2
+          - path1
+          - path2
   T0_CH_CERN_Disk:
     scanner:
+      include_sizes: no
       server: eoscms.cern.ch
       server_root: /eos/cms/tier0/store/
   T1_DE_KIT_Disk:

@@ -167,7 +167,8 @@ try:
     if not subdir.endswith("/"):    subdir = subdir + "/"
     print(f"Filtering files under {subdir} only")
 
-    ignore_list = config.dbdump_ignore(rse_name)
+    ignore_list = config.dbdump_ignore(rse_name)            # relative to the root
+    ignore_list = [subdir + path for path in ignore_list]
     if ignore_list:
         print("Ignore list:")
         for path in ignore_list:
