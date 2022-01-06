@@ -135,7 +135,7 @@ if stats:
         "files":None,
         "elapsed":None,
         "directories":None,
-        "exception":[]  
+        "exception":[],  
         "ignored_files":0,
         "ignore_list":None
     }
