@@ -75,13 +75,17 @@ Currently the toolkit reads configuration in YAML format. Here is the configurat
           - path: mc
           - path: data
 
+The "database" section configures the database connection. This section is used only by the ``db_dump.py`` tool.
+The tool can also read the database connection configuration from ``rucio.cfg`` file, so the "database" section in the YAML
+configuration file is optional.
+
 The "rses" section of the file is a dictionary indexed by the RSE name. It contains defaults section (RSE name "*") and 
 RSE-specifc sections, one per RSE. Generally, the tools, when they are looking for a configuration parameter value, look it up
 by checking the RSE-specific portion first and then, if the option is not present there, looking into the defaults section.
 Therefore, the defaults and RSE-specific sections follow the same structure, but typically RSE-specific sections are much shorter
 and most of the configuration paraneters are specified in the defaults section.
 
-Here is the structure of the configuration file section:
+Here is the structure of the configuration file for each RSE, including the defaults:
 
 * partitions:  integer, default: 10 - number of partitions for file lists. Must be the same for scanner and DB dump.
 * scanner:
@@ -95,7 +99,7 @@ Here is the structure of the configuration file section:
     * add_prefix: string - add prefix to physical path after removing ``remove_prefix``. ``remove_prefix`` and ``add_prefix`` are
       used to convert physical path to LFN.
     * roots: list - list of dictionaries, describing scanning roots. For each site the scanner recursively scans "root" directories
-        one by one. For each ``root``, the following parameters can be configured
+      one by one. For each ``root``, the following parameters can be configured
     
         * path: string, required - top of the area to scan, relative to the ``server_root``
         * ignore: list of strings - list of paths relative to the ``root`` not to scan and to exclude from scan results
@@ -103,6 +107,6 @@ Here is the structure of the configuration file section:
 * dbdump:   - database replicas dump configuration
 
     * path_root: string - top directory in LFN space to list. All LFNs found outside of ``path_root`` will be removed from the
-        database dump
+      database dump
     * ignore: list of strings - list of paths, relative to ``path_root``, to remove from the output.
 
