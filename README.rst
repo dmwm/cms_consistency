@@ -90,19 +90,19 @@ Here is the structure of the configuration file for each RSE, including the defa
 * partitions:  integer, default: 10 - number of partitions for file lists. Must be the same for scanner and DB dump.
 * scanner:
 
-    * include_sizes: yes/no, default: yes
-    * recursion: integer, default: 3 - the directory depth relative to the scanning root, where to start attempting recursive scanning
-    * nworkers: integer, default: 10 - number of parallel scanners to run for the RSE
-    * timeout: integer, default: 60 - timeout in seconds to receive scanning results for a single directory
-    * server_root: string - top path for the RSE
-    * remove_prefix: string - prefix to remove from physical path
-    * add_prefix: string - add prefix to physical path after removing ``remove_prefix``. ``remove_prefix`` and ``add_prefix`` are
-      used to convert physical path to LFN.
-    * roots: list - list of dictionaries, describing scanning roots. For each site the scanner recursively scans "root" directories
-      one by one. For each ``root``, the following parameters can be configured
-    
-        * path: string, required - top of the area to scan, relative to the ``server_root``
-        * ignore: list of strings - list of paths relative to the ``root`` not to scan and to exclude from scan results
+  * include_sizes: yes/no, default: yes
+  * recursion: integer, default: 3 - the directory depth relative to the scanning root, where to start attempting recursive scanning
+  * nworkers: integer, default: 10 - number of parallel scanners to run for the RSE
+  * timeout: integer, default: 60 - timeout in seconds to receive scanning results for a single directory
+  * server_root: string - top path for the RSE
+  * remove_prefix: string - prefix to remove from physical path
+  * add_prefix: string - add prefix to physical path after removing ``remove_prefix``. ``remove_prefix`` and ``add_prefix`` are
+    used to convert physical path to LFN.
+  * roots: list - list of dictionaries, describing scanning roots. For each site the scanner recursively scans "root" directories
+    one by one. For each ``root``, the following parameters can be configured
+
+    * path: string, required - top of the area to scan, relative to the ``server_root``
+    * ignore: list of strings - list of paths relative to the ``root`` not to scan and to exclude from scan results
     
 * dbdump:   - database replicas dump configuration
 
