@@ -106,7 +106,7 @@ Here is the structure of the configuration file for each RSE, including the defa
     
 * dbdump:   - database replicas dump configuration
 
-    * path_root: string - top directory in LFN space to list. All LFNs found outside of ``path_root`` will be removed from the
-      database dump
-    * ignore: list of strings - list of paths, relative to ``path_root``, to remove from the output.
+  * path_root: string - top directory in LFN space to list. All LFNs found outside of ``path_root`` will be removed from the
+    database dump
+  * ignore: list of strings - list of paths, relative to ``path_root``, to remove from the output.
 
