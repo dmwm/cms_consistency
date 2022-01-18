@@ -55,7 +55,8 @@ while [ -n "$1" ]; do
     shift
 done    
 
-server=ceph-gw1.gridpp.rl.ac.uk
+# - old - server=ceph-gw1.gridpp.rl.ac.uk
+server=xrootd.echo.stfc.ac.uk
 
 case $RSE in
 	T1_UK_RAL_Tape)
