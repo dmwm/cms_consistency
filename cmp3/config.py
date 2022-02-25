@@ -246,7 +246,7 @@ class CCConfiguration(object):
         self.Backend = backend
         self.RSE = rse
 
-        self.NPartitions = int(backend.rse_param(rse, "npartitions"))
+        self.NPartitions = int(backend.rse_param(rse, "npartitions", 10))
 
         self.Server = backend.scanner_param(rse, "server", required=True)
         self.ServerRoot = backend.scanner_param(rse, "server_root", "/store", required=True)

@@ -15,7 +15,7 @@ try:
 except:
     Use_tqdm = False
 
-from config import CCConfiguration
+from config import CCConfiguration, ConfigYAMLBackend
 
 def truncated_path(root, path):
         if path == root:
@@ -133,13 +133,11 @@ class XRootDClient(object):
     def get_data_server(redirector, location, timeout):
         # Query a redirector and return a single registered data server
         # On failure, return the original server address
-        subp = subprocess.run(['xrdfs', redirector, 'locate', '-m', location],
-                timeout=timeout, encoding='utf-8',
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
                 
-        retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+        command = "xrdfs %s locate -m %s" % (redirector, location)
+        retcode, out, err = ShellCommand.execute(command, timeout=timeout)
 
-        if subp.returncode != 0:
+        if retcode != 0:
             return redirector
 
         servers = [x.split()[0] for x in out.split("\n") if " server " in x.lower()]
@@ -150,8 +148,7 @@ class XRootDClient(object):
             return redirector
 
     def location_exists(self, location):
-        s = Scanner(None, self.Server, location, False, self.Timeout)
-        status, reason, dirs, files = s.ls(False, False)
+        status, reason, dirs, files = self.ls(location, False, False)
         return status == "OK", reason or status
         
     def root_exists(self):
@@ -310,6 +307,7 @@ class ScannerMaster(PyThread):
         self.RecursiveThreshold = recursive_threshold
         self.Root = canonic_path(root)
         self.Client = XRootDClient(server, is_redirector, self.Root, timeout)
+        self.Server = server
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
         self.ScannerQueue = TaskQueue(max_scanners)
@@ -337,7 +335,7 @@ class ScannerMaster(PyThread):
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
-    def root_exists():
+    def root_exists(self):
         return self.Client.root_exists()
         
     def actual_server(self):
@@ -398,7 +396,7 @@ class ScannerMaster(PyThread):
 
                 if self.MaxFiles is None or self.NFiles < self.MaxFiles:
                     self.ScannerQueue.addTask(
-                        Scanner(self, self.Server, path, allow_recursive, self.Timeout, include_sizes=self.IncludeSizes)
+                        Scanner(self, self.Client, path, allow_recursive, include_sizes=self.IncludeSizes)
                     )
                     self.NToScan += 1
 
@@ -572,11 +570,13 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
     failed = root_failed = False
     
     timeout = override_timeout or config.ScannerTimeout
+    server = config.Server
     server_root = config.ServerRoot
     root_path = canonic_path(root if root.startswith("/") else server_root + "/" + root)
     recursive_threshold = override_recursive_threshold or config.RecursionThreshold
     max_scanners = override_max_scanners or config.NWorkers
     ignore_subdirs = config.ignore_subdirs(root)
+    is_redirector = config.ServerIsRedirector
 
     t0 = time.time()
     root_stats = {
@@ -593,18 +593,18 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
     if stats is not None:
         stats[stats_key] = my_stats
 
-    master = ScannerMaster(server, root_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
+    ignore_list = config.ignore_subdirs(root)
+
+    master = ScannerMaster(server, is_redirector, root_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
-            ignore_subdirs = ignore_subdirs)
+            ignore_subdirs = ignore_list)
 
     root_stats["actual_server"] = master.actual_server()
 
     exists, reason = master.root_exists()
-
-    exists, reason = Scanner.location_exists(server, top_path, timeout)
     t1 = time.time()
     if not exists:
-        print("Root %s does not exist: %s" % (top_path, reason))
+        print("Root %s does not exist: %s" % (root_path, reason))
         root_stats.update({
             "root_failed": True,
             "error": reason,
@@ -627,26 +627,18 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
             assert rewrite_out is not None
             rewrite_path = re.compile(rewrite_path)
 
-        print("Starting scan of %s:%s with:" % (server, top_path))
+        print("Starting scan of %s:%s with:" % (server, root_path))
+        if master.actual_server() != server:
+            print("  Actual server       =", master.actual_server())
         print("  Include sizes       = %s" % include_sizes)
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
         print("  Timeout             = %s" % timeout)
-
-        ignore_list = config.ignore_subdirs(rse)
         if ignore_list:
             print("  Ignore list:")
             for p in ignore_list:
                 print("    ", p)
 
-        if ignore_subdirs:
-            print("  Ignore subdirectories:")
-            for p in ignore_subdirs:
-                print("    ", p)
-
-        master = ScannerMaster(server, top_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
-            max_files = max_files, include_sizes=include_sizes,
-            ignore_subdirs = ignore_subdirs)
         master.start()
 
         path_prefix = server_root
