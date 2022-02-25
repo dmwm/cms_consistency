@@ -1,6 +1,6 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized, ShellCommand
 import re, json, os, os.path, traceback
-import subprocess, time
+import subprocess, time, random
 from part import PartitionedList
 from py3 import to_str
 from stats import Stats
@@ -15,7 +15,7 @@ try:
 except:
     Use_tqdm = False
 
-from config import Config
+from config import CCConfiguration
 
 def truncated_path(root, path):
         if path == root:
@@ -69,43 +69,13 @@ class RMDir(Task):
         except: 
             # ignore
             pass
-        
-class Scanner(Task):
-    
-    MAX_ATTEMPTS_REC = 1
-    MAX_ATTEMPTS_FLAT = 3
 
-    def __init__(self, master, server, location, recursive, timeout, include_sizes = True):
-        Task.__init__(self)
-        self.Server = server
-        self.Master = master
-        self.Location = canonic_path(location)
+class XRootDClient(object):
+
+    def __init__(self, server, is_redirector, root, timeout):
+        self.Root = root
         self.Timeout = timeout
-        self.ForcedFlat = not recursive
-        self.WasRecursive = recursive
-        self.Subprocess = None
-        self.Killed = False
-        self.Started = None
-        self.Elapsed = None
-        self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
-        self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
-        self.IncludeSizes = include_sizes
-
-    def __str__(self):
-        return "Scanner(%s)" % (self.Location,)
-
-    def message(self, status, stats):
-        if self.Master is not None:
-            self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
-        
-
-    @synchronized
-    def killme(self):
-        if self.Subprocess is not None:
-                self.Killed = True
-                self.Subprocess.terminate()
-                
-    #dr-x 2021-06-23 23:21:46           0 /store/unmerged/HINPbPbSpring21MiniAOD
+        self.Server = server if not is_redirector else self.get_data_server(server, root, timeout)
 
     Line_Patterns = [
         # UNIX FS ls -l style
@@ -133,7 +103,7 @@ class Scanner(Task):
     def parse_scan_line(self, line, with_meta):
         """
         returns (is_file, size, path)
-        
+
         dr-x 2021-07-13 04:00:26        4096 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004
         -r-- 2021-07-02 09:35:03   719124843 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004//1C576248-6EEF-B74F-A336-D1D5B8E41722.root
         
@@ -159,21 +129,46 @@ class Scanner(Task):
         #print("parse:", line,"->",is_file, size, canonic_path(path))
         return is_file, size, canonic_path(path)
 
-    def scan(self, recursive, with_meta):
+    @staticmethod
+    def get_data_server(redirector, location, timeout):
+        # Query a redirector and return a single registered data server
+        # On failure, return the original server address
+        subp = subprocess.run(['xrdfs', redirector, 'locate', '-m', location],
+                timeout=timeout, encoding='utf-8',
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                
+        retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+
+        if subp.returncode != 0:
+            return redirector
+
+        servers = [x.split()[0] for x in out.split("\n") if " server " in x.lower()]
+        servers = [x for x in servers if x]
+        if servers:
+            return random.choice(servers)
+        else:
+            return redirector
+
+    def location_exists(self, location):
+        s = Scanner(None, self.Server, location, False, self.Timeout)
+        status, reason, dirs, files = s.ls(False, False)
+        return status == "OK", reason or status
+        
+    def root_exists(self):
+        return self.location_exists(self.Root)
+
+    def ls(self, location, recursive, with_meta):
         #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
         server = self.Server
-        location = self.Location
-        timeout = self.Timeout
         lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)        
         files = []
         dirs = []
         status = "OK"
         reason = ""
 
-
         try:    
             #print(f"lscommand: {lscommand}")
-            retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
+            retcode, out, err = ShellCommand.execute(lscommand, timeout=self.Timeout)
             #print(f"retcode: {retcode}")
         except RuntimeError:
             status = "timeout"
@@ -237,6 +232,39 @@ class Scanner(Task):
         
         return status, reason, dirs, files
 
+class Scanner(Task):
+    
+    MAX_ATTEMPTS_REC = 1
+    MAX_ATTEMPTS_FLAT = 3
+
+    def __init__(self, master, client, location, recursive, include_sizes = True):
+        Task.__init__(self)
+        self.Client = client
+        self.Master = master
+        self.Location = canonic_path(location)
+        self.ForcedFlat = not recursive
+        self.WasRecursive = recursive
+        self.Subprocess = None
+        self.Killed = False
+        self.Started = None
+        self.Elapsed = None
+        self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
+        self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
+        self.IncludeSizes = include_sizes
+
+    def __str__(self):
+        return "Scanner(%s)" % (self.Location,)
+
+    def message(self, status, stats):
+        if self.Master is not None:
+            self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
+
+    @synchronized
+    def killme(self):
+        if self.Subprocess is not None:
+                self.Killed = True
+                self.Subprocess.terminate()
+                
     def run(self):
         #print("Scanner.run():", self.Master)
         self.Started = t0 = time.time()
@@ -251,7 +279,7 @@ class Scanner(Task):
         stats = "r" if recursive else " "
         #self.message("start", stats)
 
-        status, reason, dirs, files = self.scan(recursive, self.IncludeSizes)
+        status, reason, dirs, files = self.Client.ls(self.Location, recursive, self.IncludeSizes)
         self.Elapsed = time.time() - self.Started
         #stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
         stats = "r" if recursive else " "
@@ -270,29 +298,21 @@ class Scanner(Task):
             self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs)
-        
-                
-    @staticmethod
-    def location_exists(server, location, timeout):
-        s = Scanner(None, server, location, False, timeout)
-        status, reason, dirs, files = s.scan(False, False)
-        return status == "OK", reason or status
-                
+
 class ScannerMaster(PyThread):
     
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
+    def __init__(self, server, is_redirector, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
                 include_sizes=True, ignore_subdirs=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
-        self.Server = server
         self.Root = canonic_path(root)
+        self.Client = XRootDClient(server, is_redirector, self.Root, timeout)
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
         self.ScannerQueue = TaskQueue(max_scanners)
-        self.Timeout = timeout
         self.Done = False
         self.Error = None
         self.Failed = False
@@ -317,12 +337,18 @@ class ScannerMaster(PyThread):
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
+    def root_exists():
+        return self.Client.root_exists()
+        
+    def actual_server(self):
+        return self.Client.Server
+
     def run(self):
         #
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        scanner_task = Scanner(self, self.Server, self.Root, self.RecursiveThreshold == 0, self.Timeout, include_sizes=self.IncludeSizes)
+        scanner_task = Scanner(self, self.Client, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes)
         self.ScannerQueue.addTask(scanner_task)
         
         self.ScannerQueue.waitUntilEmpty()
@@ -538,19 +564,19 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
             sys.exit(1)
         path = rewrite_path.sub(rewrite_out, path)   
     return path
-    
 
-def scan_root(rse, server_root, root, config, my_stats, stats, stats_key, 
+def scan_root(rse, config, root, my_stats, stats, stats_key, 
     override_recursive_threshold, override_max_scanners, file_list, dir_list,
     purge_empty_dirs, ignore_failed_directories, include_sizes):
     
     failed = root_failed = False
     
-    timeout = override_timeout or config.scanner_timeout(rse)
-    top_path = canonic_path(root if root.startswith("/") else server_root + "/" + root)
-    recursive_threshold = override_recursive_threshold or config.scanner_recursion_threshold(rse, root)
-    max_scanners = override_max_scanners or config.scanner_workers(rse)
-    ignore_subdirs = config.ignore_subdirs(rse, root)
+    timeout = override_timeout or config.ScannerTimeout
+    server_root = config.ServerRoot
+    root_path = canonic_path(root if root.startswith("/") else server_root + "/" + root)
+    recursive_threshold = override_recursive_threshold or config.RecursionThreshold
+    max_scanners = override_max_scanners or config.NWorkers
+    ignore_subdirs = config.ignore_subdirs(root)
 
     t0 = time.time()
     root_stats = {
@@ -559,12 +585,21 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
        "timeout":timeout,
        "recursive_threshold":recursive_threshold,
        "max_scanners":max_scanners,
-       "ignore_subdirectories": ignore_subdirs
+       "ignore_subdirectories": ignore_subdirs,
+       "actual_server": None
     }
 
     my_stats["scanning"] = root_stats
     if stats is not None:
         stats[stats_key] = my_stats
+
+    master = ScannerMaster(server, root_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
+            max_files = max_files, include_sizes=include_sizes,
+            ignore_subdirs = ignore_subdirs)
+
+    root_stats["actual_server"] = master.actual_server()
+
+    exists, reason = master.root_exists()
 
     exists, reason = Scanner.location_exists(server, top_path, timeout)
     t1 = time.time()
@@ -582,12 +617,12 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
         })
         root_failed = True
     else:
-        remove_prefix = config.scanner_remove_prefix(rse)
-        add_prefix = config.scanner_add_prefix(rse)
-        path_filter = config.scanner_filter(rse)
-        if path_filter is not None:
-            path_filter = re.compile(path_filter)
-        rewrite_path, rewrite_out = config.scanner_rewrite(rse)
+        remove_prefix = config.RemovePrefix
+        add_prefix = config.AddPrefix
+        path_filter = None          # -- obsolete -- config.scanner_filter(rse)
+        #if path_filter is not None:
+        #    path_filter = re.compile(path_filter)
+        rewrite_path, rewrite_out = None, None      # -- obsolete -- config.scanner_rewrite(rse)
         if rewrite_path is not None:
             assert rewrite_out is not None
             rewrite_path = re.compile(rewrite_path)
@@ -598,7 +633,7 @@ def scan_root(rse, server_root, root, config, my_stats, stats, stats_key,
         print("  Max scanner threads = %d" % max_scanners)
         print("  Timeout             = %s" % timeout)
 
-        ignore_list = config.ignore_list(rse)
+        ignore_list = config.ignore_subdirs(rse)
         if ignore_list:
             print("  Ignore list:")
             for p in ignore_list:
@@ -700,7 +735,7 @@ if __name__ == "__main__":
         sys.exit(2)
 
     rse = args[0]
-    config = Config(opts.get("-c"))
+    config = CCConfiguration(ConfigYAMLBackend(opts["-c"]), rse)
 
     quiet = "-q" in opts
     display_progress = not quiet and "-v" in opts
@@ -720,7 +755,7 @@ if __name__ == "__main__":
     if "-n" in opts:
         nparts = int(opts["-n"])
     else:
-        nparts = config.nparts(rse)
+        nparts = config.NPartitions
 
     if nparts > 1:
         if not "-o" in opts:
@@ -735,10 +770,10 @@ if __name__ == "__main__":
     dir_output = opts.get("-d")
     dir_list = PartitionedList.create(nparts, dir_output, zout) if dir_output else None
 
-    server = config.scanner_server(rse)
-    server_root = config.scanner_server_root(rse)
-    include_sizes = config.scanner_include_sizes(rse) and not "-x" in opts
-    purge_empty_dirs = config.scanner_param(rse, "purge_empty_dirs", default=False)
+    server = config.Server
+    server_root = config.ServerRoot
+    include_sizes = config.IncludeSizes and not "-x" in opts
+    purge_empty_dirs = False            # -- not really implemented -- config.scanner_param(rse, "purge_empty_dirs", default=False)
     if not server_root:
         print(f"Server root is not defined for {rse}. Should be defined as 'server_root'")
         sys.exit(2)
@@ -762,9 +797,9 @@ if __name__ == "__main__":
     
     failed = False
     all_roots_failed = True
-    for root in config.scanner_roots(rse):
+    for root in config.RootList:
         try:
-            failed, root_failed = scan_root(rse, server_root, root, config, my_stats, stats, stats_key, override_recursive_threshold, 
+            failed, root_failed = scan_root(rse, config, root, my_stats, stats, stats_key, override_recursive_threshold, 
                     override_max_scanners, out_list, dir_list,
                     purge_empty_dirs, ignore_directory_scan_errors, include_sizes)
             all_roots_failed = all_roots_failed and root_failed

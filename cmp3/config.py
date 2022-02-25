@@ -1,5 +1,5 @@
-from __future__ import print_function
-import yaml, re, os, configparser
+import re, os, json
+from configparser import ConfigParser
 
 class DBConfig:
 
@@ -37,138 +37,258 @@ class DBConfig:
             dburl = "oracle+cx_oracle://%s:%s@%s:%s/?service_name=%s" % (
                                     user, password, host, port, service)
         return DBConfig(schema, dburl)
+        
+class ConfigBackend(object):
     
+    #
+    # Helpers
+    #
+
+    def section_as_dict(self, parser, section):
+        out = {}
+        for name, value in parser.items(section):
+            try:    value = int(value)
+            except: pass
+            out[name] = value
+        return out
+
+    def roots_as_dict(self, iterable):
+        return {r["path"]:r for r in iterable}
+
+    def format_ignore_list(self, lst):
+        if not lst: lst = []
+        if isinstance(lst, str):
+            if " " in lst:
+                lst = lst.split()
+            else:
+                lst = [lst]
+        return lst
+        
+    #
+    # To be implemented by the actual backend
+    #
+            
+    def get_config(self, rse="*"):
+        # returns configuration for RSE or defaults as dictionary
+        raise NotImplementedError()
+        
+    def get_root_dict(self, rse="*"):
+        # returns None if no roots defined for the RSE or dictionary keyed by root path
+        raise NotImplementedError()
+        
+    #
+    # Low level methods
+    #
+    
+    def get_scanner(self, rse_name="*"):
+        return self.get_config(rse_name).get("scanner", {})
+
+    def get_top(self, rse_name="*"):
+        return self.get_config(rse_name)
+
+    def get_dbdump(self, rse_name="*"):
+        return self.get_config(rse_name).get("dbdump", {})
+
+    #
+    # Methods implementing RSE/common logic
+    #
+        
+    def get_value(self, name, specifc, common, default, required):
+        if name in specifc:
+            return specifc[name]
+        if name in common:
+            return common[name]
+        if required:
+            raise KeyError(f"Required field {name} not found")
+        else:
+            return default
+            
+    def scanner_param(self, rse_name, param, default=None, required=False):
+        # 1. rses->rse->param
+        # 2. rses->*->param
+        scanner_rse = self.get_scanner(rse_name)
+        scanner_common = self.get_scanner()
+        #print("scanner_rse:", scanner_rse)
+        return self.get_value(param, scanner_rse, scanner_common, default, required)
+        
+    def dbdump_param(self, rse_name, param, default=None, required=False):
+        # 1. rses->rse->param
+        # 2. rses->*->param
+        dbdump_rse = self.get_dbdump(rse_name)
+        defaults = self.get_dbdump()
+        value = self.get_value(param, dbdump_rse, defaults, default, required)
+        if param == "ignore": value = self.format_ignore_list(value)
+        return value
+
+    def rse_param(self, rse_name, param, default=None, required=False):
+        rse_cfg = self.get_top(rse_name)
+        defaults = self.get_top()
+        return self.get_value(param, rse_cfg, defaults, default, required)
+
+    def root_list(self, rse):
+        roots_dict = self.get_root_dict(rse)
+        if roots_dict is None:
+            roots_dict = self.get_root_dict("*") or {}
+        return list(roots_dict.keys())
+
+    def root_param(self, rse, root, param, default=None, required=False):
+        roots_dict = self.get_root_dict(rse)
+        #print(f"root_param({rse}, {root}, {param}):")
+        #print("  specific roots:", roots_dict)
+        if roots_dict is None:
+            roots_dict = self.get_root_dict("*") or {}
+            #print("  common roots:", roots_dict)
+        root_config = roots_dict.get(root, {})
+        value = self.get_value(param, root_config, {}, default, required)
+        #print("  value:", value)
+        if param == "ignore": value = self.format_ignore_list(value)
+        return value
+        
+class ConfigYAMLBackend(ConfigBackend):
+    
+    def __init__(self, cfg):
+        # cfg is either YAML file path or a dictionary read from the YAML file
+        if isinstance(cfg, str):
+            import yaml
+            cfg = yaml.load(open(cfg, "r"), Loader=yaml.SafeLoader)
+        cfg = cfg.get("rses", {})
+        self.Config = cfg
+        self.Roots = {}             # {rse -> {root -> root_config}} 
+        for rse, data in cfg.items():
+            roots = data.get("scanner", {}).get("roots")
+            if roots is not None:
+                self.Roots[rse] = self.roots_as_dict(roots)
+        #print("ConfigYAMLBackend.Config:", self.Config)
+        #print("ConfigYAMLBackend.__init__: Roots:", self.Roots)
+
+    def get_config(self, rse="*"):
+        cfg = self.Config.get(rse, {})
+        #print(f"get_config({rse}): cfg:", cfg)
+        return self.Config.get(rse, {})
+        
+    def get_root_dict(self, rse="*"):
+        return self.Roots.get(rse)
+        
+class ConfigRucioBackend(ConfigBackend):
+
+    CONFIG_SECTION_PREFIX = "consistency_enforcement"
+
+    def __init__(self, account="root"):
+        from rucio.client.configclient import ConfigClient
+        from rucio.client.rseclient import RSEClient
+        from rucio.common.exception import ConfigNotFound
+
+        self.RSEClient = RSEClient(account=account)
+        self.ConfigClient = ConfigClient(account=account)
+        
+        self.Common = None
+        self.CommonRoots = None
+
+        self.RSESpecific = {}
+        self.RSERoots = {}
+        
+    def get_config(self, rse="*"):
+        if rse == "*":
+            if self.Common is None:
+                self.Common = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX)
+                scanner = self.Common["scanner"] = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX + ".scanner")
+                dbdump = self.Common["dbdump"] = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX + ".dbdump")
+                
+                # parse roots config
+                self.CommonRoots = self.roots_as_dict(json.loads(scanner.get("roots", "[]")))
+                        
+            return self.Common
+        else:
+            cfg = self.RSESpecific.get(rse)
+            if cfg is None:
+                cfg = {}
+                try:    cfg = self.RSEClient.list_rse_attributes(rse.upper())
+                except: pass
+                if cfg:
+                    cfg = cfg.get(self.CONFIG_SECTION_PREFIX, "{}")
+                    cfg = json.loads(cfg)
+                self.RSESpecific[rse] = cfg
+                roots = cfg.get("scanner", {}).get("roots")
+                #print(f"Rucio backend get_config({rse}): roots:", roots)
+                if roots is not None:
+                    roots = self.roots_as_dict(roots)
+                self.RSERoots[rse] = roots
+            return cfg
+            
+    def get_root_dict(self, rse="*"):
+        if rse == "*":
+            if self.CommonRoots is None:
+                self.get_config()
+            dct = self.CommonRoots or {}
+        else:
+            cfg = self.get_config(rse)  # this will fetch self.RSERoots[rse] as dict
+            dct = self.RSERoots.get(rse)
+        return dct
+        
+    def get_root(self, root, rse="*"):
+        if rse == "*":
+            if not root in self.CommonRoots:
+                root_cfg = None
+                try:    root_cfg = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX + ".scanner.root." + root)
+                except: pass
+                self.CommonRoots[root] = root_cfg
+            return self.CommonRoots.get(root) or {}
+        else:
+            if rse not in self.RSERoots:
+                self.get_config(rse)       # this will load self.RSERoots[rse_name], if any
+            cfg = (self.RSERoots.get(rse) or {}).get(root)
+            #print(f"Rucio backend: get_root({root}, {rse}): cfg:", cfg)
+            return cfg
+        
+class CCConfiguration(object):
+    
+    def __init__(self, backend, rse):
+        self.Backend = backend
+        self.RSE = rse
+
+        self.NPartitions = int(backend.rse_param(rse, "npartitions"))
+
+        self.Server = backend.scanner_param(rse, "server", required=True)
+        self.ServerRoot = backend.scanner_param(rse, "server_root", "/store", required=True)
+        self.ScannerTimeout = int(backend.scanner_param(rse, "timeout", 300))
+        self.RootList = backend.root_list(rse)
+        self.RemovePrefix = backend.scanner_param(rse, "remove_prefix", "/")
+        self.AddPrefix = backend.scanner_param(rse, "add_prefix", "/store/")
+        self.NWorkers = int(backend.scanner_param(rse, "nworkers", 8))
+        self.IncludeSizes = backend.scanner_param(rse, "include_sizes", "yes") == "yes"
+        self.RecursionThreshold = int(backend.scanner_param(rse, "recursion", 1))
+        self.ServerIsRedirector = backend.scanner_param(rse, "is_redirector", False)
+
+        self.DBDumpPathRoot = backend.dbdump_param(rse, "path_root", "/")
+        self.DBDumpIgnoreSubdirs = backend.dbdump_param(rse, "ignore", [])
+
+    def ignore_subdirs(self, root):
+        return self.Backend.root_param(self.RSE, root, "ignore", [])
+
+    @staticmethod
+    def rse_config(rse, backend_type, *backend_args):
+        if backend_type == "rucio":
+            backend = ConfigRucioBackend(*backend_args)
+        elif backend_type == "yaml":
+            backend = ConfigYAMLBackend(*backend_args)
+        else:
+            raise ValueError(f"Unknown configuration backend type {backend_type}")
+        return CCConfiguration(backend, rse)
+
+if __name__ == "__main__":
+    import sys, getopt
+    opts, args = getopt.getopt(sys.argv[1:], "c:r")
+    opts = dict(opts)
+    rse, param = args[:2]
+    
+    if "-c" in opts:
+        backend = ConfigYAMLBackend(opts["-c"])
+    elif "-r" in opts:
+        backend = ConfigRucioBackend()
+    
+    cfg = CCConfiguration(backend, rse)
+    print(getattr(cfg, param))
+        
         
     
-
-class Config:
-        def __init__(self, cfg_file_path):
-                cfg = yaml.load(open(cfg_file_path, "r"), Loader=yaml.SafeLoader)
-                self.Config = cfg
-                self.Defaults = cfg["rses"].get("*", {})
-                self.RSEs = cfg["rses"]
-
-        def rsecfg(self, rse_name):
-                cfg = {}
-                cfg.update(self.RSEs.get("*", {}))
-                cfg.update(self.RSEs.get(rse_name, {}))
-                return cfg
-
-        def get_by_path(self, *path, default=None):
-            c = self.Config
-            for p in path[:-1]:
-                c1 = c.get(p, None)
-                if not c1:
-                    return default
-                c = c1
-            return c.get(path[-1], default)
-
-        def general_param(self, rse_name, param, default=None):
-            return self.get_by_path("rses", rse_name, param, 
-                    default = self.get_by_path("rses", "*", param, default=default))
-                    
-        rse_param = general_param
-
-        def scanner_root_config(self, rse_name, root):
-            lst = self.scanner_param(rse_name, "roots", self.scanner_param("*", "roots", []))
-            for d in lst:
-                if d["path"] == root:
-                    return d
-            return {}
-            
-        def scanner_param(self, rse_name, param, default=None, root=None):
-            #
-            # Param lookup order if root is specified:
-            # 1. rses->rse->root->param
-            # 2. rses->*->root->param
-            # 3. rses->rse->param
-            # 4. rses->*->param
-            #
-            # If no root specified:
-            # 1. rses->rse->param
-            # 2. rses->*->param
-            # 
-            if root:
-                cfg = self.scanner_root_config(rse_name, root)  # that will look in the rse-specific first and then "*"
-                value = cfg.get(param)
-                if value is None:   value = self.scanner_param(rse_name, param, default=default)
-            else:
-                default = self.get_by_path("rses", "*", "scanner", param, default=default)
-                value = self.get_by_path("rses", rse_name, "scanner", param, default=default)
-            return value
-
-        def import_param(self, rse_name, param, default=None):
-            default = self.get_by_path("rses", "*", "import", param, default=default)
-            value = self.get_by_path("rses", rse_name, "import", param, default=default)
-            return value
-
-        def dbdump_param(self, rse_name, param, default=None):
-            default = self.get_by_path("rses", "*", "dbdump", param, default=default)
-            return self.get_by_path("rses", rse_name, "dbdump", param, default=default)
-            
-        def dbdump_root(self, rse_name):
-            return self.dbdump_param(rse_name, "path_root", "/")
-            
-        def dbdump_ignore(self, rse_name):
-            return self.dbdump_param(rse_name, "ignore", [])
-
-        def nparts(self, rse_name):
-            return self.general_param(rse_name, "partitions", 10)
-
-        def ignore_list(self, rse_name):
-            return self.general_param(rse_name, "ignore_list", [])       # list of absolute paths or regexp patterns, used by scanner and cmp3
-
-        def ignore_patterns(self, rse_name):
-            lst = self.ignore_list(rse_name)       # list of absolute paths or regexp patterns, used by scanner and cmp3
-            dir_patterns = []
-            for p in lst:
-                try:    p = re.compile("%s(/.*)?$" % (p,))
-                except:
-                    p = re.compile(p)
-                dir_patterns.append(p)
-            file_patterns = []
-            for p in lst:
-                p = re.compile("%s/.+" % (p,))
-                file_patterns.append(p)
-            return dir_patterns, file_patterns
-            
-        def ignore_subdirs(self, rse_name, root):
-            return self.scanner_param(rse_name, "ignore", root=root, default=[])
-            
-        def scanner_server_root(self, rse_name):
-            return self.scanner_param(rse_name, "server_root")
-
-        def scanner_roots(self, rse_name):
-            d = self.scanner_param(rse_name, "roots", [])
-            return [x["path"] for x in d]
-            
-        def scanner_remove_prefix(self, rse_name):
-            return self.scanner_param(rse_name, "remove_prefix")
-
-        def scanner_add_prefix(self, rse_name):
-            return self.scanner_param(rse_name, "add_prefix")
-
-        def scanner_filter(self, rse_name):
-            return self.scanner_param(rse_name, "filter")
-
-        def scanner_rewrite(self, rse_name):
-            dct = self.scanner_param(rse_name, "rewrite")
-            if not dct:
-                return None, None
-            return dct["path"], dct["out"]
-
-        def scanner_server(self, rse_name):
-            return self.scanner_param(rse_name, "server")
-
-        def scanner_workers(self, rse_name):
-            return self.scanner_param(rse_name, "nworkers", default=10)
-
-        def scanner_timeout(self, rse_name):
-            return self.scanner_param(rse_name, "timeout", default=60)
-
-        def scanner_recursion_threshold(self, rse_name, root):
-            return self.scanner_param(rse_name, "recursion", root=root, default=3)
-
-        def scanner_include_sizes(self, rse_name, default=True):
-            return self.scanner_param(rse_name, "include_sizes", default=default)
 
