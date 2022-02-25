@@ -73,16 +73,18 @@ class RMDir(Task):
 class XRootDClient(Primitive):
 
     def __init__(self, server, is_redirector, root, timeout):
+        Primitive.__init__(self, name=f"XRootDClient({root})")
         self.Root = root
         self.Timeout = timeout
         self.Server = server 
-        self.Servers = self.get_underlying_servers(server, root, timeout)
+        self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
         self.IServer = 0
         
     @synchronized
     def next_server(self):
         server = self.Servers[self.IServer % len(self.Servers)]
         self.IServer += 1
+        return server
 
     Line_Patterns = [
         # UNIX FS ls -l style
@@ -313,11 +315,11 @@ class ScannerMaster(PyThread):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Root = canonic_path(root)
-        self.Client = XRootDClient(server, self.Root, timeout)
+        self.Client = XRootDClient(server, is_redirector, self.Root, timeout)
         self.Server = server
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
-        self.ScannerQueue = TaskQueue(max_scanners)
+        self.ScannerQueue = TaskQueue(max_scanners, stagger=0.2)
         self.Done = False
         self.Error = None
         self.Failed = False
