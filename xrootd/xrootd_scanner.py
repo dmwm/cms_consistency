@@ -1,4 +1,4 @@
-from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized, ShellCommand
+from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized, ShellCommand, Primitive
 import re, json, os, os.path, traceback
 import subprocess, time, random
 from part import PartitionedList
@@ -70,12 +70,19 @@ class RMDir(Task):
             # ignore
             pass
 
-class XRootDClient(object):
+class XRootDClient(Primitive):
 
     def __init__(self, server, is_redirector, root, timeout):
         self.Root = root
         self.Timeout = timeout
-        self.Server = server if not is_redirector else self.get_data_server(server, root, timeout)
+        self.Server = server 
+        self.Servers = self.get_underlying_servers(server, root, timeout)
+        self.IServer = 0
+        
+    @synchronized
+    def next_server(self):
+        server = self.Servers[self.IServer % len(self.Servers)]
+        self.IServer += 1
 
     Line_Patterns = [
         # UNIX FS ls -l style
@@ -129,23 +136,23 @@ class XRootDClient(object):
         #print("parse:", line,"->",is_file, size, canonic_path(path))
         return is_file, size, canonic_path(path)
 
-    @staticmethod
-    def get_data_server(redirector, location, timeout):
+    def get_underlying_servers(self, redirector, location, timeout):
         # Query a redirector and return a single registered data server
         # On failure, return the original server address
-                
-        command = "xrdfs %s locate -m %s" % (redirector, location)
-        retcode, out, err = ShellCommand.execute(command, timeout=timeout)
 
-        if retcode != 0:
-            return redirector
+        servers = [redirector]
 
-        servers = [x.split()[0] for x in out.split("\n") if " server " in x.lower()]
-        servers = [x for x in servers if x]
-        if servers:
-            return random.choice(servers)
-        else:
-            return redirector
+        retcode, out, err = ShellCommand.execute(
+                f"xrdfs {redirector} locate -m {location}", 
+                timeout=timeout
+        )
+
+        if retcode == 0:
+            lst = [x.split()[0] for x in out.split("\n") if " server " in x.lower()]
+            lst = [x for x in lst if x]
+            if lst:
+                servers = lst
+        return servers
 
     def location_exists(self, location):
         status, reason, dirs, files = self.ls(location, False, False)
@@ -156,7 +163,7 @@ class XRootDClient(object):
 
     def ls(self, location, recursive, with_meta):
         #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
-        server = self.Server
+        server = self.next_server()
         lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)        
         files = []
         dirs = []
@@ -306,7 +313,7 @@ class ScannerMaster(PyThread):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Root = canonic_path(root)
-        self.Client = XRootDClient(server, is_redirector, self.Root, timeout)
+        self.Client = XRootDClient(server, self.Root, timeout)
         self.Server = server
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
@@ -338,9 +345,6 @@ class ScannerMaster(PyThread):
     def root_exists(self):
         return self.Client.root_exists()
         
-    def actual_server(self):
-        return self.Client.Server
-
     def run(self):
         #
         # scan Root non-recursovely first, if failed, return immediarely
@@ -585,8 +589,7 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
        "timeout":timeout,
        "recursive_threshold":recursive_threshold,
        "max_scanners":max_scanners,
-       "ignore_subdirectories": ignore_subdirs,
-       "actual_server": None
+       "ignore_subdirectories": ignore_subdirs
     }
 
     my_stats["scanning"] = root_stats
@@ -598,8 +601,6 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
     master = ScannerMaster(server, is_redirector, root_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
             ignore_subdirs = ignore_list)
-
-    root_stats["actual_server"] = master.actual_server()
 
     exists, reason = master.root_exists()
     t1 = time.time()
@@ -628,8 +629,6 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
             rewrite_path = re.compile(rewrite_path)
 
         print("Starting scan of %s:%s with:" % (server, root_path))
-        if master.actual_server() != server:
-            print("  Actual server       =", master.actual_server())
         print("  Include sizes       = %s" % include_sizes)
         print("  Recursive threshold = %d" % (recursive_threshold,))
         print("  Max scanner threads = %d" % max_scanners)
