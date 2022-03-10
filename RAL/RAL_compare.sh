@@ -206,12 +206,15 @@ for attempt in $attempts; do
         # unmerged files list and stats
         if [ "$unmerged_out_dir" != "" ]; then
             echo making unmerged files list ...
-            n=`$python cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $site_dump_tmp`
+            filtered_unmerged_list=${scratch}/${RSE}_filtered_unmerged
+            gunzip -c $site_dump_tmp | grep -v ^/store/unmerged/logs/ > $filtered_unmerged_list
+            n=`$python cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $filtered_unmerged_list`
 	        echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
                 $python cmp3/json_file.py $um_stats set scanner.files $n
             fi   
+            rm -f $filtered_unmerged_list
         fi
         break
     fi
