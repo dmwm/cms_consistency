@@ -48,7 +48,7 @@ class WMHandler(WPHandler):
         l = 2
         first = True
         for x in iterable:
-            item = '%s "%s"' % (',' if not first else '', x)
+            item = '%s "%s"' % (',\n' if not first else '', x)
             first = False
             buf.append(item)
             l += len(item)
