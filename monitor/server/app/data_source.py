@@ -177,7 +177,11 @@ class DataSource(object):
         return open(self.Path+"/"+path, "r")
         
 class UMDataSource(DataSource):
-    
+
+    def __init__(self, path, ignore_list):
+        DataSource.__init__(self, path)
+        self.IgnoreRE = None if not ignore_list else re.compile("^(%s)" % ("|".join(ignore_list),))
+
     def postprocess_stats(self, data):
         out = {"run": data["run"], "rse":data["rse"]}
         if "error" in data:
@@ -223,20 +227,17 @@ class UMDataSource(DataSource):
             else:
                 f = open(path, "r")
         return f, type
-        
-    def line_iterator(self, f):
+
+    def file_list_as_iterable(self, rse):
+        f, _ = self.open_file_list(rse, binary=False)
         while True:
             line = f.readline()
             if not line:
                 break
             line = line.strip()
-            if line:
+            if line and (self.IgnoreRE is None or self.IgnoreRE.match(line) is None):
                 yield line
-        
-    def file_list_as_iterable(self, rse):
-        f, _ = self.open_file_list(rse, binary=False)
-        return self.line_iterator(f)
-        
+
     def fill_missing_scanner_parts(self, rse_info):
         rse_stats = {
             k: rse_info.get(k) for k in ["scanner", "server_root", "server", "start_time", "end_time", "status"]

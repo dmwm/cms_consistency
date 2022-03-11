@@ -442,10 +442,10 @@ class App(WPApp):
 
     Version = Version
     
-    def __init__(self, handler, home, cc_path, prefix, wm_path):
+    def __init__(self, handler, home, cc_path, prefix, um_path, um_ignore_list):
         WPApp.__init__(self, handler, prefix=prefix)
         self.CCDataSource = CCDataSource(cc_path)
-        self.UMDataSource = UMDataSource(wm_path)
+        self.UMDataSource = UMDataSource(um_path, um_ignore_list)
         self.Home = home
 
     def init(self):
@@ -467,7 +467,7 @@ if __name__ == "__main__":
 
     #print("server.py: sys.argv:", sys.argv)
 
-    opts, args = getopt.getopt(sys.argv[1:], "r:ld")
+    opts, args = getopt.getopt(sys.argv[1:], "r:ld", ["um-ignore"])
     opts = dict(opts)
 
     if not args:
@@ -481,11 +481,15 @@ if __name__ == "__main__":
     logging="-l" in opts
     debug=sys.stdout if "-d" in opts else None
 
+    um_ignore_list = opts.get("--um-ignore", [])
+    if um_ignore_list:
+        um_ignore_list = um_ignore_list.split(",")
+
     print("Starting server:\n  port %s\n  CC path %s\n  WM path %s" % (port, cc_path, wm_path))
 
     sys.stdout.flush()
     home = os.path.dirname(__file__) or "."
-    App(Handler, home, cc_path, prefix, wm_path).run_server(port, logging=logging, debug=debug)
+    App(Handler, home, cc_path, prefix, wm_path, um_ignore_list).run_server(port, logging=logging, debug=debug)
 
         
         

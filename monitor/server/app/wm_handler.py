@@ -64,6 +64,7 @@ class WMHandler(WPHandler):
 
     def files(self, request, replapth, rse=None, format="raw", **args):
         ds = self.App.UMDataSource
+        
         try:
             if format == "raw":
                 f, type = ds.open_file_list(rse, binary=True)
