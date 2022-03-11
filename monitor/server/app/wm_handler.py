@@ -110,13 +110,13 @@ class WMHandler(WPHandler):
                     "Content-Disposition":"attachment"
                 }
                 return self.read_file(f), headers
-            elif format == "zip-stream"
+            elif format == "zip-stream":
                 headers = {
                     "Content-Type":"application/zip",
                     "Content-Disposition":"attachment"
                 }
                 return self.zip_generator(ds.file_list_as_iterable(rse, include, exclude)), headers
-            elif format == "text"
+            elif format == "text":
                 headers = {
                     "Content-Type":"text/plain",
                     "Content-Disposition":"attachment"
