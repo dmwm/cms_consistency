@@ -467,7 +467,7 @@ if __name__ == "__main__":
 
     #print("server.py: sys.argv:", sys.argv)
 
-    opts, args = getopt.getopt(sys.argv[1:], "r:ld", ["um-ignore"])
+    opts, args = getopt.getopt(sys.argv[1:], "r:ld", ["um-ignore="])
     opts = dict(opts)
 
     if not args:
