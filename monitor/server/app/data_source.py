@@ -228,15 +228,26 @@ class UMDataSource(DataSource):
                 f = open(path, "r")
         return f, type
 
-    def file_list_as_iterable(self, rse):
+    def file_list_as_iterable(self, rse, include=None, exclude=None):
+        include_re = exclude_re = None
+        if include is not None: include_re = re.compile("^(%s)" % ('|'.join(include),))
+        if exclude is not None: exclude_re = re.compile("^(%s)" % ('|'.join(exclude),))
+        
         f, _ = self.open_file_list(rse, binary=False)
         while True:
             line = f.readline()
             if not line:
                 break
             line = line.strip()
-            if line and (self.IgnoreRE is None or self.IgnoreRE.match(line) is None):
-                yield line
+            if not line:
+                continue
+            if self.IgnoreRE is not None and self.IgnoreRE.match(line):
+                continue
+            if include_re is not None and not include_re.match(line):
+                continue
+            if exclude_re is not None and exclude_re.match(line):
+                continue
+            yield line
 
     def fill_missing_scanner_parts(self, rse_info):
         rse_stats = {

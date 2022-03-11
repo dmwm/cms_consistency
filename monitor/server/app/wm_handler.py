@@ -1,5 +1,5 @@
 from webpie import WPApp, WPHandler
-import sys, glob, json, time, os, gzip, re, os.path
+import sys, glob, json, time, os, gzip, re, os.path, zlib
 from datetime import datetime
 from data_source import UMDataSource
 
@@ -20,9 +20,7 @@ class JSONParseError(Exception):
             
     def __str__(self):
         return f"Error parsing JSON file {self.Path}"
-            
 
-        
 class WMHandler(WPHandler):
     
     def version(self, request, replapth, **args):
@@ -45,7 +43,7 @@ class WMHandler(WPHandler):
                 break
             yield buf
             
-    def json_iterator(self, iterable):
+    def json_generator(self, iterable):
         buf = ["[\n"]
         l = 2
         first = True
@@ -61,8 +59,47 @@ class WMHandler(WPHandler):
         if buf:
             yield ''.join(buf)
         yield "\n]\n"
+        
+    def zip_generator(self, line_iterator, buf_size = 64000):
+        compressor = zlib.compressobj()
+        buf = []
+        lbuf = 0
+        for line in line_iterator:
+            out = compressor.compress((line + "\n").encode("utf-8"))
+            if out:
+                buf.append(out)
+                lbuf += len(out)
+            if lbuf >= buf_size:
+                yield b''.join(buf)
+                buf = []
+                lbuf = 0
+        out = compressor.flush()
+        if out:
+            buf.append(out)
+        if buf:
+            yield b''.join(buf)
 
-    def files(self, request, replapth, rse=None, format="raw", **args):
+    def text_generator(self, line_iterator, buf_size = 64000):
+        buf = []
+        lbuf = 0
+        for line in line_iterator:
+            buf.append(line + "\n")
+            lbuf += len(line)+1
+            if lbuf >= buf_size:
+                yield ''.join(buf)
+                buf = []
+                lbuf = 0
+        if buf:
+            yield ''.join(buf)
+
+    def files(self, request, replapth, rse=None, format="raw", include=None, exclude=None, **args):
+        
+        if include:
+            include = include.split(",")
+
+        if exclude:
+            exclude = exclude.split(",")
+
         ds = self.App.UMDataSource
         
         try:
@@ -73,12 +110,24 @@ class WMHandler(WPHandler):
                     "Content-Disposition":"attachment"
                 }
                 return self.read_file(f), headers
+            elif format == "zip-stream"
+                headers = {
+                    "Content-Type":"application/zip",
+                    "Content-Disposition":"attachment"
+                }
+                return self.zip_generator(ds.file_list_as_iterable(rse, include, exclude)), headers
+            elif format == "text"
+                headers = {
+                    "Content-Type":"text/plain",
+                    "Content-Disposition":"attachment"
+                }
+                return self.text_generator(ds.file_list_as_iterable(rse, include, exclude)), headers
             elif format == "json":
                 headers = {
                     "Content-Type":"text/json",
                     "Content-Disposition":"attachment"
                 }
-                return self.json_iterator(ds.file_list_as_iterable(rse)), headers
+                return self.json_generator(ds.file_list_as_iterable(rse, include, exclude)), headers
         except FileNotFoundError:
             return 404, "not found"
             
