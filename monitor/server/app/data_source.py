@@ -180,7 +180,7 @@ class UMDataSource(DataSource):
 
     def __init__(self, path, ignore_list):
         DataSource.__init__(self, path)
-        self.IgnoreRE = None if not ignore_list else re.compile("^(%s)" % ("|".join(ignore_list),))
+        self.DefaultIgnoreRE = None if not ignore_list else re.compile("^(%s)" % ("|".join(ignore_list),))
 
     def postprocess_stats(self, data):
         out = {"run": data["run"], "rse":data["rse"]}
@@ -230,8 +230,11 @@ class UMDataSource(DataSource):
 
     def file_list_as_iterable(self, rse, include=None, exclude=None):
         include_re = exclude_re = None
-        if include is not None: include_re = re.compile("^(%s)" % ('|'.join(include),))
-        if exclude is not None: exclude_re = re.compile("^(%s)" % ('|'.join(exclude),))
+        if include is None and exclude is None:
+            exclude_re = self.DefaultIgnoreRE
+        else:
+            if include is not None: include_re = re.compile("^(%s)" % ('|'.join(include),))
+            if exclude is not None: exclude_re = re.compile("^(%s)" % ('|'.join(exclude),))
         
         f, _ = self.open_file_list(rse, binary=False)
         while True:
@@ -240,8 +243,6 @@ class UMDataSource(DataSource):
                 break
             line = line.strip()
             if not line:
-                continue
-            if self.IgnoreRE is not None and self.IgnoreRE.match(line):
                 continue
             if include_re is not None and not include_re.match(line):
                 continue
