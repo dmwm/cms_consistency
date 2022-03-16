@@ -1,4 +1,4 @@
-import re, os, json
+import re, os, json, yaml
 from configparser import ConfigParser
 
 class DBConfig:
@@ -11,7 +11,7 @@ class DBConfig:
     
     @staticmethod
     def from_cfg(path):
-        cfg = configparser.ConfigParser()
+        cfg = ConfigParser()
         cfg.read(path)
         dbparams = dict(cfg.items("database"))
         return DBConfig(dbparams.get("schema"), dbparams["default"])
