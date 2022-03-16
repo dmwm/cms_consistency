@@ -1,7 +1,7 @@
 import getopt, os, time, re, gzip, json, traceback
 import sys, uuid
 
-from config import DBConfig, Config
+from config import DBConfig, CCConfiguration, ConfigYAMLBackend
 from part import PartitionedList
 
 from sqlalchemy import create_engine
@@ -121,7 +121,7 @@ else:
 
 #print("dbconfig: url:", dbconfig.DBURL, "schema:", dbconfig.Schema)
 
-config = Config(opts["-c"])
+config = CCConfiguration(ConfigYAMLBackend(opts["-c"]), rse_name)
 
 stats = None if stats_file is None else Stats(stats_file)
 
@@ -161,13 +161,13 @@ try:
     if "-n" in opts:
             nparts = int(opts["-n"])
     else:
-            nparts = config.nparts(rse_name) or 1
+            nparts = config.NPartitions
 
-    subdir = config.dbdump_root(rse_name) or "/"
+    subdir = config.DBDumpPathRoot
     if not subdir.endswith("/"):    subdir = subdir + "/"
     print(f"Filtering files under {subdir} only")
 
-    ignore_list = config.dbdump_ignore(rse_name)            # relative to the root
+    ignore_list = config.DBDumpIgnoreSubdirs            # relative to the root
     ignore_list = [subdir + path for path in ignore_list]
     if ignore_list:
         print("Ignore list:")
@@ -204,7 +204,7 @@ try:
             replicas = replicas.filter(Replica.state.in_(list(all_states)))
     dirs = set()
     n = 0
-    filter_re = config.dbdump_param(rse, "filter")
+    filter_re = None    #config.dbdump_param(rse, "filter")
     ignored_files = 0
     if filter_re:
         filter_re = re.compile(filter_re)
