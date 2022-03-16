@@ -105,7 +105,7 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config_file} -d $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors}
 
 sleep 10
 
@@ -132,7 +132,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_errors}
-$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config_file} -d $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
 
 # 4. cmp3
 
