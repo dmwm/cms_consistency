@@ -257,7 +257,7 @@ class CCConfiguration(object):
         self.NWorkers = int(backend.scanner_param(rse, "nworkers", 8))
         self.IncludeSizes = backend.scanner_param(rse, "include_sizes", "yes") == "yes"
         self.RecursionThreshold = int(backend.scanner_param(rse, "recursion", 1))
-        self.ServerIsRedirector = backend.scanner_param(rse, "is_redirector", False)
+        self.ServerIsRedirector = backend.scanner_param(rse, "is_redirector", True)
 
         self.DBDumpPathRoot = backend.dbdump_param(rse, "path_root", "/")
         self.DBDumpIgnoreSubdirs = backend.dbdump_param(rse, "ignore", [])
