@@ -38,7 +38,7 @@ fi
 
 rm -rf ${b_prefix}*
 #$python cmp3/db_dump.py -o ${b_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
-$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
+$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config} -d $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 
 
 exit=$?
 if [ "$exit" != "0" ]; then
