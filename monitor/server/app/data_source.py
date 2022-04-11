@@ -214,11 +214,11 @@ class UMDataSource(DataSource):
         else:
             raise FileNotFoundError("not found")
         
-        type = "text/plain"
+        encoding = None
         if binary:
             if path.endswith(".gz"):
                 f = open(path, "rb")
-                type = "application/x-gzip"
+                encoding = "gzip"
             else:
                 f = open(path, "rb")
         else:
@@ -226,7 +226,7 @@ class UMDataSource(DataSource):
                 f = gzip.open(path, "rt")
             else:
                 f = open(path, "r")
-        return f, type
+        return f, encoding
 
     def file_list_as_iterable(self, rse, include=None, exclude=None):
         include_re = exclude_re = None

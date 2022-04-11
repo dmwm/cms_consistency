@@ -125,7 +125,7 @@ class Handler(WPHandler):
         for run in runs:
             stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
             summary = data_source.run_summary(stats)
-            start_time = summary["start_time"]
+            start_time = summary["start_time"] or 0
             status = summary["status"]
             if status == "failed":
                 status = summary["failed"] + " failed"

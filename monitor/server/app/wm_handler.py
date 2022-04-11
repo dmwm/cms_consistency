@@ -104,15 +104,19 @@ class WMHandler(WPHandler):
         
         try:
             if format == "raw":
-                f, type = ds.open_file_list(rse, binary=True)
+                f, encoding = ds.open_file_list(rse, binary=True)
                 headers = {
-                    "Content-Type":type,
+                    "Content-Type":"text/plain",
                     "Content-Disposition":"attachment"
                 }
+                if encoding == "gzip":
+                    headers["Content-Type"] = "application/x-gzip"
+                    headers["Content-Encoding"] = "gzip"
                 return self.read_file(f), headers
             elif format == "zip-stream":
                 headers = {
                     "Content-Type":"application/zip",
+                    "Content-Encoding":"deflate",
                     "Content-Disposition":"attachment"
                 }
                 return self.zip_generator(ds.file_list_as_iterable(rse, include, exclude)), headers
