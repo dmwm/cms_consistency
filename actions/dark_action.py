@@ -36,7 +36,10 @@ min_runs = int(opts.get("-n", 2))
 
 runs = CCRun.runs_for_rse(storage_path, rse)
 now = datetime.now()
-recent_runs = sorted([r for r in runs if r.Timestamp >= now - timedelta(days=age_first)], key=lambda r: r.Timestamp)
+recent_runs = sorted(
+        [r for r in runs if r.Timestamp >= now - timedelta(days=age_first)], 
+        key=lambda r: r.Timestamp
+)
 latest_run = recent_runs[-1]
 
 if len(recent_runs) < min_runs:
@@ -48,7 +51,7 @@ if latest_run.Timestamp < now - timedelta(days=age_last):
     sys.exit(1)
 
 num_scanned = latest_run.scanner_num_files()
-print("Latest run:", latest_run.Run)
+print("Latest run:", latest_run.Run, file=sys.stderr)
 print("Files found by scanner in the latest run:", num_scanned, file=sys.stderr)
 
 confirmed = None
