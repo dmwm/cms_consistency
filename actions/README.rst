@@ -1,8 +1,6 @@
 Consistency Enforcement Actions
 ===============================
 
-Missing Action
---------------
 
 .. code-block:: shell
 
