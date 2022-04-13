@@ -18,6 +18,12 @@ class CCRun(object):
     def missing_list_path(self):
         return self.Stats["cmp3"]["missing_list_file"]
         
+    def missing_file_count(self):
+        return self.Stats["cmp3"]["missing"]
+        
+    def dark_file_count(self):
+        return self.Stats["cmp3"]["dark"]
+        
     def scanner_num_files(self):
         scanner_stats = self.Stats["scanner"]
         nfiles = scanner_stats.get("total_files") or sum(root_stats.get("files", 0) for root_stats in scanner_stats.get("roots", []))
