@@ -8,9 +8,9 @@ Usage = """
 python missing_action.py [options] <storage_path> <rse> <scope> 
     -f <ratio, floating point>  - max allowed fraction of missing files to total number of files found by the scanner,
                                   default = 0.05
-    -m <max age, days>             - Max age of the latest run in days, default: 1 day
-    -o (-|<out file>)              - produce dark list and write it to the file or stdout if "-", 
-                                     instead of sending to Rucio
+    -m <max age, days>          - Max age of the latest run in days, default: 1 day
+    -o (-|<out file>)           - produce dark list and write it to the file or stdout if "-", 
+                                  instead of sending to Rucio
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "cc_dark"
 """

@@ -16,3 +16,5 @@ Consistency Enforcement Actions
         -M <days>                   - max age for oldest run to use for confirmation, default = 14 days
         -n <number>                 - min number of runs to use to produce the confirmed dark list, 
                                       including the most recent run, default = 2
+    missing action options:
+        -c <scope>                  - scope to declare replicas in, required for missing action

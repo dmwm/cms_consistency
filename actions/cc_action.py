@@ -17,6 +17,8 @@ dark mode only options:
     -M <days>                   - max age for oldest run to use for confirmation, default = 14 days
     -n <number>                 - min number of runs to use to produce the confirmed dark list, 
                                   including the most recent run, default = 2
+missing action options:
+    -c <scope>                  - scope to declare replicas in, required for missing action
 """
 
 def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, stats, stats_key):
@@ -107,7 +109,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
     
     return my_stats
 
-def missing_action(storage_dir, rse, max_age_last, out, stats, stats_key):
+def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key):
     
     t0 = time.time()
     my_stats = {
@@ -177,7 +179,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
 
 mode = sys.argv[1]
 
-opts, args = getopt.getopt(sys.argv[2:], "h?o:M:m:n:f:s:S:")
+opts, args = getopt.getopt(sys.argv[2:], "h?o:M:m:n:f:s:S:c:")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -200,13 +202,16 @@ stats_file = opts.get("-s")
 stats = stats_key = None
 if stats_file is not None:
     stats = Stats(stats_file)
-
 stats_key = opts.get("-S")
+scope = opts.get("-c")
 
 if mode == "dark":
     final_stats = dark_action(storage_path, rse, age_last, age_first, min_runs, out, stats, stats_key or "cc_dark")
 elif mode == "missing":
-    final_stats = missing_action(storage_path, rse, age_last, out, stats, stats_key or "cc_miss")
+    if scope is None:
+        print("Use -c <scope> to specify scope", file=sys.stderr)
+        sys.exit(2)
+    final_stats = missing_action(storage_path, rse, scope, age_last, out, stats, stats_key or "cc_miss")
 else:
     print("Unknown mode:", mode, file=sys.stderr)
     sys.exit(1)
