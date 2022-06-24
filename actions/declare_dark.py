@@ -26,7 +26,8 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         "initial_dark_files": None,
         "confirmed_dark_files": None,
         "aborted_reason": None,
-        "error": None
+        "error": None,
+        "runs": []
     }
 
     if stats is not None:
@@ -44,6 +45,9 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
     latest_dark_count = None
     confirmed_dark_count = None
     error = None
+    
+    if recent_runs:
+        my_stats["runs"] = [r.Run for r in recent_runs]
 
     if len(recent_runs) < min_runs:
         status = "aborted"
