@@ -22,7 +22,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
         "start_time": t0,
         "end_time": None,
         "status": "started",
-        "confirmed_miss_files": None,
+        "confirmed_missing_files": None,
         "aborted_reason": None,
         "error": None
     }
