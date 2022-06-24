@@ -38,7 +38,6 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
             [r for r in runs if r.Timestamp >= now - timedelta(days=age_first)], 
             key=lambda r: r.Timestamp
     )
-    latest_run = recent_runs[-1]
 
     status = "started"
     aborted_reason = None
@@ -50,11 +49,12 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         status = "aborted"
         print("not enough runs to produce confirmed dark list:", len(recent_runs), "   required:", min_runs, file=sys.stderr)
     
-    elif latest_run.Timestamp < now - timedelta(days=age_last):
+    elif recent_runs[-1].Timestamp < now - timedelta(days=age_last):
         status = "aborted"
         aborted_reason = "latest run too old: %s" % (latest_run.Timestamp,)
 
     else:
+        latest_run = recent_runs[-1]
         num_scanned = latest_run.scanner_num_files()
         print("Latest run:", latest_run.Run, file=sys.stderr)
         print("Files found by scanner in the latest run:", num_scanned, file=sys.stderr)
