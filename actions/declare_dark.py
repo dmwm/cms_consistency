@@ -80,8 +80,6 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
                 confirmed = new_confirmed
         """
                 
-        confirmed = confirmed or set()
-
         my_stats["confirmed_dark_files"] = confirmed_dark_count = len(confirmed)
         ratio = confirmed_dark_count/num_scanned
         print("Confirmed dark replicas:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
