@@ -63,6 +63,10 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         print("Latest run:", latest_run.Run, file=sys.stderr)
         print("Files found by scanner in the latest run:", num_scanned, file=sys.stderr)
 
+        dark_lists = (run.dark_files() for run in recent_runs[1:])
+        confirmed = set(recent_runs[0].dark_files()).intersection(*dark_lists)
+
+        """
         confirmed = None
         for run in recent_runs[::-1]:
             if confirmed is None:
@@ -74,6 +78,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
                     if f in confirmed:
                         new_confirmed.add(f)
                 confirmed = new_confirmed
+        """
                 
         confirmed = confirmed or set()
 
