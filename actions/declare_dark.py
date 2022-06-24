@@ -70,6 +70,8 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
                     if f in confirmed:
                         new_confirmed.add(f)
                 confirmed = new_confirmed
+                
+        confirmed = confirmed or set()
 
         my_stats["confirmed_dark_files"] = confirmed_dark_count = len(confirmed)
         print("Confirmed dark replicas:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
@@ -102,7 +104,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         status = status,
         error = error,
         initial_dark_files = latest_dark_count,
-        confirmed_dark_files = len(confirmed),
+        confirmed_dark_files = confirmed_dark_count,
         aborted_reason = aborted_reason
     ))
 
