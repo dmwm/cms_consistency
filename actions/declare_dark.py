@@ -44,6 +44,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
     aborted_reason = None
     latest_dark_count = None
     confirmed_dark_count = None
+    error = None
 
     if len(recent_runs) < min_runs:
         status = "aborted"

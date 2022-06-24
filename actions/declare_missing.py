@@ -35,6 +35,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
 
     status = "started"
     aborted_reason = None
+    error = None
 
     if latest_run.Timestamp < now - timedelta(days=age_last):
         status = "aborted"
