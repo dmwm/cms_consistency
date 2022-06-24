@@ -74,11 +74,11 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         confirmed = confirmed or set()
 
         my_stats["confirmed_dark_files"] = confirmed_dark_count = len(confirmed)
+        ratio = confirmed_dark_count/num_scanned
         print("Confirmed dark replicas:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
         
         status = "done"
         if confirmed:
-            ratio = confirmed_dark_count/num_scanned
             if ratio > fraction:
                 status = "aborted"
                 aborted_reason = "too many dark files: %d (%.2f%% > %.2f%%)" % (confirmed_dark_count, ratio*100.0, fraction*100.0)
