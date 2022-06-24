@@ -157,17 +157,13 @@ nmissing=`wc -l ${m_out}`
 echo "Dark list:    " $ndark
 echo "Missing list: " $nmissing
 
-end_time=`date -u +%s`
-
 #
-# 5. Declare missing replicas
+# 5. Declare missing and dark replicas
 #
 $python actions/declare_missing.py -s $stats $out $scope $rse 2>> ${missing_action_errors}
-
-#
-# 5. Declare dark replicas
-#
 $python actions/declare_dark.py -s $stats $out $rse 2>> ${dark_action_errors}
+
+end_time=`date -u +%s`
 
 $python cmp3/stats.py stats.json << _EOF_
 { "end_time":${end_time}.0 }
