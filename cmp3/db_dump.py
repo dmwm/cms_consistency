@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.dialects.oracle import RAW, CLOB
 from sqlalchemy.dialects.mysql import BINARY
 from sqlalchemy.types import TypeDecorator, CHAR, String
+from sqlalchemy.exc import ArgumentError
 
 from stats import Stats
 
@@ -174,7 +175,9 @@ try:
         for path in ignore_list:
             print(" ", path)
 
-    engine = create_engine(dbconfig.DBURL,  echo=verbose)
+    try:    engine = create_engine(dbconfig.DBURL,  echo=verbose)
+    except ArgumentError as e:
+        raise ValueError("SQLAlchemy ArgumentError: " + str(e)[:40])
     Session = sessionmaker(bind=engine)
     session = Session()
 
