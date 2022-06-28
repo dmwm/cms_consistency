@@ -186,10 +186,10 @@ for attempt in $attempts; do
         sleep $sleep_interval
     else
         echo download succeeded
+        n=`wc -l ${site_dump_tmp}`
+        echo "$n lines in the list"
         echo partitioning ...
         n=`$python cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
-	    echo $n files in the list
-
 
     	t1=`date +%s`
         downloaded="yes"
@@ -199,7 +199,6 @@ for attempt in $attempts; do
         $python cmp3/json_file.py ${stats} set scanner.scanner.last_attempt_time_utc -t "$attempt_time"
         $python cmp3/json_file.py ${stats} set scanner.scanner.status_code $xrdcp_status
         $python cmp3/json_file.py ${stats} set scanner.scanner.stderr -t ""
-
         $python cmp3/json_file.py ${stats} set scanner.total_files $n
         
         

@@ -248,7 +248,7 @@ class CCConfiguration(object):
 
         self.NPartitions = int(backend.rse_param(rse, "npartitions", 10))
 
-        self.Server = backend.scanner_param(rse, "server", required=True)
+        self.Server = backend.scanner_param(rse, "server", None)
         self.ServerRoot = backend.scanner_param(rse, "server_root", "/store", required=True)
         self.ScannerTimeout = int(backend.scanner_param(rse, "timeout", 300))
         self.RootList = backend.root_list(rse)
@@ -258,7 +258,7 @@ class CCConfiguration(object):
         self.IncludeSizes = backend.scanner_param(rse, "include_sizes", "yes") == "yes"
         self.RecursionThreshold = int(backend.scanner_param(rse, "recursion", 1))
         self.ServerIsRedirector = backend.scanner_param(rse, "is_redirector", True)
-
+        self.IgnoreList = backend.rse_param(rse, "ignore_list", [])
         self.DBDumpPathRoot = backend.dbdump_param(rse, "path_root", "/")
         self.DBDumpIgnoreSubdirs = backend.dbdump_param(rse, "ignore", [])
 

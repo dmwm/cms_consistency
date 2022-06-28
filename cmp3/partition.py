@@ -1,6 +1,6 @@
 from part import part, PartitionedList
 import sys, getopt, re, gzip
-from config import Config
+from config import CCConfiguration
 try:
     import tqdm
     Use_tqdm = True
@@ -35,26 +35,13 @@ def main():
     ignore_list = []
     if "-c" in opts:
         rse = opts["-r"]
-        config = Config(opts.get("-c"))
-        preprocess = config.rse_param(rse, "preprocess")
-        ignore_list = config.rse_param(rse, "ignore_list") or []
-        if preprocess is not None:
-            ilist = preprocess.get("ignore_list")
-            if ilist is not None:
-                ignore_list = ilist
-            filter_in = preprocess.get("filter")
-            if filter_in is not None:
-                #print("filtering:", filter_in)
-                filter_in = re.compile(filter_in)
-            starts_with = preprocess.get("starts_with")
-            remove_prefix = preprocess.get("remove_prefix")
-            add_prefix = preprocess.get("add_prefix")
-            rewrite = preprocess.get("rewrite", {})
-            if rewrite:
-                    rewrite_match = re.compile(rewrite["match"])
-                    rewrite_out = rewrite["out"]
-                #print("rewriting:", rewrite["match"], rewrite["out"])
-        nparts = config.nparts(rse)
+        cfg = opts["-c"]
+        if cfg == "rucio":
+            config = CCConfiguration.rse_config(rse, "rucio")
+        else:
+            config = CCConfiguration.rse_config(rse, "yaml", opts["-c"])
+        ignore_list = config.IgnoreList
+        nparts = config.NPartitions
     zout = "-z" in opts
     nparts = int(opts.get("-n", nparts))
     
