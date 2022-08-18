@@ -273,7 +273,7 @@ class CEConfiguration(object):
 
 class ScannerConfiguration(CEConfiguration):
     
-    def __init__(self, rse, source, **source_agrs)
+    def __init__(self, rse, source, **source_agrs):
         CEConfiguration.__init__(self, rse, source, **source_agrs)
 
         self.Server = self.scanner_param(rse, "server", None)
