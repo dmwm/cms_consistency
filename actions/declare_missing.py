@@ -142,7 +142,7 @@ if final_stats["status"] == "aborted":
 if "-v" in opts:
     print("\nFinal stats:")
     for k, v in sorted(final_stats.items()):
-        print(f"{k}: {v}")
+        print(f"  {k}:\t{v}")
     print()
 
 if final_stats["status"] != "done":
