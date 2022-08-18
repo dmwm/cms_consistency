@@ -293,7 +293,7 @@ class ScannerConfiguration(CEConfiguration):
     def __getitem__(self, name):
         return self.scanner_param(self.RSE, name, required=True)
 
-class DBDumpConfig(CEConfiguration):
+class DBDumpConfiguration(CEConfiguration):
 
     def __init__(self, rse, *params, **agrs):
         CCConfiguration.__init__(self, rse, *params, **agrs)
@@ -303,7 +303,7 @@ class DBDumpConfig(CEConfiguration):
     def __getitem__(self, name):
         return self.dbdump_param(self.RSE, name, required=True)
 
-class ActionConfig(CEConfiguration):
+class ActionConfiguration(CEConfiguration):
     
     def __init__(self, rse, source, action, **source_agrs):
         CEConfiguration.__init__(self, rse, source, **source_agrs)
