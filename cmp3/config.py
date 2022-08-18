@@ -152,6 +152,10 @@ class ConfigBackend(object):
         if param == "ignore": value = self.format_ignore_list(value)
         return value
         
+    def get(self, name, default=None):
+        try:    return self[name]
+        except KeyError: return default
+        
 class ConfigYAMLBackend(ConfigBackend):
     
     def __init__(self, cfg):
