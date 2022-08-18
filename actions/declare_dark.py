@@ -3,17 +3,22 @@ from datetime import datetime, timedelta
 
 from run import CCRun
 from cmp3.stats import Stats
+from cmp3.config import ActionConfiguration
+
 
 Usage = """
 python declare_dark.py [options] <storage_path> <rse>
+    -o (-|<out file>)           - write confirmed dark list and write it to the file or stdout if "-", instead of sending to Rucio
+    -s <stats file>             - file to write stats to
+    -S <stats key>              - key to store stats under, default: "dark_action"
+    -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
+
+    The following will override values read from the configuration
     -f <ratio, floating point>  - max allowed fraction of confirmed dark files to total number of files found by the scanner,
                                   default = 0.05
     -m <days>                   - max age for the most recent run, default = 1 day
     -M <days>                   - max age for oldest run to use for confirmation, default = 14 days
     -n <number>                 - min number of runs to use to produce the confirmed dark list, 
-    -o (-|<out file>)           - write confirmed dark list and write it to the file or stdout if "-", instead of sending to Rucio
-    -s <stats file>             - file to write stats to
-    -S <stats key>              - key to store stats under, default: "dark_action"
 """
 
 def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, stats, stats_key):
@@ -124,7 +129,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:n:f:s:S:")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:n:f:s:S:c:")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -139,10 +144,16 @@ if "-o" in opts:
         out = open(opts["-o"], "w")
 
 storage_path, rse = args
-age_first = int(opts.get("-M", 14))
-age_last = int(opts.get("-m", 1))
-fraction = float(opts.get("-f", 0.05))
-min_runs = int(opts.get("-n", 2))
+
+config = {}
+if "-c" in opts:
+    config = ActionConfiguration(rse, opts["-c"], "dark")
+
+age_first = int(opts.get("-M", config.get("max_age_first_run", 15)))
+age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
+fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
+min_runs = int(opts.get("-n", config.get("min_runs", 3)))
+
 stats_file = opts.get("-s")
 stats = stats_key = None
 if stats_file is not None:

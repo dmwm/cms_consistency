@@ -15,7 +15,7 @@ try:
 except:
     Use_tqdm = False
 
-from config import CCConfiguration, ConfigYAMLBackend
+from config import CCScannerConfiguration
 
 def truncated_path(root, path):
         if path == root:
@@ -533,7 +533,7 @@ class ScannerMaster(PyThread):
 Usage = """
 python xrootd_scanner.py [options] <rse>
     Options:
-    -c <config.yaml>            - config file, required
+    -c <config.yaml>|-c rucio   - required - read config either from a YAML file or from Rucio
     -o <output file prefix>     - output will be sent to <output>.00000, <output>.00001, ...
     -t <timeout>                - xrdfs ls operation timeout (default 30 seconds)
     -m <max workers>            - default 5
@@ -728,7 +728,7 @@ if __name__ == "__main__":
         sys.exit(2)
 
     rse = args[0]
-    config = CCConfiguration(ConfigYAMLBackend(opts["-c"]), rse)
+    config = CCScannerConfiguration(rse, opts["-c"], rse)
 
     quiet = "-q" in opts
     display_progress = not quiet and "-v" in opts

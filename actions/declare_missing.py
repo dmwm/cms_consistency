@@ -3,15 +3,19 @@ from datetime import datetime, timedelta
 
 from run import CCRun
 from cmp3.stats import Stats
+from cmp3.config import ActionConfiguration
 
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
-    -f <ratio, floating point>  - max allowed fraction of confirmed missing files to total number of files found by the scanner,
-                                  default = 0.05
-    -m <days>                   - max age for the most recent run, default = 1 day
-    -o (-|<out file>)           - produce confirmed missing list and write it to the file or stdout if "-", instead of sending to Rucio
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "missing_action"
+    -o (-|<out file>)           - produce confirmed missing list and write it to the file or stdout if "-", instead of sending to Rucio
+    -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
+
+    The following will override values read from the configuration
+    -f <ratio>                  - max allowed fraction of confirmed missing files to total number of files found by the scanner,
+                                  floating point, default = 0.05
+    -m <days>                   - max age for the most recent run, integer, default = 1 day
 """
 
 def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key):
@@ -90,7 +94,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:m:f:s:S:")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:m:f:s:S:c:")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -105,8 +109,14 @@ if "-o" in opts:
         out = open(opts["-o"], "w")
 
 storage_path, scope, rse = args
-age_last = int(opts.get("-m", 1))
-fraction = float(opts.get("-f", 0.05))
+
+config = {}
+if "-c" in opts:
+    config = ActionConfiguration(rse, opts["-c"], "missing")
+
+age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
+fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
+
 stats_file = opts.get("-s")
 stats = None
 if stats_file is not None:
