@@ -305,7 +305,7 @@ class DBDumpConfig(CEConfiguration):
 
 class ActionConfig(CEConfiguration):
     
-    def __init__(self, rse, source, action, **source_agrs)
+    def __init__(self, rse, source, action, **source_agrs):
         CEConfiguration.__init__(self, rse, source, **source_agrs)
         self.Action = action
         self.AbortThreshold = float(self.action_param(rse, action, "max_fraction", 0.05))
