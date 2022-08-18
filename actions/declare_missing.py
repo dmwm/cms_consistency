@@ -131,7 +131,7 @@ if "-v" in opts:
     print("  config:                      ", opts.get("-c"))
     print("  max age for last run:        ", age_last)
     print("  max missing files fraction:  ", fraction)
-    
+    print()
 
 final_stats = missing_action(storage_path, rse, scope, age_last, out, stats, stats_key)
 
@@ -143,6 +143,7 @@ if "-v" in opts:
     print("\nFinal stats:")
     for k, v in sorted(final_stats.items()):
         print(f"{k}: {v}")
+    print()
 
 if final_stats["status"] != "done":
     sys.exit(1)
