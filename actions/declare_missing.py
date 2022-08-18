@@ -11,6 +11,7 @@ python declare_missing.py [options] <storage_path> <scope> <rse>
     -S <stats key>              - key to store stats under, default: "missing_action"
     -o (-|<out file>)           - produce confirmed missing list and write it to the file or stdout if "-", instead of sending to Rucio
     -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
+    -v                          - verbose output
 
     The following will override values read from the configuration
     -f <ratio>                  - max allowed fraction of confirmed missing files to total number of files found by the scanner,
@@ -94,7 +95,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:m:f:s:S:c:")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:m:f:s:S:c:v")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -123,11 +124,25 @@ if stats_file is not None:
     stats = Stats(stats_file)
 stats_key = opts.get("-S", "missing_action")
 
+if "-v" in opts:
+    print("\nParameters:")
+    print("  stats file:                  ", stats_file)
+    print("  stats key:                   ", stats_key)
+    print("  config:                      ", opts.get("-c"))
+    print("  max age for last run:        ", age_last)
+    print("  max missing files fraction:  ", fraction)
+    
+
 final_stats = missing_action(storage_path, rse, scope, age_last, out, stats, stats_key)
 
 print("Final status:", final_stats["status"])
 if final_stats["status"] == "aborted":
     print("Reason:", final_stats["aborted_reason"])
+
+if "-v" in opts:
+    print("\nFinal stats:")
+    for k, v in sorted(final_stats.items()):
+        print(f"{k}: {v}")
 
 if final_stats["status"] != "done":
     sys.exit(1)
