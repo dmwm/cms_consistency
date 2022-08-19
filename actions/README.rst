@@ -34,8 +34,8 @@ Declaring dark replicas
         -f <ratio, floating point>  - max allowed fraction of confirmed dark files to total number of files found by the scanner,
                                       default = 0.05
         -m <days>                   - max age for the most recent run, default = 1 day
-        -M <days>                   - max age for oldest run to use for confirmation, default = 14 days
-        -n <number>                 - min number of runs to use to produce the confirmed dark list, 
+        -M <days>                   - max age for oldest run to use for confirmation, default = 15 days
+        -n <number>                 - min number of runs to use to produce the confirmed dark list, default = 3
 
 Configuration
 -------------
@@ -60,6 +60,5 @@ If YAML file is used, the following fields will be used:
         RSE:
             # same parameters as for default ("*")
             
-                
 
 
