@@ -11,10 +11,8 @@ Importing configuration from YAML file to Rucio:
     $ python import_config.py [-c] <config.yaml>
     -c allows to create RSEs, which exist in the YAML file but not in Rucio
     
-Exporting configuration from Rucio to YAML file:
+Print configuration from Rucio to stdout in YAML format:
 
 .. code-block:: shell
 
-    $ python export_config.py > <config.yaml>
-
-    
+    $ python export_config.py
