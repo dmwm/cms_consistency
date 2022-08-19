@@ -16,3 +16,5 @@ Print configuration from Rucio to stdout in YAML format:
 .. code-block:: shell
 
     $ python export_config.py
+
+These tools use Rucio client initialized using standard Rucio environment
