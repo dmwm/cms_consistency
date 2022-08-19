@@ -160,8 +160,8 @@ echo "Missing list: " $nmissing
 #
 # 5. Declare missing and dark replicas
 #
-$python actions/declare_missing.py -s $stats $out $scope $rse 2>> ${missing_action_errors}
-$python actions/declare_dark.py -s $stats $out $rse 2>> ${dark_action_errors}
+$python actions/declare_missing.py -c rucio -s $stats $out $scope $rse 2>> ${missing_action_errors}
+$python actions/declare_dark.py -c rucio -s $stats $out $rse 2>> ${dark_action_errors}
 
 end_time=`date -u +%s`
 
