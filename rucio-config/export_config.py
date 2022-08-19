@@ -4,9 +4,8 @@ from rucio.client.rseclient import RSEClient
 from rucio.common.exception import ConfigNotFound
 
 Usage = """
-python export_config.py [-o <file>]
-Exports CE configuration to YAML format
--o <file> -- write to a file. Otherwise - stdout
+python export_config.py
+Exports CE configuration to YAML format, prints it to stdout
 """
 
 CONFIG_SECTION_PREFIX = "consistency_enforcement"
