@@ -303,7 +303,6 @@ class DBDumpConfiguration(CEConfiguration):
     def __init__(self, rse, *params, **agrs):
         CCConfiguration.__init__(self, rse, *params, **agrs)
         self.DBDumpPathRoot = self.dbdump_param(rse, "path_root", "/")
-        self.DBDumpIgnoreSubdirs = self.dbdump_param(rse, "ignore", [])
 
     def __getitem__(self, name):
         return self.dbdump_param(self.RSE, name, required=True)

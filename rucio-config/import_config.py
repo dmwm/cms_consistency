@@ -8,7 +8,7 @@ CONFIG_SECTION_PREFIX = "consistency_enforcement"
 
 
 Usage = """
-python import_rse_config.py [-c] <config.yaml>
+python import_ce_config.py [-c] <config.yaml>
     -c -- create RSE if not found
 """
 
@@ -37,13 +37,14 @@ def set_option(subsection, name, value):
         value = " ".join(value) or "[]"
     cfg_client.set_config_option(section, name, str(value))
 
-def copy_config(config_in, field, subsection, default=None, required=True):
-    if field not in config_in and required:
+def copy_config(config_in, field, subsection, default=None, required=False):
+    if field in config_in:
+        value = config_in.get(field, default)
+        if value is not None:
+            set_option(subsection, field, value)
+    elif required:
         raise KeyError(f"Rquired field {field} not found")
-    value = config_in.get(field, default)
-    if value is not None:
-        set_option(subsection, field, value)
-        
+
 def clear_section(section):
     section = CONFIG_SECTION_PREFIX if not section else CONFIG_SECTION_PREFIX + "." + section
     try:
@@ -55,30 +56,39 @@ def clear_section(section):
             cfg_client.delete_config_option(section, k)
 
 clear_section("")
-clear_section("scanner")
-clear_section("dbdump")
 
 set_option("", "npartitions", defaults_in.get("partitions", 10))
 
+clear_section("scanner")
 if "scanner" in defaults_in:
     scanner_in = defaults_in["scanner"]
     
     copy_config(scanner_in, "recursion", "scanner")
-    copy_config(scanner_in, "nworkers", "scanner", 10)
-    copy_config(scanner_in, "timeout", "scanner", 60)
-    copy_config(scanner_in, "server_root", "scanner", required = True)
-    copy_config(scanner_in, "remove_prefix", "scanner", "/")
-    copy_config(scanner_in, "add_prefix", "scanner", "/")
+    copy_config(scanner_in, "nworkers", "scanner")
+    copy_config(scanner_in, "timeout", "scanner")
+    copy_config(scanner_in, "server_root", "scanner", required=True)
     
     roots_in = scanner_in.get("roots", {})
     set_option("scanner", "roots", json.dumps(roots_in))
     
+clear_section("dbdump")
 if "dbdump" in defaults_in:
     dbdump_in = defaults_in["dbdump"]
-    set_option("dbdump", "path_root", dbdump_in["path_root"])
-    if "ignore" in dbdump_in:
-        ignore = dbdump_in["ignore"]
-        set_option("dbdump", "ignore", ignore)
+    copy_config(defaults_in, "path_root", "dbdump")
+
+clear_section("missing_action")
+if "missing_action" in defaults_in:
+    missing_action_in = defaults_in["missing_action"]
+    copy_config(missing_action_in, "max_fraction", "missing_action")
+    copy_config(missing_action_in, "max_age_last_run", "missing_action")
+
+clear_section("dark_action")
+if "dark_action" in defaults_in:
+    dark_action_in = defaults_in["dark_action"]
+    copy_config(dark_action_in, "max_fraction", "dark_action")
+    copy_config(dark_action_in, "max_age_last_run", "dark_action")
+    copy_config(dark_action_in, "max_age_first_run", "dark_action")
+    copy_config(dark_action_in, "min_runs", "dark_action")
 
 #
 # RSE specifics
