@@ -19,10 +19,10 @@ def load_defaults(client):
 
     for subsection in ("scanner", "dbdump", "missing_action", "dark_action"):
         try:    
-            cfg = self.ConfigClient.get_config(CONFIG_SECTION_PREFIX + '.' + subsection)
+            cfg = client.get_config(CONFIG_SECTION_PREFIX + '.' + subsection)
             if subsection == "scanner":
                 if "roots" in cfg:
-                    cfg["roots"] = json.loads(cfg["roots"])
+                    cfg["roots"] = sorted(json.loads(cfg["roots"]), key=lambda r: r["path"])
             if cfg:
                 defaults[subsection] = cfg
         except ConfigNotFound:
@@ -35,6 +35,8 @@ def load_rse(client, rse):
         cfg = client.list_rse_attributes(rse.upper()).get(CONFIG_SECTION_PREFIX)
         if cfg:
             cfg = json.loads(cfg)
+            if "roots" in cfg:
+                cfg["roots"] = sorted(cfg["roots"], key=lambda r: r["path"])
     except: cfg = None
     return cfg
     
@@ -44,6 +46,7 @@ rses = {
 
 rse_client = RSEClient()
 for rse in rse_client.list_rses():
+    rse = rse["rse"]
     cfg = load_rse(rse_client, rse)
     if cfg is not None:
         rses[rse] = cfg
