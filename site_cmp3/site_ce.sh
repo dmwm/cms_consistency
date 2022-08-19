@@ -159,9 +159,13 @@ echo "Missing list: " $nmissing
 
 #
 # 5. Declare missing and dark replicas
+#    -o ... turns it into "dry run" mode
 #
-$python actions/declare_missing.py -c rucio -s $stats $out $scope $rse 2>> ${missing_action_errors}
-$python actions/declare_dark.py -c rucio -s $stats $out $rse 2>> ${dark_action_errors}
+
+m_action_list=${out}/${RSE}_${now}_M_action.list
+d_action_list=${out}/${RSE}_${now}_D_action.list
+$python actions/declare_missing.py -o ${m_action_list} -c rucio -s $stats $out $scope $rse 2>> ${missing_action_errors}
+$python actions/declare_dark.py    -o ${d_action_list} -c rucio -s $stats $out $rse 2>> ${dark_action_errors}
 
 end_time=`date -u +%s`
 
