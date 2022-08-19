@@ -14,7 +14,7 @@ python declare_dark.py [options] <storage_path> <rse>
     -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
     -v                          - verbose output
 
-    The following will override values read from the configuration
+    The following will override values read from the configuration:
     -f <ratio, floating point>  - max allowed fraction of confirmed dark files to total number of files found by the scanner,
                                   default = 0.05
     -m <days>                   - max age for the most recent run, default = 1 day

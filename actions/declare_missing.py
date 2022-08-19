@@ -13,7 +13,7 @@ python declare_missing.py [options] <storage_path> <scope> <rse>
     -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
     -v                          - verbose output
 
-    The following will override values read from the configuration
+    The following will override values read from the configuration:
     -f <ratio>                  - max allowed fraction of confirmed missing files to total number of files found by the scanner,
                                   floating point, default = 0.05
     -m <days>                   - max age for the most recent run, integer, default = 1 day
