@@ -120,7 +120,7 @@ echo Site dump ...
 echo
 
 echo "Site scan..." > ${scanner_errors}
-$python xrootd_scanner.py -z -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
+$python xrootd/xrootd_scanner.py -z -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then
     echo "Site scan failed. Status code: $scanner_status" >> ${scanner_errors}
