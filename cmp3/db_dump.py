@@ -1,7 +1,7 @@
 import getopt, os, time, re, gzip, json, traceback
 import sys, uuid
 
-from config import DBConfig, CCConfiguration, ConfigYAMLBackend
+from config import DBConfig, DBDumpConfiguration
 from part import PartitionedList
 
 from sqlalchemy import create_engine
@@ -121,7 +121,7 @@ else:
 
 #print("dbconfig: url:", dbconfig.DBURL, "schema:", dbconfig.Schema)
 
-config = CCConfiguration(ConfigYAMLBackend(opts["-c"]), rse_name)
+config = DBDumpConfiguration(rse_name, opts["-c"])
 
 stats = None if stats_file is None else Stats(stats_file)
 
