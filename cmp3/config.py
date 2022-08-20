@@ -301,7 +301,7 @@ class ScannerConfiguration(CEConfiguration):
 class DBDumpConfiguration(CEConfiguration):
 
     def __init__(self, rse, *params, **agrs):
-        CCConfiguration.__init__(self, rse, *params, **agrs)
+        CEConfiguration.__init__(self, rse, *params, **agrs)
         self.DBDumpPathRoot = self.dbdump_param(rse, "path_root", "/")
 
     def __getitem__(self, name):
