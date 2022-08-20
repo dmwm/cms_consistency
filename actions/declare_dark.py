@@ -2,8 +2,8 @@ import sys, os, getopt, time
 from datetime import datetime, timedelta
 
 from run import CCRun
-from cmp3.stats import Stats
-from cmp3.config import ActionConfiguration
+from stats import Stats
+from config import ActionConfiguration
 
 
 Usage = """

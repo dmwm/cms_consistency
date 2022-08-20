@@ -58,8 +58,6 @@ m_out=${out}/${RSE}_${now}_M.list
 stats=${out}/${RSE}_${now}_stats.json
 scanner_errors=${out}/${RSE}_${now}_scanner.errors
 dbdump_errors=${out}/${RSE}_${now}_dbdump.errors
-missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
-dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -162,10 +160,12 @@ echo "Missing list: " $nmissing
 #    -o ... turns it into "dry run" mode
 #
 
+missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
+dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
 m_action_list=${out}/${RSE}_${now}_M_action.list
 d_action_list=${out}/${RSE}_${now}_D_action.list
-$python actions/declare_missing.py -o ${m_action_list} -c rucio -s $stats $out $scope $rse 2>> ${missing_action_errors}
-$python actions/declare_dark.py    -o ${d_action_list} -c rucio -s $stats $out $rse 2>> ${dark_action_errors}
+$python actions/declare_missing.py -o ${m_action_list} -c rucio -s $stats $out $scope $RSE 2>> ${missing_action_errors}
+$python actions/declare_dark.py    -o ${d_action_list} -c rucio -s $stats $out        $RSE 2>> ${dark_action_errors}
 
 end_time=`date -u +%s`
 
