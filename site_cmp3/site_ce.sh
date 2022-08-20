@@ -30,7 +30,7 @@ echo "key:                       $key"
 
 python=${PYTHON:-python}
 
-export PYTHONPATH=`pwd`/cmp3:`pwd`
+export PYTHONPATH=`pwd`:`pwd`/cmp3
 
 echo will use python: $python
 
