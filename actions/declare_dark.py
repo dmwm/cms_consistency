@@ -29,7 +29,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         "start_time": t0,
         "end_time": None,
         "status": "started",
-        "initial_dark_files": None,
+        "detected_dark_files": None,
         "confirmed_dark_files": None,
         "aborted_reason": None,
         "error": None,
@@ -66,9 +66,10 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
     else:
         latest_run = recent_runs[-1]
         num_scanned = latest_run.scanner_num_files()
+        detected_dark_count = latest_run.dark_file_count()
         print("Latest run:", latest_run.Run, file=sys.stderr)
         print("Files in RSE:", num_scanned, file=sys.stderr)
-        print("Dark files found in the latest run:", latest_run.dark_file_count(), file=sys.stderr)
+        print("Dark files found in the latest run:", detected_dark_count, file=sys.stderr)
 
         dark_lists = (run.dark_files() for run in recent_runs[1:])
         confirmed = set(recent_runs[0].dark_files()).intersection(*dark_lists)
@@ -87,7 +88,6 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
                 confirmed = new_confirmed
         """
                 
-        my_stats["confirmed_dark_files"] = confirmed_dark_count = len(confirmed)
         ratio = confirmed_dark_count/num_scanned
         print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
         
@@ -117,7 +117,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         end_time = t1,
         status = status,
         error = error,
-        initial_dark_files = latest_dark_count,
+        detected_dark_files = detected_dark_count,
         confirmed_dark_files = confirmed_dark_count,
         aborted_reason = aborted_reason
     ))
