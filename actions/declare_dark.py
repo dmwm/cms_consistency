@@ -58,7 +58,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
     if len(recent_runs) < min_runs:
         status = "aborted"
         print("not enough runs to produce confirmed dark list:", len(recent_runs), "   required:", min_runs, file=sys.stderr)
-    
+
     elif recent_runs[-1].Timestamp < now - timedelta(days=age_last):
         status = "aborted"
         aborted_reason = "latest run too old: %s" % (latest_run.Timestamp,)
@@ -88,6 +88,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
                 confirmed = new_confirmed
         """
                 
+        confirmed_dark_count = len(confirmed)
         ratio = confirmed_dark_count/num_scanned
         print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
         
