@@ -32,16 +32,23 @@ def display_file_list(lst):
 
 class Handler(WPHandler):
     
-    def __init__(self, *params, **args):
+    def __init__(self, subhandler=True, *params, **args):
         WPHandler.__init__(self, *params, **args)
         self.WM = self.unmerged = WMHandler(*params, **args)
         self.static = WPStaticHandler(*params, **args)
-        
+        if subhandler:
+            self.IsNew = False
+            self.new = Handler(subhandler=False, *params, **args)
+        else:
+            self.IsNew = True
+        self.CCDataSource = CCDataSource(self.App.CCPath, self.IsNew)
+        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMIgnoreList)
+
     def __index(self, request, relpath, **args):
         #
         # list available RSEs
         #
-        data_source = self.App.CCDataSource
+        data_source = self.CCDataSource
 
         for rse, stats in data_source.latest_stats_per_rse().items():
             summary = data_source.run_summary(stats)
@@ -63,8 +70,8 @@ class Handler(WPHandler):
         #
         # list available RSEs
         #
-        cc_data_source = self.App.CCDataSource
-        um_data_source = self.App.UMDataSource
+        cc_data_source = self.CCDataSource
+        um_data_source = self.UMDataSource
 
         cc_stats = cc_data_source.latest_stats_per_rse()
         cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
@@ -106,18 +113,18 @@ class Handler(WPHandler):
     index = index_combined
         
     def probe(self, request, relpath, **args):
-        return self.App.CCDataSource.status(), "text/plain"
-        return "OK" if self.App.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
+        return self.CCDataSource.status(), "text/plain"
+        return "OK" if self.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
         
     def raw_stats(self, request, relpath, rse=None, run=None, **args):
-        runs = self.App.CCDataSource.list_runs(rse)
+        runs = self.CCDataSource.list_runs(rse)
         raw_stats = mtime = None
         if run:
-            raw_stats, mtime = self.App.CCDataSource.raw_stats(rse, run)
+            raw_stats, mtime = self.CCDataSource.raw_stats(rse, run)
         return self.render_to_response("raw_stats.html", rse=rse, runs=runs, raw_stats=raw_stats, mtime=mtime)
 
     def show_rse(self, request, relpath, rse=None, **args):
-        data_source = self.App.CCDataSource
+        data_source = self.CCDataSource
         runs = data_source.list_runs(rse)
         runs = sorted(runs, reverse=True)
         
@@ -148,7 +155,7 @@ class Handler(WPHandler):
             ))
         #print(infos)
         
-        um_data_source = self.App.UMDataSource
+        um_data_source = self.UMDataSource
         um_runs = um_data_source.all_stats_for_rse(rse)
         um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
         um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
@@ -224,14 +231,14 @@ class Handler(WPHandler):
         return errors
         
     def dark(self, request, relpath, rse=None, run=None, **args):
-        lst = self.App.CCDataSource.get_dark(rse, run)
+        lst = self.CCDataSource.get_dark(rse, run)
         return (path+"\n" for path in lst), {
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
         }
             
     def missing(self, request, relpath, rse=None, run=None, **args):
-        lst = self.App.CCDataSource.get_missing(rse, run)
+        lst = self.CCDataSource.get_missing(rse, run)
         return (path+"\n" for path in lst), {
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
@@ -240,7 +247,7 @@ class Handler(WPHandler):
     LIMIT = 1000
     
     def show_run(self, request, relpath, rse=None, run=None, **args):
-        data_source = self.App.CCDataSource
+        data_source = self.CCDataSource
         stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
         summary = data_source.run_summary(stats)
         errors = []
@@ -274,8 +281,8 @@ class Handler(WPHandler):
         dark_truncated = (ndark or 0)  > self.LIMIT
         missing_truncated = (nmissing or 0) > self.LIMIT
         
-        dark = self.App.CCDataSource.get_dark(rse, run, self.LIMIT)
-        missing = self.App.CCDataSource.get_missing(rse, run, self.LIMIT)
+        dark = self.CCDataSource.get_dark(rse, run, self.LIMIT)
+        missing = self.CCDataSource.get_missing(rse, run, self.LIMIT)
         
         #
         # retrofit failed directories
@@ -315,12 +322,12 @@ class Handler(WPHandler):
         )
 
     def files(self, request, relpath, rse=None, type="*"):
-        files = self.App.CCDataSource.files(rse, type)
+        files = self.CCDataSource.files(rse, type)
         sizes = [os.path.getsize(path) for path in files]
         return [f"{f} {s}\n" for f, s in zip(files, sizes)], "text/plain"
         
     def file(self, request, relpath):
-        f = self.App.CCDataSource.open_file(relpath)
+        f = self.CCDataSource.open_file(relpath)
         def read_file(f):
             data = f.read(10240)
             while data:
@@ -331,8 +338,8 @@ class Handler(WPHandler):
     MAX_HISTORY = 10
         
     def status_history(self, request, relpath, rses=None, **args):
-        um_data_source = self.App.UMDataSource
-        cc_data_source = self.App.CCDataSource
+        um_data_source = self.UMDataSource
+        cc_data_source = self.CCDataSource
 
         if rses is None:
             rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
@@ -368,7 +375,7 @@ class Handler(WPHandler):
         return json.dumps(data), "text/json"
         
     def ls(self, request, relpath, rse="*", **args):
-        lst = self.App.CCDataSource.ls(rse)
+        lst = self.CCDataSource.ls(rse)
         return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"] or "", d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
         
 def as_dt(t):
@@ -443,8 +450,9 @@ class App(WPApp):
     
     def __init__(self, handler, home, cc_path, prefix, um_path, um_ignore_list):
         WPApp.__init__(self, handler, prefix=prefix)
-        self.CCDataSource = CCDataSource(cc_path)
-        self.UMDataSource = UMDataSource(um_path, um_ignore_list)
+        self.CCPath = cc_path
+        self.UMPath = cc_path
+        self.UMIgnoreList = um_ignore_list
         self.Home = home
 
     def init(self):
