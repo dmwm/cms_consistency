@@ -27,6 +27,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
         "start_time": t0,
         "end_time": None,
         "status": "started",
+        "detected_missing_files": None,
         "confirmed_missing_files": None,
         "aborted_reason": None,
         "error": None
@@ -51,7 +52,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
         print("Latest run:", latest_run.Run, file=sys.stderr)
         print("Files found by scanner in the latest run:", num_scanned, file=sys.stderr)
 
-        missing_count = my_stats["confirmed_missing_files"] = latest_run.missing_file_count()
+        missing_count = my_stats["detected_missing_files"] = my_stats["confirmed_missing_files"] = latest_run.missing_file_count()
 
         ratio = missing_count/num_scanned
         print("Missing replicas:", missing_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
