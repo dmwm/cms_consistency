@@ -87,7 +87,8 @@ if "dark_action" in defaults_in:
     dark_action_in = defaults_in["dark_action"]
     copy_config(dark_action_in, "max_fraction", "dark_action")
     copy_config(dark_action_in, "max_age_last_run", "dark_action")
-    copy_config(dark_action_in, "max_age_first_run", "dark_action")
+    copy_config(dark_action_in, "min_age_first_run", "dark_action")
+    copy_config(dark_action_in, "confirmation_window", "dark_action")
     copy_config(dark_action_in, "min_runs", "dark_action")
 
 #

@@ -17,12 +17,13 @@ python declare_dark.py [options] <storage_path> <rse>
     The following will override values read from the configuration:
     -f <ratio, floating point>  - max allowed fraction of confirmed dark files to total number of files found by the scanner,
                                   default = 0.05
+    -w <days>                   - max age for oldest run to use for confirmation, default = 35 days
     -m <days>                   - max age for the most recent run, default = 1 day
-    -M <days>                   - max age for oldest run to use for confirmation, default = 15 days
+    -M <days>                   - min age for oldest run, default = 25
     -n <number>                 - min number of runs to use to produce the confirmed dark list, default = 3
 """
 
-def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, stats, stats_key):
+def dark_action(storage_dir, rse, window, min_age_first, max_age_last, min_runs, out, stats, stats_key):
     t0 = time.time()
     my_stats = {
         "elapsed": None,
@@ -42,7 +43,7 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
     runs = CCRun.runs_for_rse(storage_path, rse)
     now = datetime.now()
     recent_runs = sorted(
-            [r for r in runs if r.Timestamp >= now - timedelta(days=age_first)], 
+            [r for r in runs if r.Timestamp >= now - timedelta(days=window)], 
             key=lambda r: r.Timestamp
     )
 
@@ -57,37 +58,30 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
 
     if len(recent_runs) < min_runs:
         status = "aborted"
-        print("not enough runs to produce confirmed dark list:", len(recent_runs), "   required:", min_runs, file=sys.stderr)
+        aborted_reason = "not enough runs to produce confirmed dark list: %d, required: %d" % (len(recent_runs), min_runs)
 
-    elif recent_runs[-1].Timestamp < now - timedelta(days=age_last):
+    elif recent_runs[-1].Timestamp < now - timedelta(days=max_age_last):
         status = "aborted"
-        aborted_reason = "latest run too old: %s" % (latest_run.Timestamp,)
+        aborted_reason = "latest run too old: %s, required: < %d days old" % (latest_run.Timestamp, max_age_last)
+
+    elif recent_runs[0].Timestamp > now - timedelta(days=min_age_first):
+        status = "aborted"
+        aborted_reason = "oldest run too recent: %s, required: > %d days old" % (latest_run.Timestamp, min_age_first)
 
     else:
+        first_run = recent_runs[0]
         latest_run = recent_runs[-1]
         num_scanned = latest_run.scanner_num_files()
         detected_dark_count = latest_run.dark_file_count()
+        print("First run:", first_run.Run, file=sys.stderr)
         print("Latest run:", latest_run.Run, file=sys.stderr)
-        print("Files in RSE:", num_scanned, file=sys.stderr)
-        print("Dark files found in the latest run:", detected_dark_count, file=sys.stderr)
+        print("  Files in RSE:", num_scanned, file=sys.stderr)
+        print("  Dark files:", detected_dark_count, file=sys.stderr)
 
-        dark_lists = (run.dark_files() for run in recent_runs[1:])
-        confirmed = set(recent_runs[0].dark_files()).intersection(*dark_lists)
+        confirmed = set(recent_runs[0].dark_files())
+        for run in recent_runs[1:]:
+            confirmed &= set(run.dark_files())
 
-        """
-        confirmed = None
-        for run in recent_runs[::-1]:
-            if confirmed is None:
-                confirmed = set(run.dark_files())
-                latest_dark_count = len(confirmed)
-            else:
-                new_confirmed = set()
-                for f in run.dark_files():
-                    if f in confirmed:
-                        new_confirmed.add(f)
-                confirmed = new_confirmed
-        """
-                
         confirmed_dark_count = len(confirmed)
         ratio = confirmed_dark_count/num_scanned
         print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
@@ -122,6 +116,10 @@ def dark_action(storage_dir, rse, max_age_last, max_age_first, min_runs, out, st
         confirmed_dark_files = confirmed_dark_count,
         aborted_reason = aborted_reason
     ))
+    
+    print("status:", status, file=sys.stderr)
+    if status == "abortded":
+        print("reason:", aborted_reason, file=sys.stderr)
 
     if stats is not None:
         stats[stats_key] = my_stats
@@ -132,7 +130,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:n:f:s:S:c:v")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:v")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -152,8 +150,9 @@ config = {}
 if "-c" in opts:
     config = ActionConfiguration(rse, opts["-c"], "dark")
 
-age_first = int(opts.get("-M", config.get("max_age_first_run", 15)))
-age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
+window = int(opts.get("-w", config.get("confirmation_window", 35)))
+min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
+max_age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
 fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
 min_runs = int(opts.get("-n", config.get("min_runs", 3)))
 
@@ -168,13 +167,14 @@ if "-v" in opts:
     print("  stats file:                  ", stats_file)
     print("  stats key:                   ", stats_key)
     print("  config:                      ", opts.get("-c"))
-    print("  max age for last run:        ", age_last)
-    print("  max age for first run:       ", age_first)
+    print("  confirmation window:         ", window)
+    print("  min age for last run:        ", min_age_first)
+    print("  max age for first run:       ", max_age_last)
     print("  min number of runs:          ", min_runs)
-    print("  max missing files fraction:  ", fraction)
+    print("  max dark files fraction:     ", fraction)
     print()
 
-final_stats = dark_action(storage_path, rse, age_last, age_first, min_runs, out, stats, stats_key)
+final_stats = dark_action(storage_path, rse, window, min_age_first, max_age_last, min_runs, out, stats, stats_key)
 
 print("Final status:", final_stats["status"])
 if final_stats["status"] == "aborted":
