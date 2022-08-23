@@ -32,16 +32,14 @@ def display_file_list(lst):
 
 class Handler(WPHandler):
     
-    def __init__(self, subhandler=True, *params, **args):
+    def __init__(self, *params, new=False, **args):
         WPHandler.__init__(self, *params, **args)
         self.WM = self.unmerged = WMHandler(*params, **args)
         self.static = WPStaticHandler(*params, **args)
-        if subhandler:
-            self.IsNew = False
-            self.new = Handler(subhandler=False, *params, **args)
-        else:
-            self.IsNew = True
-        self.CCDataSource = CCDataSource(self.App.CCPath, self.IsNew)
+        self.IsNew = new
+        if not new:
+            self.new = Handler(*params, new=True, **args)
+        self.CCDataSource = CCDataSource(self.App.CCPath, new)
         self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMIgnoreList)
 
     def __index(self, request, relpath, **args):
