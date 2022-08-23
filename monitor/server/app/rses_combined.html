@@ -45,6 +45,14 @@
         return color;
     }
     
+    function display_diffs(rse, prev_run, counts)
+    {
+        var td_missing = document.getElementById("diffs_missing_"+rse+"_td");
+        var td_dark = document.getElementById("diffs_dark_"+rse+"_td");
+        td_missing.innerHTML = '' + counts.missing_old + '/' + counts.missing_new;
+        td_dark.innerHTML = '' + counts.dark_old + '/' + counts.dark_new;
+    }
+    
     function display_um_status_chart(id_prefix, status_list)
     {
         var td = document.getElementById(id_prefix+"_td");
@@ -269,16 +277,30 @@
         }
     };
     
-    function request_history_info(rse_lst)
+    var diffs_receiver = {
+        data_received: function(diffs) {
+            for ( rse in diffs )
+            {
+                var info = diffs[rse];
+                var prev_run = info.prev_run;
+                if( prev_run != null )
+                    display_diffs(rse, prev_run, diffs[rse])
+            }
+        }
+    };
+    
+    function request_info(rse_lst)
     {
         var batch_size = 5;
         var batch = [];
         var requests = [];
 
-        function request_batch(rse_batch)
+        function request_batch(rse_batch, requests)
         {
             var url = "./status_history?rses=" + rse_batch.join(",");
-            return HTTPRequest(url, history_receiver, null, "json");
+            requests.push(HTTPRequest(url, history_receiver, null, "json"));
+            var url = "./lists_diffs?rses=" + rse_batch.join(",");
+            requests.push(HTTPRequest(url, diffs_receiver, null, "json"));
         }
     
         rse_lst = rse_lst.sort(() => Math.random() - 0.5);
@@ -288,16 +310,16 @@
             batch.push(rse);
             if( batch.length >= batch_size )
             {
-                requests.push(request_batch(batch));
+                request_batch(batch, requests);
                 batch = [];
             }   
         }
         if( batch.length > 0 )
-            requests.push(request_batch(batch));
+            request_batch(batch, requests);
         return requests;
     }
     
-    var requests=request_history_info(rse_list);
+    var requests=request_info(rse_list);
     //HTTPRequest("./status_history", history_receiver, null, "json");
     
 </script>

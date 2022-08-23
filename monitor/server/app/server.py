@@ -4,7 +4,7 @@ from datetime import datetime
 from wm_handler import WMHandler, UMDataSource
 from data_source import CCDataSource, UMDataSource
 
-Version = "1.10.2"
+Version = "1.11.3"
 
 def display_file_list(lst):
     Indent = "    "
@@ -107,12 +107,54 @@ class Handler(WPHandler):
             infos = sorted(infos, key=lambda x: (-(x["um_summary"] or {}).get("start_time", -1), x["rse"]))
         
         return self.render_to_response("rses_combined.html", infos=infos)
+
+    def index(self, request, relpath, sort="rse", **args):
+        #
+        # list available RSEs
+        #
+        cc_data_source = self.App.CCDataSource
+        um_data_source = self.App.UMDataSource
+
+        cc_stats = cc_data_source.latest_stats_per_rse()
+        cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
+        print("cc stats available for:", list(cc_stats.keys()))
+
+        um_stats = um_data_source.latest_stats_per_rse()
+        um_summaries = {rse: um_data_source.run_summary(stats) for rse, stats in um_stats.items()}
         
-    index = index_combined
+        #print("um_stats:")
+        #for rse, stats in um_stats.items():
+        #    print (rse, stats)
+        #sys.stdout.flush()
+        
+        all_rses = set(cc_stats.keys()) | set(um_stats.keys())
+        all_rses = sorted(list(all_rses))
+
+        infos = [
+            {
+                "rse":        rse,
+                "cc_summary":   cc_summaries.get(rse),
+                "um_summary":   um_summaries.get(rse)
+            } 
+            for rse in all_rses
+        ]
+        
+        if sort == "rse":
+            infos = sorted(infos, key=lambda x: x["rse"])
+        elif sort == "cc_run":
+            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time", -1), x["rse"]))
+        elif sort == "-cc_run":
+            infos = sorted(infos, key=lambda x: (-(x["cc_summary"] or {}).get("start_time", -1), x["rse"]))
+        elif sort == "um_run":
+            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time", -1), x["rse"]))
+        elif sort == "-um_run":
+            infos = sorted(infos, key=lambda x: (-(x["um_summary"] or {}).get("start_time", -1), x["rse"]))
+        
+        return self.render_to_response("rses_combined.html", infos=infos)
         
     def probe(self, request, relpath, **args):
         return self.CCDataSource.status(), "text/plain"
-        return "OK" if self.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
+        return "OK" if self.App.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
         
     def raw_stats(self, request, relpath, rse=None, run=None, **args):
         runs = self.CCDataSource.list_runs(rse)
@@ -123,6 +165,62 @@ class Handler(WPHandler):
 
     def show_rse(self, request, relpath, rse=None, **args):
         data_source = self.CCDataSource
+        runs = data_source.list_runs(rse)
+        runs = sorted(runs, reverse=True)
+        
+        cc_infos = []
+        for run in runs:
+            stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
+            prev_run, missing_old, missing_new, dark_old, dark_new = data_source.file_lists_diffs(rse, run)
+            summary = data_source.run_summary(stats)
+            start_time = summary["start_time"] or 0
+            status = summary["status"]
+            if status == "failed":
+                status = summary["failed"] + " failed"
+            running = summary.get("running")
+            cc_infos.append((
+                run, 
+                {
+                    "start_time":       start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running,
+
+                    "confirmed_dark":   summary["dark_stats"]["confirmed"], 
+                    "acted_dark":       summary["dark_stats"]["acted_on"], 
+                    "dark_status":      summary["dark_stats"]["action_status"],
+                    "dark_status_reason": summary["dark_stats"].get("aborted_reason", ""),
+                    
+                    "acted_missing":summary["missing_stats"]["acted_on"], 
+                    "missing_status":summary["missing_stats"]["action_status"],
+                    "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
+                    "start_time_milliseconds":int(start_time*1000),
+                    "prev_run":         prev_run,
+                    "old_missing":      len(missing_old or []),
+                    "new_missing":      len(missing_new or []),
+                    "old_dark":         len(dark_old or []),
+                    "new_dark":         len(dark_new or [])
+                }
+            ))
+        #print(infos)
+        
+        um_data_source = self.UMDataSource
+        um_runs = um_data_source.all_stats_for_rse(rse)
+        um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
+        um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
+        
+        try:
+            for r in um_runs:
+                r["elapsed_time_hours"] = r["start_time_milliseconds"] = None
+                if r.get("start_time"):
+                    r["start_time_milliseconds"] = int(r["start_time"]*1000)
+                    if r.get("end_time"):
+                        r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
+                r.setdefault("total_size_gb", None)
+                
+        except KeyError:
+            raise ValueError(f"key error in: {r}")
+        return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
+        
+    def ___show_rse(self, request, relpath, rse=None, **args):
+        data_source = self.App.CCDataSource
         runs = data_source.list_runs(rse)
         runs = sorted(runs, reverse=True)
         
@@ -151,9 +249,8 @@ class Handler(WPHandler):
                     "start_time_milliseconds":int(start_time*1000)
                 }
             ))
-        #print(infos)
         
-        um_data_source = self.UMDataSource
+        um_data_source = self.App.UMDataSource
         um_runs = um_data_source.all_stats_for_rse(rse)
         um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
         um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
@@ -332,6 +429,28 @@ class Handler(WPHandler):
                 yield data
                 data = f.read(10240)
         return read_file(f), "text/plain"
+        
+    def lists_diffs(self, request, relpath, rses=None, **args):
+        cc_data_source = self.App.CCDataSource
+        if rses is None:
+            rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
+        else:
+            rses = rses.split(",")
+        data = {}      # {rse -> {"old_missing":.., "new_missing":, "old_dark":, "new_dark"}}
+        for rse in rses:
+            last_stats = cc_data_source.latest_stats_for_rse(rse)
+            last_run = last_stats["run"]
+            if last_stats is not None and last_stats.get("cmp3", {}).get("status") == "done":
+                prev_run, missing_old, missing_new, dark_old, dark_new = cc_data_source.file_lists_diffs(rse, last_run)
+                if prev_run is not None:
+                    data[rse] = dict(
+                            prev_run=prev_run,
+                            missing_old=len(missing_old), 
+                            missing_new=len(missing_new), 
+                            dark_old=len(dark_old), 
+                            dark_new=len(dark_new)
+                    )
+        return json.dumps(data), "text/json"
         
     MAX_HISTORY = 10
         

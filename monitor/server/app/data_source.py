@@ -267,16 +267,7 @@ class UMDataSource(DataSource):
 
         
 class CCDataSource(DataSource):
-
-    def __init__(self, path, new=False):
-        DataSource.__init__(self, path)
-        if new:
-            self.DarkSection = "dark_action"
-            self.MissingSection = "missing_action"
-        else:
-            self.DarkSection = "cc_dark"
-            self.MissingSection = "cc_miss"
-
+    
     def is_mounted(self):
         return os.path.isdir(self.Path)
 
@@ -346,8 +337,8 @@ class CCDataSource(DataSource):
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
-        confirmed_dark = stats.get(self.DarkSection, {}).get("confirmed_dark_files")
-        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", self.DarkSection, self.MissingSection, "cmp2dark"]:
+        confirmed_dark = stats.get("cc_dark",{}).get("confirmed_dark_files")
+        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", "cc_dark", "cc_miss", "cmp2dark"]:
             d = stats.get(k)
             if isinstance(d, dict) and not "elapsed" in d:
                 d["elapsed"] = None
@@ -378,20 +369,59 @@ class CCDataSource(DataSource):
             f.close()
             
         return limited_line_reader(f, limit)
-            
+        
+    def file_lists_diffs(self, rse, run):
+        # typ: 'D' or 'M' for 'dark' and 'missing'
+        # compare dark or missing list from the run to the previous run
+        # returns (prev_run, missing_old, missing_new, dark_old, dark_new) - sets
+        # or (None, None, None, None, None)
+
+        runs = self.list_runs(rse)
+        try:    this_i = runs.index(run)
+        except ValueError:
+            return (None, None, None, None, None)         # run not found
+
+        this_dark = self.get_dark(rse, run)
+        this_missing = self.get_missing(rse, run)
+        if this_dark is None or this_missing is None:
+            return (None, None, None, None, None)         # one of the lists missing
+
+        i = this_i - 1
+        while i >= 0:
+            prev_run = runs[i]
+            prev_stats, _, _, _ = self.get_stats(rse, prev_run)
+            if prev_stats is not None and prev_stats.get("cmp3", {}).get("status") == "done":
+                prev_dark = self.get_dark(rse, prev_run)
+                prev_missing = self.get_missing(rse, prev_run)
+                if prev_dark is not None and prev_missing is not None:
+                    break
+            i -= 1
+        else:
+            return (None, None, None, None, None)         # no run to compare to
+
+        this_dark = set(this_dark)
+        this_missing = set(this_missing)
+        prev_dark = set(prev_dark)
+        prev_missing = set(prev_missing)
+
+        return (prev_run, 
+            this_missing & prev_missing, this_missing - prev_missing, 
+            this_dark & prev_dark, this_dark - prev_dark
+        ) 
+
     def get_dark(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "D", limit)
 
     def get_missing(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "M", limit)
         
-    def last_stats(self, rse):
+    def ___last_stats(self, rse):
         last_run = self.list_runs(rse, 1)
         if last_run:
             last_run = last_run[0]
             return (last_run,) + self.get_stats(rse, last_run)
         else:
-            return None
+            return None, None
 
     COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
 
@@ -464,14 +494,16 @@ class CCDataSource(DataSource):
             if "cmp2dark" in stats:
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
-            if self.DarkSection in stats:
-                summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
-                summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
-                summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")
+            if "cc_dark" in stats:
+                summary["dark_stats"]["acted_on"] = stats["cc_dark"].get("confirmed_dark_files")
+                summary["dark_stats"]["action_status"] = stats["cc_dark"].get("status", "").lower() or None
+                summary["dark_stats"]["aborted_reason"] = stats["cc_dark"].get("aborted_reason", "")
                 
-            if self.MissingSection in stats:
-                summary["missing_stats"]["acted_on"] = stats[self.MissingSection].get("confirmed_miss_files", 
-                                stats[self.MissingSection].get("confirmed_missing_files"))
-                summary["missing_stats"]["action_status"] = stats[self.MissingSection].get("status", "").lower() or None
-                summary["missing_stats"]["aborted_reason"] = stats[self.MissingSection].get("aborted_reason", "")
+            if "cc_miss" in stats:
+                summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_miss_files")
+                if summary["missing_stats"]["acted_on"] is None:
+                    summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_dark_files")       # there used to be a typo in older versions 
+                summary["missing_stats"]["action_status"] = stats["cc_miss"].get("status", "").lower() or None
+                summary["missing_stats"]["aborted_reason"] = stats["cc_miss"].get("aborted_reason", "")
+        #print("summary:", summary)
         return summary
