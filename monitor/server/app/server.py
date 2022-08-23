@@ -64,7 +64,7 @@ class Handler(WPHandler):
         #print(infos)
         return self.render_to_response("rses.html", infos=infos)
         
-    def index_combined(self, request, relpath, sort="rse", **args):
+    def ____index_combined(self, request, relpath, sort="rse", **args):
         #
         # list available RSEs
         #
@@ -73,7 +73,7 @@ class Handler(WPHandler):
 
         cc_stats = cc_data_source.latest_stats_per_rse()
         cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
-        print("cc stats available for:", list(cc_stats.keys()))
+        #print("cc stats available for:", list(cc_stats.keys()))
 
         um_stats = um_data_source.latest_stats_per_rse()
         um_summaries = {rse: um_data_source.run_summary(stats) for rse, stats in um_stats.items()}
@@ -117,7 +117,7 @@ class Handler(WPHandler):
 
         cc_stats = cc_data_source.latest_stats_per_rse()
         cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
-        print("cc stats available for:", list(cc_stats.keys()))
+        #print("cc stats available for:", list(cc_stats.keys()))
 
         um_stats = um_data_source.latest_stats_per_rse()
         um_summaries = {rse: um_data_source.run_summary(stats) for rse, stats in um_stats.items()}
