@@ -47,10 +47,10 @@
     
     function display_diffs(rse, prev_run, counts)
     {
-        var td_missing = document.getElementById("diffs_missing_"+rse+"_td");
-        var td_dark = document.getElementById("diffs_dark_"+rse+"_td");
-        td_missing.innerHTML = '' + counts.missing_old + '/' + counts.missing_new;
-        td_dark.innerHTML = '' + counts.dark_old + '/' + counts.dark_new;
+        var td_missing = document.getElementById("nmissing_"+rse+"_td");
+        var td_dark = document.getElementById("ndark_"+rse+"_td");
+        td_missing.innerHTML = '' + counts.nmissing + '(' + counts.nmissing_old + ')';
+        td_dark.innerHTML = '' + counts.ndark + '(' + counts.ndark_old + ')';
     }
     
     function display_um_status_chart(id_prefix, status_list)
@@ -206,7 +206,7 @@
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             
             {% set dark_stats = cc_summary["dark_stats"] %}
-            <td>{{dark_stats["detected"]|none_as_blank}}</td>
+            <td id="ndark_{{rse}}_td"></td>
             <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
             <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
@@ -220,7 +220,7 @@
             </td>
             
             {% set missing_stats = cc_summary["missing_stats"] %}
-            <td>{{missing_stats["detected"]|none_as_blank}}</td>
+            <td id="nmissing_{{rse}}_td"></td>
             <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{missing_stats['action_status']|none_as_blank}}">
                 {{missing_stats['action_status']|none_as_blank}}

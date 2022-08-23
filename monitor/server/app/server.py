@@ -378,11 +378,13 @@ class Handler(WPHandler):
                 prev_run, missing_old, missing_new, dark_old, dark_new = cc_data_source.file_lists_diffs(rse, last_run)
                 if prev_run is not None:
                     data[rse] = dict(
+                            nmissing = last_stats["cmp3"]["missing"],
+                            ndark = last_stats["cmp3"]["dark"]
                             prev_run=prev_run,
-                            missing_old=len(missing_old), 
-                            missing_new=len(missing_new), 
-                            dark_old=len(dark_old), 
-                            dark_new=len(dark_new)
+                            nmissing_old=len(missing_old), 
+                            nmissing_new=len(missing_new), 
+                            ndark_old=len(dark_old), 
+                            ndark_new=len(dark_new)
                     )
         return json.dumps(data), "text/json"
         
