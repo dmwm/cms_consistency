@@ -271,11 +271,11 @@ class CCDataSource(DataSource):
     def __init__(self, path, new=False):
         DataSource.__init__(self, path)
         if new:
-            self.DarkKey = "dark_action"
-            self.MissingKey = "missing_action"
+            self.DarkSection = "dark_action"
+            self.MissingSection = "missing_action"
         else:
-            self.DarkKey = "cc_dark"
-            self.MissingKey = "cc_miss"
+            self.DarkSection = "cc_dark"
+            self.MissingSection = "cc_miss"
 
     def is_mounted(self):
         return os.path.isdir(self.Path)
@@ -347,7 +347,7 @@ class CCDataSource(DataSource):
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
         confirmed_dark = stats.get(self.DarkSection, {}).get("confirmed_dark_files")
-        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", self.DarkSection, self.MissingAction, "cmp2dark"]:
+        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", self.DarkSection, self.MissingSection, "cmp2dark"]:
             d = stats.get(k)
             if isinstance(d, dict) and not "elapsed" in d:
                 d["elapsed"] = None
