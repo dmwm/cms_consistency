@@ -268,6 +268,15 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
+    def __init__(self, path, new=False):
+        DataSource.__init__(self, path)
+        if new:
+            self.DarkSection = "dark_action"
+            self.MissingSection = "missing_action"
+        else:
+            self.DarkSection = "cc_dark"
+            self.MissingSection = "cc_miss"
+    
     def is_mounted(self):
         return os.path.isdir(self.Path)
 
@@ -337,8 +346,8 @@ class CCDataSource(DataSource):
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
-        confirmed_dark = stats.get("cc_dark",{}).get("confirmed_dark_files")
-        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", "cc_dark", "cc_miss", "cmp2dark"]:
+        confirmed_dark = stats.get(self.DarkSection,{}).get("confirmed_dark_files")
+        for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", self.DarkSection, self.MissingSection, "cmp2dark"]:
             d = stats.get(k)
             if isinstance(d, dict) and not "elapsed" in d:
                 d["elapsed"] = None
@@ -494,16 +503,14 @@ class CCDataSource(DataSource):
             if "cmp2dark" in stats:
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
-            if "cc_dark" in stats:
-                summary["dark_stats"]["acted_on"] = stats["cc_dark"].get("confirmed_dark_files")
-                summary["dark_stats"]["action_status"] = stats["cc_dark"].get("status", "").lower() or None
-                summary["dark_stats"]["aborted_reason"] = stats["cc_dark"].get("aborted_reason", "")
+            if self.DarkSection in stats:
+                summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
+                summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
+                summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")
                 
-            if "cc_miss" in stats:
-                summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_miss_files")
-                if summary["missing_stats"]["acted_on"] is None:
-                    summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_dark_files")       # there used to be a typo in older versions 
-                summary["missing_stats"]["action_status"] = stats["cc_miss"].get("status", "").lower() or None
-                summary["missing_stats"]["aborted_reason"] = stats["cc_miss"].get("aborted_reason", "")
-        #print("summary:", summary)
+            if self.MissingSection in stats:
+                summary["missing_stats"]["acted_on"] = stats[self.MissingSection].get("confirmed_miss_files", 
+                                stats[self.MissingSection].get("confirmed_missing_files"))
+                summary["missing_stats"]["action_status"] = stats[self.MissingSection].get("status", "").lower() or None
+                summary["missing_stats"]["aborted_reason"] = stats[self.MissingSection].get("aborted_reason", "")
         return summary
