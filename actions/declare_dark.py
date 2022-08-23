@@ -5,7 +5,7 @@ from run import CCRun
 from stats import Stats
 from config import ActionConfiguration
 
-Version = "1.1"
+Version = "1.2"
 
 Usage = """
 python declare_dark.py [options] <storage_path> <rse>
@@ -24,7 +24,7 @@ python declare_dark.py [options] <storage_path> <rse>
     -n <number>                 - min number of runs to use to produce the confirmed dark list, default = 3
 """
 
-def dark_action(storage_dir, rse, window, min_age_first, max_age_last, min_runs, out, stats, stats_key):
+def dark_action(storage_dir, rse, out, stats, stats_key):
     t0 = time.time()
     my_stats = {
         "version": Version,
@@ -36,7 +36,14 @@ def dark_action(storage_dir, rse, window, min_age_first, max_age_last, min_runs,
         "confirmed_dark_files": None,
         "aborted_reason": None,
         "error": None,
-        "runs_compared": None
+        "runs_compared": None,
+        "configuration": {
+            "confirmation_window": window,
+            "min_age_first_run": min_age_first,
+            "max_age_last_run": max_age_last,
+            "min_runs": min_runs,
+            "max_fraction": fraction
+        }
     }
 
     if stats is not None:
@@ -176,7 +183,7 @@ if "-v" in opts:
     print("  max dark files fraction:     ", fraction)
     print()
 
-final_stats = dark_action(storage_path, rse, window, min_age_first, max_age_last, min_runs, out, stats, stats_key)
+final_stats = dark_action(storage_path, rse, out, stats, stats_key)
 
 print("Final status:", final_stats["status"])
 if final_stats["status"] == "aborted":

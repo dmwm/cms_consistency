@@ -5,7 +5,7 @@ from run import CCRun
 from stats import Stats
 from config import ActionConfiguration
 
-Version = "1.1"
+Version = "1.2"
 
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
@@ -33,7 +33,11 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
         "detected_missing_files": None,
         "confirmed_missing_files": None,
         "aborted_reason": None,
-        "error": None
+        "error": None,
+        "configuration": {
+            "max_age_last_run": age_last,
+            "max_fraction": fraction
+        }
     }
 
     if stats is not None:
