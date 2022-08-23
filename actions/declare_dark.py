@@ -5,6 +5,7 @@ from run import CCRun
 from stats import Stats
 from config import ActionConfiguration
 
+Version = "1.1"
 
 Usage = """
 python declare_dark.py [options] <storage_path> <rse>
@@ -26,6 +27,7 @@ python declare_dark.py [options] <storage_path> <rse>
 def dark_action(storage_dir, rse, window, min_age_first, max_age_last, min_runs, out, stats, stats_key):
     t0 = time.time()
     my_stats = {
+        "version": Version,
         "elapsed": None,
         "start_time": t0,
         "end_time": None,

@@ -5,6 +5,8 @@ from run import CCRun
 from stats import Stats
 from config import ActionConfiguration
 
+Version = "1.1"
+
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
     -s <stats file>             - file to write stats to
@@ -23,6 +25,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
     
     t0 = time.time()
     my_stats = {
+        "version": Version,
         "elapsed": None,
         "start_time": t0,
         "end_time": None,
