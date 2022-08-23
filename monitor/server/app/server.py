@@ -379,7 +379,7 @@ class Handler(WPHandler):
                 if prev_run is not None:
                     data[rse] = dict(
                             nmissing = last_stats["cmp3"]["missing"],
-                            ndark = last_stats["cmp3"]["dark"]
+                            ndark = last_stats["cmp3"]["dark"],
                             prev_run=prev_run,
                             nmissing_old=len(missing_old), 
                             nmissing_new=len(missing_new), 
