@@ -45,12 +45,17 @@
         return color;
     }
     
+    function display_current_old(element_id, current, old)
+    {
+        var td = document.getElementById(element_id);
+        td.innerHTML = '' + current + (old ? '(' + old + ')' : '');
+        if( old ) td.className = "with_old";
+    }
+    
     function display_diffs(rse, prev_run, counts)
     {
-        var td_missing = document.getElementById("nmissing_"+rse+"_td");
-        var td_dark = document.getElementById("ndark_"+rse+"_td");
-        td_missing.innerHTML = '' + counts.nmissing + '(' + counts.nmissing_old + ')';
-        td_dark.innerHTML = '' + counts.ndark + '(' + counts.ndark_old + ')';
+        display_current_old("nmissing_"+rse+"_td", counts.nmissing, counts.nmissing_old);
+        display_current_old("ndark_"+rse+"_td", counts.ndark, counts.ndark_old);
     }
     
     function display_um_status_chart(id_prefix, status_list)
