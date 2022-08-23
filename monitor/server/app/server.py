@@ -112,8 +112,8 @@ class Handler(WPHandler):
         #
         # list available RSEs
         #
-        cc_data_source = self.App.CCDataSource
-        um_data_source = self.App.UMDataSource
+        cc_data_source = self.CCDataSource
+        um_data_source = self.UMDataSource
 
         cc_stats = cc_data_source.latest_stats_per_rse()
         cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
@@ -154,7 +154,7 @@ class Handler(WPHandler):
         
     def probe(self, request, relpath, **args):
         return self.CCDataSource.status(), "text/plain"
-        return "OK" if self.App.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
+        return "OK" if self.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
         
     def raw_stats(self, request, relpath, rse=None, run=None, **args):
         runs = self.CCDataSource.list_runs(rse)
@@ -220,7 +220,7 @@ class Handler(WPHandler):
         return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
         
     def ___show_rse(self, request, relpath, rse=None, **args):
-        data_source = self.App.CCDataSource
+        data_source = self.CCDataSource
         runs = data_source.list_runs(rse)
         runs = sorted(runs, reverse=True)
         
@@ -250,7 +250,7 @@ class Handler(WPHandler):
                 }
             ))
         
-        um_data_source = self.App.UMDataSource
+        um_data_source = self.UMDataSource
         um_runs = um_data_source.all_stats_for_rse(rse)
         um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
         um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
@@ -431,7 +431,7 @@ class Handler(WPHandler):
         return read_file(f), "text/plain"
         
     def lists_diffs(self, request, relpath, rses=None, **args):
-        cc_data_source = self.App.CCDataSource
+        cc_data_source = self.CCDataSource
         if rses is None:
             rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
         else:
