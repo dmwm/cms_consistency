@@ -194,7 +194,7 @@ if "-v" in options:
 print("Final status:", status, file=sys.stderr)
 if status == "aborted":
     print("  Reason:", reason, file=sys.stderr)
-elif status != "done"
+elif status != "done":
     print("  Error:", error, file=sys.stderr)
 
 if status != "done":
