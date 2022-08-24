@@ -126,7 +126,7 @@ config = DBDumpConfiguration(rse_name, opts["-c"])
 stats = None if stats_file is None else Stats(stats_file)
 
 if stats:
-    stats.update(stats_key, {
+    stats.update_section(stats_key, {
         "status":"started",
         "version":Version,
         "rse":rse_name,
@@ -253,7 +253,7 @@ except:
     lines = traceback.format_exc().split("\n")
     t1 = time.time()
     if stats is not None:
-        stats.update(stats_key, {
+        stats.update_section(stats_key, {
             "status":"failed",
             "end_time":t1,
             "exception":lines,
@@ -262,7 +262,7 @@ except:
     raise
 else:    
     if stats is not None:
-        stats.update(stats_key, {
+        stats.update_section(stats_key, {
             "status":"done",
             "end_time":t1,
             "files":n,

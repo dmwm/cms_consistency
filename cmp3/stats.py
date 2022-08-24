@@ -43,8 +43,14 @@ class Stats(object):
                 data[k] = v[:]
             else:
                 data[k] = v
+                
+    def update(self, __update=None, **kw):
+        if __update is None:    __update = kw
+        assert isinstance(__update, dict)
+        self.__update_deep(self.Data, __update)
+        self.save()        
 
-    def update(self, section, __update=None, **kw):
+    def update_section(self, section, __update=None, **kw):
         if __update is None:    __update = kw
         assert isinstance(__update, dict)
         self.__update_deep(self.Data.setdefault(section, {}), __update)
@@ -61,7 +67,7 @@ class Stats(object):
         data = json.loads(data or "{}")
         data.update(self.Data)
         open(self.Path, "w").write(json.dumps(data, indent=4))
-        
+
 
 def write_stats(my_stats, stats_file, stats_key = None):
     if stats_file:

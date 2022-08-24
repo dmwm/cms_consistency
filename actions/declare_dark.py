@@ -47,7 +47,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
     }
 
     if stats is not None:
-        stats.update(stats_key, my_stats)
+        stats.update_section(stats_key, my_stats)
 
     runs = CCRun.runs_for_rse(storage_path, rse)
     now = datetime.now()
@@ -128,7 +128,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
     )
 
     if stats is not None:
-        stats.update(stats_key, my_stats)
+        stats.update_section(stats_key, my_stats)
     
     return my_stats
 

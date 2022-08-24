@@ -41,7 +41,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
     }
 
     if stats is not None:
-        stats.update(stats_key, my_stats)
+        stats.update_section(stats_key, my_stats)
 
     now = datetime.now()
     latest_run = list(CCRun.runs_for_rse(storage_path, rse))[-1]
@@ -95,7 +95,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
     )
 
     if stats is not None:
-        stats.update(stats_key, my_stats)
+        stats.update_section(stats_key, my_stats)
 
     return my_stats
 

@@ -635,7 +635,7 @@ def scan_root(rse, config, client, my_stats, stats, stats_key,
 
     my_stats["scanning"] = root_stats
     if stats is not None:
-        stats.update(stats_key, my_stats)
+        stats.update_section(stats_key, my_stats)
 
     ignore_list = config.ignore_subdirs(root)
 
