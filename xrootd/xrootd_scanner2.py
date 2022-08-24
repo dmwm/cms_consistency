@@ -258,6 +258,7 @@ class Prescanner(Primitive):
             return not self.Failed
 
     def __init__(self, server, is_redirector, roots, timeout, max_scanners):
+        Primitive.__init__(self)
         self.Good = []              # [client, ...]
         self.Failed = {}            # {root: error}
         self.Queue = TaskQueue(max_scanners, stagger=0.5, delegate=self,
