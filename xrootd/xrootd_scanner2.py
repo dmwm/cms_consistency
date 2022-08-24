@@ -163,7 +163,6 @@ class XRootDClient(Primitive):
         #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
         location = self.absolute_path(location)
         server = self.next_server()
-        absolute_path = 
         lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)        
         files = []
         dirs = []
