@@ -812,12 +812,17 @@ if __name__ == "__main__":
     t0 = time.time()
     good_roots, failed_roots = Prescanner(server, config.ServerIsRedirector, root_paths, config.ScannerTimeout, max_scanners).run()
     t1 = time.time()
+    
+    if failed_roots:
+        print("Failed roots:", file=sys.stderr)
+        for root, error in failed_roots:
+            print(root, error)
 
     my_stats["roots"] = [
         {
             "root": root,
             "start_time":t0,
-            "timeout":timeout,
+            "timeout":config.ScannerTimeout,
             "root_failed": True,
             "error": error,
             "end_time":t1,
