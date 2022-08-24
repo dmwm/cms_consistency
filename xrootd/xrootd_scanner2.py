@@ -820,11 +820,6 @@ if __name__ == "__main__":
     good_roots, failed_roots = Prescanner(server, config.ServerIsRedirector, root_paths, config.ScannerTimeout, max_scanners).run()
     t1 = time.time()
     
-    if failed_roots:
-        print("Failed roots:", file=sys.stderr)
-        for root, error in failed_roots:
-            print(root, error)
-
     my_stats["roots"] = [
         {
             "root": root,
@@ -842,6 +837,7 @@ if __name__ == "__main__":
     all_roots_failed = not good_roots
     for client in good_roots:
         try:
+            print(f"Scanning root {client.Root} ...", file=sys.stderr)
             failed = scan_root(rse, config, client, my_stats, stats, stats_key, recursive_threshold, 
                     max_scanners, out_list, dir_list,
                     purge_empty_dirs, ignore_directory_scan_errors, include_sizes)
