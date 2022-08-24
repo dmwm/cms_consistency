@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="3.0"
+version="3.1"
 
 echo site_cmp3 version: $version
 
@@ -172,16 +172,3 @@ end_time=`date -u +%s`
 $python cmp3/stats.py stats.json << _EOF_
 { "end_time":${end_time}.0 }
 _EOF_
-
-
-
-
-
-
-
-
-
-
-
-
-

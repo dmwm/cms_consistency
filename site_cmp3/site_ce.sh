@@ -172,16 +172,3 @@ end_time=`date -u +%s`
 $python cmp3/stats.py stats.json << _EOF_
 { "end_time":${end_time}.0 }
 _EOF_
-
-
-
-
-
-
-
-
-
-
-
-
-
