@@ -242,7 +242,7 @@ class Prescanner(Primitive):
     class PrescannerTask(Task):
 
         def __init__(self, server, is_redirector, root, timeout):
-            Task.__init__(self, name=f"RootPrescanner({client.Root})")
+            Task.__init__(self, name=f"RootPrescanner({root})")
             self.Client = None
             self.Server = server
             self.IsRedirector = is_redirector
