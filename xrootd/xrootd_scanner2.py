@@ -273,15 +273,15 @@ class Prescanner(Primitive):
     def taskEnded(self, queue, task, root_ok):
         if root_ok:
             self.Good.append(task.Client)
-            print(f"Root {self.Root} prescanned successfully", file=sys.stderr)
+            print(f"Root {task.Root} prescanned successfully", file=sys.stderr)
         else:
             self.Failed[task.Root] = task.Error
-            print(f"Root prescan for {self.Root} failed with error:", task.Error, file=sys.stderr)
+            print(f"Root prescan for {task.Root} failed with error:", task.Error, file=sys.stderr)
 
     @synchronized
     def taskFailed(self, queue, task, exc_type, exc_value, tb):
         self.Failed[task.Root] = "Exception: " + "\n".join(traceback.format_exception_only(exc_type, exc_value))
-        print(f"Root prescan for {self.Root} failed with exception:", self.Failed[task.Root], file=sys.stderr)
+        print(f"Root prescan for {task.Root} failed with exception:", self.Failed[task.Root], file=sys.stderr)
 
 class Scanner(Task):
     
