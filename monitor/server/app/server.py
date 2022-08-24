@@ -367,9 +367,8 @@ class Handler(WPHandler):
     def stats(self, request, relpath, rse=None, run=None, **args):
         if not rse or not run:
             return 400, "Missing RSE or run"
-        stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
+        stats, ndark, nmissing, confirmed_dark = self.CCDataSource.get_stats(rse, run)
         return json.dumps(stats, indent=4, sort_keys=True), "text/json"
-        
 
     def lists_diffs(self, request, relpath, rses=None, **args):
         cc_data_source = self.CCDataSource
