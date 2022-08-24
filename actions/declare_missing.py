@@ -41,7 +41,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
     }
 
     if stats is not None:
-        stats[stats_key] = my_stats
+        stats.update(stats_key, my_stats)
 
     now = datetime.now()
     latest_run = list(CCRun.runs_for_rse(storage_path, rse))[-1]
@@ -86,17 +86,17 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
                     error = "Rucio declaration error: {e}"
 
     t1 = time.time()
-    my_stats.update(dict(
+    my_stats.update(
         elapsed = t1-t0,
         end_time = t1,
         status = status,
         aborted_reason = aborted_reason,
         error = error
-    ))
+    )
 
     if stats is not None:
-        stats[stats_key] = my_stats
-    
+        stats.update(stats_key, my_stats)
+
     return my_stats
 
 if not sys.argv[1:] or sys.argv[1] == "help":
@@ -145,7 +145,9 @@ final_stats = missing_action(storage_path, rse, scope, age_last, out, stats, sta
 
 print("Final status:", final_stats["status"])
 if final_stats["status"] == "aborted":
-    print("Reason:", final_stats["aborted_reason"])
+    print("  Reason:", final_stats.get("aborted_reason", ""))
+elif final_stats["status"] != "done":
+    print("  Error:", final_stats.get("error", ""))
 
 if "-v" in opts:
     print("\nFinal stats:")

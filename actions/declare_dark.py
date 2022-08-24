@@ -47,7 +47,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
     }
 
     if stats is not None:
-        stats[stats_key] = my_stats
+        stats.update(stats_key, my_stats)
 
     runs = CCRun.runs_for_rse(storage_path, rse)
     now = datetime.now()
@@ -75,7 +75,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
         detected_dark_count = latest_run.dark_file_count()
         print("Runs in the confirmation history:", len(recent_runs))
         print("First run:", first_run.Run, file=sys.stderr)
-        print("Latest run:", latest_run.Run, file=sys.stderr)
+        print("Last run:", latest_run.Run, file=sys.stderr)
         print("  Files in RSE:", num_scanned, file=sys.stderr)
         print("  Dark files:", detected_dark_count, file=sys.stderr)
 
@@ -117,7 +117,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
                             status = "failed"
 
     t1 = time.time()
-    my_stats.update(dict(
+    my_stats.update(
         elapsed = t1-t0,
         end_time = t1,
         status = status,
@@ -125,14 +125,10 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
         detected_dark_files = detected_dark_count,
         confirmed_dark_files = confirmed_dark_count,
         aborted_reason = aborted_reason
-    ))
-    
-    print("status:", status, file=sys.stderr)
-    if status == "abortded":
-        print("reason:", aborted_reason, file=sys.stderr)
+    )
 
     if stats is not None:
-        stats[stats_key] = my_stats
+        stats.update(stats_key, my_stats)
     
     return my_stats
 
@@ -184,23 +180,23 @@ if "-v" in opts:
     print("  max dark files fraction:     ", fraction)
     print()
 
-final_stats = dark_action(storage_path, rse, out, stats, stats_key)
+run_stats = dark_action(storage_path, rse, out, stats, stats_key)
+status = run_stats["status"]
+error = run_stats.get("error")
+aborted_reason = run_stats.get("aborted_reason")
 
-print("Final status:", final_stats["status"])
-if final_stats["status"] == "aborted":
-    print("Reason:", final_stats["aborted_reason"])
-
-if "-v" in opts:
+if "-v" in options:
     print("\nFinal stats:")
-    for k, v in sorted(final_stats.items()):
-        print(f"  {k}:\t{v}")
+    for k, v in sorted(run_stats.items()):
+        print("%s = %s" % (k, v))
     print()
 
-if final_stats["status"] != "done":
+print("Final status:", status, file=sys.stderr)
+if status == "aborted":
+    print("  Reason:", reason, file=sys.stderr)
+elif status != "done"
+    print("  Error:", error, file=sys.stderr)
+
+if status != "done":
     sys.exit(1)
-
-
-
-
-
 
