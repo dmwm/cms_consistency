@@ -360,6 +360,7 @@ class ScannerMaster(PyThread):
         self.RecursiveThreshold = recursive_threshold
         self.Client = client
         self.Root = client.Root
+        self.AbsoluteRootPath = client.absolute_path(client.Root)
         self.Server = server
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
@@ -426,8 +427,8 @@ class ScannerMaster(PyThread):
             
     def addDirectory(self, path, scan, allow_recursive):
         if scan and not self.Failed:
-                assert path.startswith(self.Root)
-                relpath = path[len(self.Root):]
+                assert path.startswith(self.AbsoluteRootPath)
+                relpath = path[len(self.AbsoluteRootPath):]
                 while relpath and relpath[0] == '/':
                     relpath = relpath[1:]
                 while relpath and relpath[-1] == '/':
