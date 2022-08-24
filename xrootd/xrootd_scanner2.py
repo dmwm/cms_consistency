@@ -71,13 +71,17 @@ class RMDir(Task):
 
 class XRootDClient(Primitive):
 
-    def __init__(self, server, is_redirector, root, timeout):
+    def __init__(self, server, server_root, is_redirector, root, timeout):
         Primitive.__init__(self, name=f"XRootDClient({root})")
         self.Root = root
         self.Timeout = timeout
         self.Server = server 
+        self.ServerRoot = server_root
         self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
         self.IServer = 0
+
+    def absolute_path(self, path):
+        return canonic_path(path if path.startswith("/") else self.ServerRoot + "/" + path)
         
     @synchronized
     def next_server(self):
@@ -155,16 +159,11 @@ class XRootDClient(Primitive):
                 servers = lst
         return servers
 
-    def location_exists(self, location):
-        status, reason, dirs, files = self.ls(location, False, False)
-        return status == "OK", reason or status
-        
-    def root_exists(self):
-        return self.location_exists(self.Root)
-
     def ls(self, location, recursive, with_meta):
         #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
+        location = self.absolute_path(location)
         server = self.next_server()
+        absolute_path = 
         lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)        
         files = []
         dirs = []
@@ -241,10 +240,11 @@ class Prescanner(Primitive):
 
     class PrescannerTask(Task):
 
-        def __init__(self, server, is_redirector, root, timeout):
+        def __init__(self, server, server_root, is_redirector, root, timeout):
             Task.__init__(self, name=f"RootPrescanner({root})")
             self.Client = None
             self.Server = server
+            self.ServerRoot = server_root
             self.IsRedirector = is_redirector
             self.Root = root
             self.Timeout = timeout
@@ -252,17 +252,17 @@ class Prescanner(Primitive):
             self.Error = None
 
         def run(self):
-            self.Client = XRootDClient(self.Server, self.IsRedirector, self.Root, self.Timeout)
-            status, self.Error, _, _ = self.Client.ls(self.Client.Root, False, False)
+            self.Client = XRootDClient(self.Server, self.ServerRoot, self.IsRedirector, self.Root, self.Timeout)
+            status, self.Error, _, _ = self.Client.ls(self.Root, False, False)
             self.Failed = status != "OK"
             return not self.Failed
 
-    def __init__(self, server, is_redirector, roots, timeout, max_scanners):
+    def __init__(self, server, server_root, is_redirector, roots, timeout, max_scanners):
         Primitive.__init__(self)
         self.Good = []              # [client, ...]
         self.Failed = {}            # {root: error}
         self.Queue = TaskQueue(max_scanners, stagger=0.5, delegate=self,
-            tasks = [self.PrescannerTask(server, is_redirector, root, timeout) for root in roots]
+            tasks = [self.PrescannerTask(server, server_root, is_redirector, root, timeout) for root in roots]
         )
 
     def run(self):
@@ -388,9 +388,6 @@ class ScannerMaster(PyThread):
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
 
-    def root_exists(self):
-        return self.Client.root_exists()
-        
     def run(self):
         #
         # scan Root non-recursovely first, if failed, return immediarely
@@ -613,10 +610,10 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
         path = rewrite_path.sub(rewrite_out, path)   
     return path
 
-def scan_root(rse, config, client, my_stats, stats, stats_key, 
-    recursive_threshold, max_scanners, file_list, dir_list,
-    purge_empty_dirs, ignore_failed_directories, include_sizes):
-    
+def scan_root(rse, config, client, my_stats, stats, stats_key,
+            recursive_threshold, max_scanners, file_list, dir_list,
+            purge_empty_dirs, ignore_failed_directories, include_sizes):
+    root = client.Root
     failed = root_failed = False
     
     timeout = override_timeout or config.ScannerTimeout
@@ -656,7 +653,7 @@ def scan_root(rse, config, client, my_stats, stats, stats_key,
         assert rewrite_out is not None
         rewrite_path = re.compile(rewrite_path)
 
-    print("Starting scan of %s:%s with:" % (server, root_path))
+    print("Starting scan of %s:%s with:" % (server, root))
     print("  Include sizes       = %s" % include_sizes)
     print("  Recursive threshold = %d" % (recursive_threshold,))
     print("  Max scanner threads = %d" % max_scanners)
@@ -817,7 +814,7 @@ if __name__ == "__main__":
     root_paths = [canonic_path(root if root.startswith("/") else server_root + "/" + root) for root in config.RootList]
     
     t0 = time.time()
-    good_roots, failed_roots = Prescanner(server, config.ServerIsRedirector, root_paths, config.ScannerTimeout, max_scanners).run()
+    good_roots, failed_roots = Prescanner(server, server_root, config.ServerIsRedirector, config.RootList, config.ScannerTimeout, max_scanners).run()
     t1 = time.time()
     
     my_stats["roots"] = [
