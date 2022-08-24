@@ -237,6 +237,44 @@ class XRootDClient(Primitive):
                 print("     ", f)
         
         return status, reason, dirs, files
+        
+class Prescanner(Primitive):
+
+    class PrescannerTask(Task):
+
+        def __init__(self, server, is_redirector, root, timeout):
+            Task.__init__(self, name=f"RootPrescanner({client.Root})")
+            self.Client = None
+            self.Server = server
+            self.IsRedirector = is_redirector
+            self.Root = root
+            self.Timeout = timeout
+            self.Failed = False
+            self.Error = None
+
+        def run(self):
+            self.Client = XRootDClient(self.Server, self.IsRedirector, self.Root, self.Timeout)
+            status, self.Error, _, _ = self.Client.ls(self.Client.Root, False, False)
+            self.Failed = status != "OK"
+            return not self.Failed
+
+    def __init__(self, server, is_redirector, roots, timeout, max_scanners):
+        self.Good = []              # [client, ...]
+        self.Failed = {}            # {root: error}
+        self.Queue = TaskQueue(max_scanners, stagger=0.5, delegate=self,
+            tasks = [PrescannerTask(server, is_redirector, root, timeout) for root in roots]
+        )
+
+    def run(self):
+        self.Qeueue.waitUntilEmpty()
+        return self.Good, self.Failed
+
+    @synchronized
+    def taskEnded(self, queue, task, root_ok):
+        if root_ok:
+            self.GoodRoots.append(task.Client)
+        else:
+            self.Failed[task.Root] = task.Error
 
 class Scanner(Task):
     
@@ -310,12 +348,12 @@ class ScannerMaster(PyThread):
     MAX_RECURSION_FAILED_COUNT = 5
     REPORT_INTERVAL = 10.0
     
-    def __init__(self, server, is_redirector, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
+    def __init__(self, server, is_redirector, client, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
                 include_sizes=True, ignore_subdirs=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
-        self.Root = canonic_path(root)
-        self.Client = XRootDClient(server, is_redirector, self.Root, timeout)
+        self.Client = client
+        self.Root = client.Root
         self.Server = server
         self.MaxScanners = max_scanners
         self.Results = DEQueue()
@@ -323,7 +361,6 @@ class ScannerMaster(PyThread):
         self.Done = False
         self.Error = None
         self.Failed = False
-        self.RootFailed = False
         self.Directories = set()
         self.RecursiveFailed = {}       # parent path -> count
         self.Errors = {}                # location -> count
@@ -569,8 +606,8 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
         path = rewrite_path.sub(rewrite_out, path)   
     return path
 
-def scan_root(rse, config, root, my_stats, stats, stats_key, 
-    override_recursive_threshold, override_max_scanners, file_list, dir_list,
+def scan_root(rse, config, client, my_stats, stats, stats_key, 
+    recursive_threshold, max_scanners, file_list, dir_list,
     purge_empty_dirs, ignore_failed_directories, include_sizes):
     
     failed = root_failed = False
@@ -578,8 +615,6 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
     timeout = override_timeout or config.ScannerTimeout
     server = config.Server
     server_root = config.ServerRoot
-    root_path = canonic_path(root if root.startswith("/") else server_root + "/" + root)
-    recursive_threshold = override_recursive_threshold or config.RecursionThreshold
     max_scanners = override_max_scanners or config.NWorkers
     ignore_subdirs = config.ignore_subdirs(root)
     is_redirector = config.ServerIsRedirector
@@ -600,121 +635,103 @@ def scan_root(rse, config, root, my_stats, stats, stats_key,
 
     ignore_list = config.ignore_subdirs(root)
 
-    master = ScannerMaster(server, is_redirector, root_path, recursive_threshold, max_scanners, timeout, quiet, display_progress,
+    master = ScannerMaster(server, is_redirector, client, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
             ignore_subdirs = ignore_list)
 
-    exists, reason = master.root_exists()
+    remove_prefix = config.RemovePrefix
+    add_prefix = config.AddPrefix
+    path_filter = None          # -- obsolete -- config.scanner_filter(rse)
+    #if path_filter is not None:
+    #    path_filter = re.compile(path_filter)
+    rewrite_path, rewrite_out = None, None      # -- obsolete -- config.scanner_rewrite(rse)
+    if rewrite_path is not None:
+        assert rewrite_out is not None
+        rewrite_path = re.compile(rewrite_path)
+
+    print("Starting scan of %s:%s with:" % (server, root_path))
+    print("  Include sizes       = %s" % include_sizes)
+    print("  Recursive threshold = %d" % (recursive_threshold,))
+    print("  Max scanner threads = %d" % max_scanners)
+    print("  Timeout             = %s" % timeout)
+    if ignore_list:
+        print("  Ignore list:")
+        for p in ignore_list:
+            print("    ", p)
+
+    master.start()
+
+    path_prefix = server_root
+    if not path_prefix.endswith("/"):
+        path_prefix += "/"
+
+    for t, path in master.paths():
+        if t == 'f':
+            path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
+            if path:    
+                file_list.add(path)             
+        elif t == 'd' and dir_list is not None:
+            path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
+            if path:
+                dir_list.add(path) 
+                
+    if purge_empty_dirs:
+        master.purgeEmptyDirs()
+
+    if display_progress:
+        master.close_progress()
+
+    if master.Failed:
+        sys.stderr.write("Scanner failed to scan %s: %s\n" % (root, master.Error))
+
+    if master.GaveUp:
+        sys.stderr.write("Scanner failed to scan the following %d locations:\n" % (len(master.GaveUp),))
+        for path, error in sorted(list(master.GaveUp.items())):
+            sys.stderr.write(f"{path}: {error}\n")
+
+    print("Files:                %d" % (master.NFiles,))
+    print("Files ignored:        %d" % (master.IgnoredFiles,))
+    print("Directories found:    %d" % (master.NToScan,))
+    print("Directories ignored:  %d" % (master.IgnoredDirs,))
+    print("Directories scanned:  %d" % (master.NScanned,))
+    print("Directories:          %d" % (master.NDirectories,))
+    print("  empty directories:  %d" % (len(master.EmptyDirs,)))
+    print("Failed directories:   %d" % (len(master.GaveUp),))
+    if include_sizes:
+        print("Total size:           %.3f GB" % (master.TotalSize/GB))
     t1 = time.time()
-    if not exists:
-        print("Root %s does not exist: %s" % (root_path, reason))
-        root_stats.update({
-            "root_failed": True,
-            "error": reason,
-            "failed_subdirectories": {},
-            "files": 0,
-            "directories": 0,
-            "empty_directories":0,
-            "end_time":t1,
-            "elapsed_time": t1-t0
-        })
-        root_failed = True
-    else:
-        remove_prefix = config.RemovePrefix
-        add_prefix = config.AddPrefix
-        path_filter = None          # -- obsolete -- config.scanner_filter(rse)
-        #if path_filter is not None:
-        #    path_filter = re.compile(path_filter)
-        rewrite_path, rewrite_out = None, None      # -- obsolete -- config.scanner_rewrite(rse)
-        if rewrite_path is not None:
-            assert rewrite_out is not None
-            rewrite_path = re.compile(rewrite_path)
-
-        print("Starting scan of %s:%s with:" % (server, root_path))
-        print("  Include sizes       = %s" % include_sizes)
-        print("  Recursive threshold = %d" % (recursive_threshold,))
-        print("  Max scanner threads = %d" % max_scanners)
-        print("  Timeout             = %s" % timeout)
-        if ignore_list:
-            print("  Ignore list:")
-            for p in ignore_list:
-                print("    ", p)
-
-        master.start()
-
-        path_prefix = server_root
-        if not path_prefix.endswith("/"):
-            path_prefix += "/"
-
-        for t, path in master.paths():
-            if t == 'f':
-                path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
-                if path:    
-                    file_list.add(path)             
-            elif t == 'd' and dir_list is not None:
-                path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
-                if path:
-                    dir_list.add(path) 
-                    
-        if purge_empty_dirs:
-            master.purgeEmptyDirs()
-
-        if display_progress:
-            master.close_progress()
-
-        if master.Failed:
-            sys.stderr.write("Scanner failed to scan %s: %s\n" % (root, master.Error))
+    elapsed = int(t1 - t0)
+    s = elapsed % 60
+    m = elapsed // 60
+    print("Elapsed time:         %dm %02ds\n" % (m, s))
     
-        if master.GaveUp:
-            sys.stderr.write("Scanner failed to scan the following %d locations:\n" % (len(master.GaveUp),))
-            for path, error in sorted(list(master.GaveUp.items())):
-                sys.stderr.write(f"{path}: {error}\n")
+    if (not ignore_failed_directories) and master.GaveUp:
+        failed = True
 
-        print("Files:                %d" % (master.NFiles,))
-        print("Files ignored:        %d" % (master.IgnoredFiles,))
-        print("Directories found:    %d" % (master.NToScan,))
-        print("Directories ignored:  %d" % (master.IgnoredDirs,))
-        print("Directories scanned:  %d" % (master.NScanned,))
-        print("Directories:          %d" % (master.NDirectories,))
-        print("  empty directories:  %d" % (len(master.EmptyDirs,)))
-        print("Failed directories:   %d" % (len(master.GaveUp),))
-        if include_sizes:
-            print("Total size:           %.3f GB" % (master.TotalSize/GB))
-        t1 = time.time()
-        elapsed = int(t1 - t0)
-        s = elapsed % 60
-        m = elapsed // 60
-        print("Elapsed time:         %dm %02ds\n" % (m, s))
-        
-        if (not ignore_failed_directories) and master.GaveUp:
-            failed = True
+    total_size = None if failed else master.TotalSize/GB
 
-        total_size = None if failed else master.TotalSize/GB
+    root_stats.update({
+        "root_failed": False,
+        "error": master.Error,
+        "failed_subdirectories": master.GaveUp,
+        "files": master.NFiles,
+        "directories": master.NDirectories,
+        "empty_directories": len(master.EmptyDirs),
+        "directories_ignored": master.IgnoredDirs,
+        "files_ignored": master.IgnoredFiles,
+        "end_time":t1,
+        "elapsed_time": t1-t0,
+        "total_size_gb": total_size,
+        "ignored_subdirectories": ignore_subdirs
+    })
 
-        root_stats.update({
-            "root_failed": master.RootFailed,
-            "error": master.Error,
-            "failed_subdirectories": master.GaveUp,
-            "files": master.NFiles,
-            "directories": master.NDirectories,
-            "empty_directories": len(master.EmptyDirs),
-            "directories_ignored": master.IgnoredDirs,
-            "files_ignored": master.IgnoredFiles,
-            "end_time":t1,
-            "elapsed_time": t1-t0,
-            "total_size_gb": total_size,
-            "ignored_subdirectories": ignore_subdirs
-        })
-
-        root_failed = master.RootFailed
-            
     del my_stats["scanning"]
     my_stats["roots"].append(root_stats)
     if stats is not None:
         stats[stats_key] = my_stats
         if failed:
             stats["error"] = root_stats.get("error")
-    return failed, root_failed
+    return failed
     
 if __name__ == "__main__":
     import getopt, sys, time
@@ -788,14 +805,34 @@ if __name__ == "__main__":
     if stats is not None:
         stats[stats_key] = my_stats
     
+    max_scanners = override_max_scanners or config.NWorkers
+    recursive_threshold = override_recursive_threshold or config.RecursionThreshold
+    root_paths = [canonic_path(root if root.startswith("/") else server_root + "/" + root) for root in config.RootList]
+    
+    t0 = time.time()
+    good_roots, failed_roots = Prescanner(server, config.ServerIsRedirector, root_paths, config.ScannerTimeout, max_scanners).run()
+    t1 = time.time()
+
+    my_stats["roots"] = [
+        {
+            "root": root,
+            "start_time":t0,
+            "timeout":timeout,
+            "root_failed": True,
+            "error": error,
+            "end_time":t1,
+            "elapsed_time": t1-t0
+        }
+        for root, error in failed_roots.items()
+    ]
+
     failed = False
-    all_roots_failed = True
-    for root in config.RootList:
+    all_roots_failed = not good_roots
+    for client in good_roots:
         try:
-            failed, root_failed = scan_root(rse, config, root, my_stats, stats, stats_key, override_recursive_threshold, 
-                    override_max_scanners, out_list, dir_list,
+            failed = scan_root(rse, config, client, my_stats, stats, stats_key, recursive_threshold, 
+                    max_scanners, out_list, dir_list,
                     purge_empty_dirs, ignore_directory_scan_errors, include_sizes)
-            all_roots_failed = all_roots_failed and root_failed
         except:
             exc = traceback.format_exc()
             print(exc)
@@ -804,10 +841,10 @@ if __name__ == "__main__":
             scanning["exception"] = lines
             scanning["exception_time"] = time.time()
             failed = True
-    
+
         if failed:
             break
-           
+
     out_list.close()
 
     if failed or all_roots_failed:
@@ -824,6 +861,3 @@ if __name__ == "__main__":
         sys.exit(1)
     else:
         sys.exit(0)
- 
-    
-        
