@@ -47,7 +47,7 @@ class Stats(object):
     def update(self, section, __update=None, **kw):
         if __update is None:    __update = kw
         assert isinstance(__update, dict)
-        self.__update_deep(self.Data.setdefault(section, {})), __update)
+        self.__update_deep(self.Data.setdefault(section, {}), __update)
         self.save()
         
     def save(self):
