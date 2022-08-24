@@ -65,18 +65,9 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
     if recent_runs:
         my_stats["runs_compared"] = [r.Run for r in recent_runs]
 
-    if len(recent_runs) < min_runs:
+    if not recent_runs or len(recent_runs) < min_runs:
         status = "aborted"
         aborted_reason = "not enough runs to produce confirmed dark list: %d, required: %d" % (len(recent_runs), min_runs)
-
-    elif recent_runs[-1].Timestamp < now - timedelta(days=max_age_last):
-        status = "aborted"
-        aborted_reason = "latest run too old: %s, required: < %d days old" % (latest_run.Timestamp, max_age_last)
-
-    elif recent_runs[0].Timestamp > now - timedelta(days=min_age_first):
-        status = "aborted"
-        aborted_reason = "oldest run too recent: %s, required: > %d days old" % (latest_run.Timestamp, min_age_first)
-
     else:
         first_run = recent_runs[0]
         latest_run = recent_runs[-1]
@@ -87,33 +78,42 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
         print("  Files in RSE:", num_scanned, file=sys.stderr)
         print("  Dark files:", detected_dark_count, file=sys.stderr)
 
-        confirmed = set(recent_runs[0].dark_files())
-        for run in recent_runs[1:]:
-            confirmed &= set(run.dark_files())
+        if latest_run.Timestamp < now - timedelta(days=max_age_last):
+            status = "aborted"
+            aborted_reason = "latest run too old: %s, required: < %d days old" % (latest_run.Timestamp, max_age_last)
 
-        confirmed_dark_count = len(confirmed)
-        ratio = confirmed_dark_count/num_scanned
-        print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
+        elif first_run.Timestamp > now - timedelta(days=min_age_first):
+            status = "aborted"
+            aborted_reason = "oldest run too recent: %s, required: > %d days old" % (latest_run.Timestamp, min_age_first)
+
+        else:
+            confirmed = set(recent_runs[0].dark_files())
+            for run in recent_runs[1:]:
+                confirmed &= set(run.dark_files())
+
+            confirmed_dark_count = len(confirmed)
+            ratio = confirmed_dark_count/num_scanned
+            print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
         
-        status = "done"
-        if confirmed:
-            if ratio > fraction:
-                status = "aborted"
-                aborted_reason = "too many dark files: %d (%.2f%% > %.2f%%)" % (confirmed_dark_count, ratio*100.0, fraction*100.0)
-            else:
-                if out is not None:
-                    for f in sorted(confirmed):
-                        print(f, file=out)
-                    if out is not sys.stdout:
-                        out.close()                 # yes, paranoia
+            status = "done"
+            if confirmed:
+                if ratio > fraction:
+                    status = "aborted"
+                    aborted_reason = "too many dark files: %d (%.2f%% > %.2f%%)" % (confirmed_dark_count, ratio*100.0, fraction*100.0)
                 else:
-                    try:
-                        from rucio.client.replicaclient import ReplicaClient
-                        client = ReplicaClient()
-                        client.quarantine_replicas(confirmed, rse=rse)
-                    except Exception as e:
-                        error = f"rucio error: {e}"
-                        status = "failed"
+                    if out is not None:
+                        for f in sorted(confirmed):
+                            print(f, file=out)
+                        if out is not sys.stdout:
+                            out.close()                 # yes, paranoia
+                    else:
+                        try:
+                            from rucio.client.replicaclient import ReplicaClient
+                            client = ReplicaClient()
+                            client.quarantine_replicas(confirmed, rse=rse)
+                        except Exception as e:
+                            error = f"rucio error: {e}"
+                            status = "failed"
 
     t1 = time.time()
     my_stats.update(dict(
