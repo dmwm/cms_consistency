@@ -126,7 +126,7 @@ config = DBDumpConfiguration(rse_name, opts["-c"])
 stats = None if stats_file is None else Stats(stats_file)
 
 if stats:
-    stats[stats_key] = {
+    stats.update(stats_key, {
         "status":"started",
         "version":Version,
         "rse":rse_name,
@@ -138,8 +138,8 @@ if stats:
         "exception":[],  
         "ignored_files":0,
         "ignore_list":None
-    }
-    
+    })
+
 try:
     Base = declarative_base()
     if dbconfig.Schema:
@@ -253,17 +253,16 @@ except:
     lines = traceback.format_exc().split("\n")
     t1 = time.time()
     if stats is not None:
-        stats[stats_key].update({
+        stats.update(stats_key, {
             "status":"failed",
             "end_time":t1,
             "exception":lines,
             "ignore_list":ignore_list
         })
-        stats.save()
     raise
 else:    
     if stats is not None:
-        stats[stats_key].update({
+        stats.update(stats_key, {
             "status":"done",
             "end_time":t1,
             "files":n,
@@ -272,6 +271,5 @@ else:
             "directories":len(dirs),
             "ignore_list":ignore_list
         })
-        stats.save()
 
 
