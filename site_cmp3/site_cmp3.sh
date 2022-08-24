@@ -176,6 +176,6 @@ $python actions/declare_dark.py    -o ${d_action_list} -c ${config_file} -s $sta
 
 end_time=`date -u +%s`
 
-$python cmp3/stats.py stats.json << _EOF_
+$python cmp3/stats.py $stats << _EOF_
 { "end_time":${end_time}.0 }
 _EOF_
