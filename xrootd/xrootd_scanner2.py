@@ -61,7 +61,6 @@ class RMDir(Task):
     TIMEOUT = 5
     
     def run(self):
-
         rmcommand = "xrdfs %s rmdir %s" % (self.Server, self.Location)
         try:    
             print(f"would delete directory {self.Location} with {rmcommand}")
@@ -262,7 +261,7 @@ class Prescanner(Primitive):
         self.Good = []              # [client, ...]
         self.Failed = {}            # {root: error}
         self.Queue = TaskQueue(max_scanners, stagger=0.5, delegate=self,
-            tasks = [PrescannerTask(server, is_redirector, root, timeout) for root in roots]
+            tasks = [self.PrescannerTask(server, is_redirector, root, timeout) for root in roots]
         )
 
     def run(self):
