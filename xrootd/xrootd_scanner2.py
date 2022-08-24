@@ -265,7 +265,7 @@ class Prescanner(Primitive):
         )
 
     def run(self):
-        self.Qeueue.waitUntilEmpty()
+        self.Queue.waitUntilEmpty()
         return self.Good, self.Failed
 
     @synchronized
