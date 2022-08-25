@@ -153,55 +153,6 @@ class Handler(WPHandler):
             raise ValueError(f"key error in: {r}")
         return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
         
-    def ___show_rse(self, request, relpath, rse=None, **args):
-        data_source = self.CCDataSource
-        runs = data_source.list_runs(rse)
-        runs = sorted(runs, reverse=True)
-        
-        cc_infos = []
-        for run in runs:
-            stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
-            summary = data_source.run_summary(stats)
-            start_time = summary["start_time"] or 0
-            status = summary["status"]
-            if status == "failed":
-                status = summary["failed"] + " failed"
-            running = summary.get("running")
-            cc_infos.append((
-                run, 
-                {
-                    "start_time":       start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running,
-
-                    "confirmed_dark":   summary["dark_stats"]["confirmed"], 
-                    "acted_dark":       summary["dark_stats"]["acted_on"], 
-                    "dark_status":      summary["dark_stats"]["action_status"],
-                    "dark_status_reason": summary["dark_stats"].get("aborted_reason", ""),
-                    
-                    "acted_missing":summary["missing_stats"]["acted_on"], 
-                    "missing_status":summary["missing_stats"]["action_status"],
-                    "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
-                    "start_time_milliseconds":int(start_time*1000)
-                }
-            ))
-        
-        um_data_source = self.UMDataSource
-        um_runs = um_data_source.all_stats_for_rse(rse)
-        um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
-        um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
-        
-        try:
-            for r in um_runs:
-                r["elapsed_time_hours"] = r["start_time_milliseconds"] = None
-                if r.get("start_time"):
-                    r["start_time_milliseconds"] = int(r["start_time"]*1000)
-                    if r.get("end_time"):
-                        r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
-                r.setdefault("total_size_gb", None)
-                
-        except KeyError:
-            raise ValueError(f"key error in: {r}")
-        return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
-
     def common_paths(self, lst, space="&nbsp;"):
         lst = sorted(lst)
         prev = []
@@ -276,6 +227,10 @@ class Handler(WPHandler):
     LIMIT = 1000
     
     def show_run(self, request, relpath, rse=None, run=None, **args):
+        if rse is None:
+            self.redirect("./index")
+        if run is None:
+            self.redirect(f"./show_rse?rse={rse}")
         data_source = self.CCDataSource
         stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
         summary = data_source.run_summary(stats)
