@@ -7,7 +7,7 @@ from part import PartitionedList
 import os
 from stats import Stats
 
-Version = "cmp5 1.0"
+Version = "cmp5 1.1"
 
 
 
@@ -65,6 +65,11 @@ def main():
                 "missing_list_file": None,
                 "dark_list_file": None,
                 
+                "status": "started"
+            }
+            
+        if False:
+            my_stats.update({
                 "b_m_prefix": b_m_prefix,
                 "b_d_prefix": b_d_prefix,
                 "a_m_prefix": a_m_prefix,
@@ -80,11 +85,9 @@ def main():
                 "b_m_nfiles": b_m_list.NParts,
                 "a_d_nfiles": a_d_list.NParts,
                 "b_d_nfiles": b_d_list.NParts,
-                
-                "r_nfiles": r_d_list.NParts,
-
-                "status": "started"
-            }
+            
+                "r_nfiles": r_d_list.NParts
+            })
         
         if stats is not None:
             stats[stats_key] = my_stats
