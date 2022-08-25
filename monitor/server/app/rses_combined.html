@@ -211,7 +211,7 @@
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             
             {% set dark_stats = cc_summary["dark_stats"] %}
-            <td id="ndark_{{rse}}_td"></td>
+            <td id="ndark_{{rse}}_td">{{dark_stats["detected"]|none_as_blank}}</td>
             <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
             <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
@@ -225,7 +225,7 @@
             </td>
             
             {% set missing_stats = cc_summary["missing_stats"] %}
-            <td id="nmissing_{{rse}}_td"></td>
+            <td id="nmissing_{{rse}}_td">{{missing_stats["detected"]|none_as_blank}}</td>
             <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{missing_stats['action_status']|none_as_blank}}">
                 {{missing_stats['action_status']|none_as_blank}}
