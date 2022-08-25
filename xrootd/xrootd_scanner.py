@@ -825,6 +825,8 @@ if __name__ == "__main__":
             "root_failed": True,
             "error": error,
             "end_time":t1,
+            "files": 0,
+            "directories": 0,
             "elapsed_time": t1-t0
         }
         for root, error in failed_roots.items()

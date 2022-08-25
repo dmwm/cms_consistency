@@ -322,8 +322,9 @@ class CCDataSource(DataSource):
                 if not "total_files" in scanner_stats:
                     nfiles = ndirectories = 0
                     for root_info in scanner_stats.get("roots", []):
-                        nfiles += root_info["files"]
-                        ndirectories += root_info["directories"]
+                        if not root_info.get("root_failed"):
+                            nfiles += root_info.get("files", 0)
+                            ndirectories += root_info.get("directories", 0)
                     scanner_stats["total_files"] = nfiles
                     scanner_stats["total_directories"] = ndirectories
             out = stats
