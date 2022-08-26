@@ -78,6 +78,7 @@ class XRootDClient(Primitive):
         self.Server = server 
         self.ServerRoot = server_root
         self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
+        print(f"Underlying servers for {server}:{server_root} root:{root}:", self.Servers)
         self.IServer = 0
 
     def absolute_path(self, path):
@@ -142,13 +143,15 @@ class XRootDClient(Primitive):
         return is_file, size, canonic_path(path)
 
     def get_underlying_servers(self, redirector, location, timeout):
+        # location is relative to site root
         # Query a redirector and return a single registered data server
         # On failure, return the original server address
 
         servers = [redirector]
+        absolute_location = self.absolute_path(location)
 
         retcode, out, err = ShellCommand.execute(
-                f"xrdfs {redirector} locate -m {location}", 
+                f"xrdfs {redirector} locate -m {absolute_location}", 
                 timeout=timeout
         )
 
