@@ -78,7 +78,7 @@ class XRootDClient(Primitive):
         self.Server = server 
         self.ServerRoot = server_root
         self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
-        print(f"Underlying servers for {server}:{server_root} root:{root}:", self.Servers)
+        #print(f"Underlying servers for {server}:{server_root} root:{root}:", self.Servers)
         self.IServer = 0
 
     def absolute_path(self, path):
