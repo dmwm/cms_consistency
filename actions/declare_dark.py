@@ -186,7 +186,7 @@ status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
 
-if "-v" in options:
+if "-v" in opts:
     print("\nFinal stats:")
     for k, v in sorted(run_stats.items()):
         print("%s = %s" % (k, v))
