@@ -174,7 +174,8 @@ class XRootDClient(Primitive):
             retcode, out, err = ShellCommand.execute(lscommand, timeout=self.Timeout)
             #print(f"retcode: {retcode}")
         except RuntimeError:
-            status = "timeout"
+            status = "failed"
+            reason = f"timeout ({self.Timeout})"
         else:
             if retcode:
                 if "not a directory" in err.lower():
