@@ -60,6 +60,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
     aborted_reason = None
     latest_dark_count = None
     confirmed_dark_count = None
+    detected_dark_count = None
     error = None
     
     if recent_runs:
