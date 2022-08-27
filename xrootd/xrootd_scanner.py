@@ -86,9 +86,27 @@ class XRootDClient(Primitive):
         
     @synchronized
     def next_server(self):
+        if len(self.Servers) > 1:
+            server = self.Servers.pop(0)
+            self.Servers.append(server)
+        else:
+            server = self.Servers[0]
+        return server
+
+    @synchronized
+    def release_server(self, server):
+        if len(self.Servers) > 1:
+            i = self.Servers.index(server)
+            if i > 0:
+                self.Servers.pop(i)
+                self.Servers.insert(i-1, server)
+
+    @synchronized
+    def __next_server(self):
         server = self.Servers[self.IServer % len(self.Servers)]
         self.IServer += 1
         return server
+
 
     Line_Patterns = [
         # UNIX FS ls -l style
@@ -164,15 +182,16 @@ class XRootDClient(Primitive):
 
     def ls(self, location, recursive, with_meta):
         #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
-        location = self.absolute_path(location)
-        server = self.next_server()
-        lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)        
         files = []
         dirs = []
         status = "OK"
         reason = ""
 
-        try:    
+        location = self.absolute_path(location)
+        server = self.next_server()
+        lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)
+
+        try:
             #print(f"lscommand: {lscommand}")
             retcode, out, err = ShellCommand.execute(lscommand, timeout=self.Timeout)
             #print(f"retcode: {retcode}")
@@ -227,16 +246,9 @@ class XRootDClient(Primitive):
                         files.append((path, size))
                     else:
                         dirs.append((path, size))
+        finally:
+            self.release_server(server)
 
-        if False:
-            print("return from scan():")
-            print("  dirs:")
-            for d in dirs[:5]:
-                print("     ", d)
-            print("  files:")
-            for f in files[:5]:
-                print("     ", f)
-        
         return status, reason, dirs, files
         
 class Prescanner(Primitive):
@@ -288,7 +300,7 @@ class Prescanner(Primitive):
 
 class Scanner(Task):
     
-    MAX_ATTEMPTS_REC = 1
+    MAX_ATTEMPTS_REC = 2
     MAX_ATTEMPTS_FLAT = 3
 
     def __init__(self, master, client, location, recursive, include_sizes = True):

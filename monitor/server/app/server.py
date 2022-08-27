@@ -40,6 +40,8 @@ class Handler(WPHandler):
         if not new:
             self.new = Handler(*params, new=True, **args)
         self.CCDataSource = CCDataSource(self.App.CCPath, new)
+        self.DarkSection = self.CCDataSource.DarkSection
+        self.MissingSection = self.CCDataSource.MissingSection
         self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMIgnoreList)
 
     def index(self, request, relpath, sort="rse", **args):
@@ -249,8 +251,8 @@ class Handler(WPHandler):
                 ("dbdump_after", "DB dump after scan"),
                 ("cmp3", "Comparison"),
                 ("cmp2dark", "Dark confirmation"),
-                ("cc_dark", "Dark action"),
-                ("cc_miss", "Missing action")
+                (self.DarkSection, "Dark action"),
+                (self.MissingSection, "Missing action")
             ]
             if stats.get(part)
         ]
