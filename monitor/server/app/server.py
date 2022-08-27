@@ -4,7 +4,7 @@ from datetime import datetime
 from wm_handler import WMHandler, UMDataSource
 from data_source import CCDataSource, UMDataSource
 
-Version = "1.11.7"
+Version = "1.11.8"
 
 def display_file_list(lst):
     Indent = "    "
