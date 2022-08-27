@@ -74,17 +74,20 @@ class Handler(WPHandler):
             } 
             for rse in all_rses
         ]
+
+        def none_as(x, v):
+            return v if x is None else x
         
         if sort == "rse":
             infos = sorted(infos, key=lambda x: x["rse"])
         elif sort == "cc_run":
-            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time") or -1, x["rse"]))
         elif sort == "-cc_run":
-            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time", -1), x["rse"]), reverse=True)
+            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time") or -1, x["rse"]), reverse=True)
         elif sort == "um_run":
-            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time", -1), x["rse"]))
+            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time") or -1, x["rse"]))
         elif sort == "-um_run":
-            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time", -1), x["rse"]), reverse=True)
+            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time") or -1, x["rse"]), reverse=True)
         
         return self.render_to_response("rses_combined.html", infos=infos)
         
