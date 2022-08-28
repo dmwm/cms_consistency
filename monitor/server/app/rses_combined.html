@@ -294,7 +294,8 @@
             for ( rse in diffs )
             {
                 var info = diffs[rse];
-                display_diffs(rse, prev_run, info);
+                display_current_old("nmissing_"+rse+"_td", info.nmissing, info.nmissing_old);
+                display_current_old("ndark_"+rse+"_td", info.ndark, info.ndark_old);
             }
         }
     };
