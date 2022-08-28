@@ -331,7 +331,7 @@
             }
             return requests;
         }
-        batch_requests("./status_history", rse_list, 10, history_receiver);
+        batch_requests("./status_history", rse_list, 20, history_receiver);
         batch_requests("./lists_diffs", rse_list, 2, diffs_receiver);
     }
     
