@@ -11,7 +11,8 @@ class StatsCache(Primitive):
     def init(self, dir_path):
         # pre-read all JSON files
         for path in glob.glob(dir_path + "/*stats.json"):
-            self.get(path)
+            try:    self.get(path)
+            except: pass
 
     @synchronized
     def get(self, path):
