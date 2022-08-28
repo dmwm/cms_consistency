@@ -44,7 +44,7 @@ class Handler(WPHandler):
         self.DarkSection = self.CCDataSource.DarkSection
         self.MissingSection = self.CCDataSource.MissingSection
         
-        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMStatsCahce, self.App.UMIgnoreList)
+        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMStatsCache, self.App.UMIgnoreList)
 
     def index(self, request, relpath, sort="rse", **args):
         #
