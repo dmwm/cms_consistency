@@ -1,32 +1,35 @@
 import os, glob, json, time, os, gzip, os.path, sys, re
-from pythreader import Primitive, synchronized
+from pythreader import Primitive, synchronized, RWLock
 
 class StatsCache(Primitive):
 
     def __init__(self):
         Primitive.__init__(self)
+        self.RWLock = RWLock()
         self.Cache = {}             # {path -> (mtime, data)}
         self.HitRatio = 0.0
     
-    @synchronized
     def init(self, dir_path):
         # pre-read all JSON files
-        for path in glob.glob(dir_path + "/*stats.json"):
-            try:    self.get(path)
-            except: pass
+        with self.RWLock.exclusive:
+            for path in glob.glob(dir_path + "/*stats.json"):
+                try:    self.get(path)
+                except: pass
 
     @synchronized
     def get(self, path):
         mtime = os.path.getmtime(path)
-        tup = self.Cache.get(path)
-        if tup:
-            my_mtime, data = tup
-            if mtime == my_mtime:
-                self.HitRatio = self.HitRatio*0.99 + 0.01
-                return data
-        data = json.load(open(path, "r"))
-        self.Cache[path] = (mtime, data)
-        self.HitRatio = self.HitRatio*0.99
+        with self.RWLock.shared:
+            tup = self.Cache.get(path)
+            if tup:
+                my_mtime, data = tup
+                if mtime == my_mtime:
+                    self.HitRatio = self.HitRatio*0.99 + 0.01
+                    return data
+        with self.RWLock.exclusive:
+            data = json.load(open(path, "r"))
+            self.Cache[path] = (mtime, data)
+            self.HitRatio = self.HitRatio*0.99
         return data
         
     def __len__(self):
