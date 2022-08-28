@@ -6,6 +6,7 @@ class StatsCache(Primitive):
     def __init__(self):
         Primitive.__init__(self)
         self.Cache = {}             # {path -> (mtime, data)}
+        self.HitRatio = 0.0
     
     @synchronized
     def init(self, dir_path):
@@ -21,10 +22,15 @@ class StatsCache(Primitive):
         if tup:
             my_mtime, data = tup
             if mtime == my_mtime:
+                self.HitRatio = self.HitRatio*0.99 + 0.01
                 return data
         data = json.load(open(path, "r"))
         self.Cache[path] = (mtime, data)
+        self.HitRatio = self.HitRatio*0.99
         return data
+        
+    def __len__(self):
+        return len(self.Cache)
 
 class DataSource(object):
     

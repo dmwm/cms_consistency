@@ -40,11 +40,11 @@ class Handler(WPHandler):
         if not new:
             self.new = Handler(*params, new=True, **args)
 
-        self.CCDataSource = CCDataSource(self.App.CCPath, self.App.CCStatsCache, new)
+        self.CCDataSource = CCDataSource(self.App.CCPath, self.App.StatsCache, new)
         self.DarkSection = self.CCDataSource.DarkSection
         self.MissingSection = self.CCDataSource.MissingSection
         
-        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMStatsCache, self.App.UMIgnoreList)
+        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.StatsCache, self.App.UMIgnoreList)
 
     def index(self, request, relpath, sort="rse", **args):
         #
@@ -96,6 +96,9 @@ class Handler(WPHandler):
     def probe(self, request, relpath, **args):
         return self.CCDataSource.status(), "text/plain"
         return "OK" if self.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
+        
+    def cache_hit_ratio(self):
+        return str(self.App.StatsCache.HitRatio), "text/plain"
         
     def raw_stats(self, request, relpath, rse=None, run=None, **args):
         runs = self.CCDataSource.list_runs(rse)
@@ -475,10 +478,10 @@ class App(WPApp):
         self.UMPath = um_path
         self.UMIgnoreList = um_ignore_list
         self.Home = home
-        self.CCStatsCache = StatsCache()
-        self.CCStatsCache.init(cc_path)
-        self.UMStatsCache = StatsCache()
-        self.UMStatsCache.init(um_path)
+        self.StatsCache = StatsCache()
+        self.StatsCache.init(cc_path)
+        self.StatsCache.init(um_path)
+        print("Stats cache initialized with", len(self.StatsCache), "entries")
 
     def init(self):
         self.initJinjaEnvironment(tempdirs=[self.Home], 
