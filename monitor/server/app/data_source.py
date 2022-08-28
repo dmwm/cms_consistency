@@ -338,7 +338,7 @@ class CCDataSource(DataSource):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
         #print("get_data: path:", path)
-        if not os.isfile(path):
+        if not os.path.isfile(path):
             return None
         if typ == "stats":
             #stats = json.loads(f.read())
