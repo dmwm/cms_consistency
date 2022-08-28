@@ -395,7 +395,22 @@ class Handler(WPHandler):
                 ][-self.MAX_HISTORY:],
                 um_status_history=[x.get("status") for x in um_summaries][-self.MAX_HISTORY:]
             )
-        
+            
+            last_stats = cc_data_source.latest_stats_for_rse(rse)
+            last_run = last_stats["run"]
+            if last_stats is not None and last_stats.get("cmp3", {}).get("status") == "done":
+                prev_run, missing_old, missing_new, dark_old, dark_new = cc_data_source.file_lists_diffs(rse, last_run)
+                if prev_run is not None:
+                    data[rse]["list_diffs"] = dict(
+                            nmissing = last_stats["cmp3"]["missing"],
+                            ndark = last_stats["cmp3"]["dark"],
+                            prev_run=prev_run,
+                            nmissing_old=len(missing_old), 
+                            nmissing_new=len(missing_new), 
+                            ndark_old=len(dark_old), 
+                            ndark_new=len(dark_new)
+                    )
+
         return json.dumps(data), "text/json"
         
     def ls(self, request, relpath, rse="*", **args):

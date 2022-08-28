@@ -278,6 +278,14 @@
                 
                 if( cc_total > 0 )
                     display_cc_status_chart(rse+"_cc_status", info.cc_status_history.slice(-N));
+                
+                var diffs = info.list_diffs;
+                if( diffs != null )
+                {
+                    var prev_run = info.prev_run;
+                    if( prev_run != null )
+                        display_diffs(rse, prev_run, diffs)
+                }
             }
         }
     };
@@ -304,8 +312,8 @@
         {
             var url = "./status_history?rses=" + rse_batch.join(",");
             requests.push(HTTPRequest(url, history_receiver, null, "json"));
-            var url = "./lists_diffs?rses=" + rse_batch.join(",");
-            requests.push(HTTPRequest(url, diffs_receiver, null, "json"));
+            //var url = "./lists_diffs?rses=" + rse_batch.join(",");
+            //requests.push(HTTPRequest(url, diffs_receiver, null, "json"));
         }
     
         rse_lst = rse_lst.sort(() => Math.random() - 0.5);
