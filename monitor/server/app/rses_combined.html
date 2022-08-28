@@ -332,7 +332,7 @@
             return requests;
         }
         batch_requests("./status_history", rse_list, 10, history_receiver);
-        batch_requests("./lists_diffs", rse_list, 2, history_receiver);
+        batch_requests("./lists_diffs", rse_list, 2, diffs_receiver);
     }
     
     var requests=request_info(rse_list);
