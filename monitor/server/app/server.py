@@ -357,7 +357,7 @@ class Handler(WPHandler):
             if last_stats is not None:
                 rse_data["nmissing"] = last_stats["cmp3"]["missing"]
                 rse_data["ndark"] = last_stats["cmp3"]["dark"]
-                rse_data["last_run"] = last_stats["run"]
+                rse_data["last_run"] = last_run = last_stats["run"]
                 if last_stats.get("cmp3", {}).get("status") == "done":
                     prev_run, missing_old, missing_new, dark_old, dark_new = cc_data_source.file_lists_diffs(rse, last_run)
                     if prev_run is not None:
