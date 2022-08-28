@@ -97,7 +97,7 @@ class Handler(WPHandler):
         return self.CCDataSource.status(), "text/plain"
         return "OK" if self.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
         
-    def cache_hit_ratio(self):
+    def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"
         
     def raw_stats(self, request, relpath, rse=None, run=None, **args):
