@@ -2,7 +2,7 @@ from webpie import WPApp, WPHandler, WPStaticHandler
 import sys, glob, json, time, os, gzip
 from datetime import datetime
 from wm_handler import WMHandler, UMDataSource
-from data_source import CCDataSource, UMDataSource
+from data_source import CCDataSource, UMDataSource, StatsCache
 
 Version = "1.11.8"
 
@@ -39,10 +39,10 @@ class Handler(WPHandler):
         self.IsNew = new
         if not new:
             self.new = Handler(*params, new=True, **args)
-        self.CCDataSource = CCDataSource(self.App.CCPath, new)
+        self.CCDataSource = CCDataSource(self.App.CCPath, self.App.StatsCahce, new)
         self.DarkSection = self.CCDataSource.DarkSection
         self.MissingSection = self.CCDataSource.MissingSection
-        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMIgnoreList)
+        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.StatsCahce, self.App.UMIgnoreList)
 
     def index(self, request, relpath, sort="rse", **args):
         #
@@ -470,9 +470,12 @@ class App(WPApp):
     def __init__(self, handler, home, cc_path, prefix, um_path, um_ignore_list):
         WPApp.__init__(self, handler, prefix=prefix)
         self.CCPath = cc_path
-        self.UMPath = cc_path
+        self.UMPath = um_path
         self.UMIgnoreList = um_ignore_list
         self.Home = home
+        self.StatsCache = StatsCache()
+        self.StatsCache.init(cc_path)
+        self.StatsCache.init(um_path)
 
     def init(self):
         self.initJinjaEnvironment(tempdirs=[self.Home], 

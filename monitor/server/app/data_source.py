@@ -1,9 +1,35 @@
 import os, glob, json, time, os, gzip, os.path, sys, re
+from pythreader import Primitive, synchronized
+
+class StatsCache(Primitive):
+
+    def __init__(self):
+        Primitive.__init__(self)
+        self.Cache = {}             # {path -> (mtime, data)}
+    
+    @synchronized
+    def init(self, dir_path):
+        # pre-read all JSON files
+        for path in glob.glob(path + "/*stats.json"):
+            self.get(path)
+
+    @synchronized
+    def get(self, path):
+        mtime = os.path.getmtime(path)
+        tup = self.Cache.get(path)
+        if tup:
+            my_mtime, data = tup
+            if mtime == my_mtime:
+                return data
+        data = json.load(open(path, "r"))
+        self.Cache[path] = (mtime, data)
+        return data
 
 class DataSource(object):
     
-    def __init__(self, path):
+    def __init__(self, path, cache):
         self.Path = path
+        self.Cache = cache
         
     def is_mounted(self):
         return os.path.isdir(self.Path)
@@ -72,7 +98,8 @@ class DataSource(object):
     def read_stats(self, rse, run, path=None, raw=False):
         path = path or f"{self.Path}/{rse}_{run}_stats.json"
         try:
-            data = json.loads(open(path, "r").read())
+#            data = json.loads(open(path, "r").read())
+            data = self.Cache.get(path)
             if not raw:
                 data.setdefault("run", run)
                 data.setdefault("rse", rse)
@@ -178,8 +205,8 @@ class DataSource(object):
         
 class UMDataSource(DataSource):
 
-    def __init__(self, path, ignore_list):
-        DataSource.__init__(self, path)
+    def __init__(self, path, cache, ignore_list):
+        DataSource.__init__(self, path, cache)
         self.DefaultIgnoreRE = None if not ignore_list else re.compile("^(%s)" % ("|".join(ignore_list),))
 
     def postprocess_stats(self, data):
@@ -268,8 +295,8 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
-    def __init__(self, path, new=False):
-        DataSource.__init__(self, path)
+    def __init__(self, path, cache, new=False):
+        DataSource.__init__(self, path, cache)
         if new:
             self.DarkSection = "dark_action"
             self.MissingSection = "missing_action"
@@ -310,13 +337,11 @@ class CCDataSource(DataSource):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
         #print("get_data: path:", path)
-        try:
-            f = open(path, "r")
-        except:
-            #print("get_data: error ")
+        if not os.isfile(path):
             return None
         if typ == "stats":
-            stats = json.loads(f.read())
+            #stats = json.loads(f.read())
+            stats = self.Cache.get(path)
             if "scanner" in stats:
                 scanner_stats = stats["scanner"]
                 if not "total_files" in scanner_stats:
@@ -329,6 +354,7 @@ class CCDataSource(DataSource):
                     scanner_stats["total_directories"] = ndirectories
             out = stats
         else:
+            f = open(path, "r")
             out = []
             while limit is None or len(out) < limit:
                 l = f.readline()
