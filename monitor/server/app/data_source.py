@@ -355,17 +355,16 @@ class CCDataSource(DataSource):
                     scanner_stats["total_directories"] = ndirectories
             out = stats
         else:
-            f = open(path, "r")
             out = []
-            while limit is None or len(out) < limit:
-                l = f.readline()
-                if not l:
-                    break
-                l = l.strip()
-                if l:
-                    out.append(l)
+            with open(path, "r") as f:
+                while limit is None or len(out) < limit:
+                    l = f.readline()
+                    if not l:
+                        break
+                    l = l.strip()
+                    if l:
+                        out.append(l)
             return out
-        f.close()
         return out
                 
     def get_stats(self, rse, run):
