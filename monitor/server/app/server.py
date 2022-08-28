@@ -39,10 +39,12 @@ class Handler(WPHandler):
         self.IsNew = new
         if not new:
             self.new = Handler(*params, new=True, **args)
-        self.CCDataSource = CCDataSource(self.App.CCPath, self.App.StatsCahce, new)
+
+        self.CCDataSource = CCDataSource(self.App.CCPath, self.App.CCStatsCache, new)
         self.DarkSection = self.CCDataSource.DarkSection
         self.MissingSection = self.CCDataSource.MissingSection
-        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.StatsCahce, self.App.UMIgnoreList)
+        
+        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.UMStatsCahce, self.App.UMIgnoreList)
 
     def index(self, request, relpath, sort="rse", **args):
         #
@@ -473,9 +475,10 @@ class App(WPApp):
         self.UMPath = um_path
         self.UMIgnoreList = um_ignore_list
         self.Home = home
-        self.StatsCache = StatsCache()
-        self.StatsCache.init(cc_path)
-        self.StatsCache.init(um_path)
+        self.CCStatsCache = StatsCache()
+        self.CCStatsCache.init(cc_path)
+        self.UMStatsCache = StatsCache()
+        self.UMStatsCache.init(um_path)
 
     def init(self):
         self.initJinjaEnvironment(tempdirs=[self.Home], 
