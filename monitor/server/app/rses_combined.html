@@ -308,20 +308,31 @@
             requests.push(HTTPRequest(url, diffs_receiver, null, "json"));
         }
     
-        rse_lst = rse_lst.sort(() => Math.random() - 0.5);
-        
-        for( rse of rse_lst )
+        function batch_requests(url_base, rse_list, batch_size, receiver)
         {
-            batch.push(rse);
-            if( batch.length >= batch_size )
+            // randomize
+            var randomized = rse_lst.sort(() => Math.random() - 0.5);
+            var batch = [];
+            var requests = [];
+            for( rse of randomized )
             {
-                request_batch(batch, requests);
-                batch = [];
-            }   
+                batch.push(rse);
+                if( batch.length >= batch_size )
+                {
+                    var url = url_base + "?rses=" + batch.join(",");
+                    requests.push(HTTPRequest(url, receiver, null, "json"));
+                    batch = [];
+                }   
+            }
+            if( batch.length > 0 )
+            {
+                var url = url_base + "?rses=" + batch.join(",");
+                requests.push(HTTPRequest(url, receiver, null, "json"));
+            }
+            return requests;
         }
-        if( batch.length > 0 )
-            request_batch(batch, requests);
-        return requests;
+        batch_requests("./status_history", rse_list, 10, history_receiver);
+        batch_requests("./lists_diffs", rse_list, 2, history_receiver);
     }
     
     var requests=request_info(rse_list);
