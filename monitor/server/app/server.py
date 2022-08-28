@@ -367,7 +367,7 @@ class Handler(WPHandler):
                                 nmissing_new=len(missing_new), 
                                 ndark_old=len(dark_old), 
                                 ndark_new=len(dark_new)
-                        )
+                        ))
             data[rse] = rse_data
         return json.dumps(data), "text/json"
         
