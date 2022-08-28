@@ -10,7 +10,7 @@ class StatsCache(Primitive):
     @synchronized
     def init(self, dir_path):
         # pre-read all JSON files
-        for path in glob.glob(path + "/*stats.json"):
+        for path in glob.glob(dir_path + "/*stats.json"):
             self.get(path)
 
     @synchronized
