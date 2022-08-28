@@ -48,8 +48,15 @@
     function display_current_old(element_id, current, old)
     {
         var td = document.getElementById(element_id);
-        td.innerHTML = '' + current + (old ? '(' + old + ')' : '');
-        if( old ) td.className = "with_old";
+        if( current == null )
+            td.innerHTML = "";
+        else if( old is null )
+            td.innerHTML = '' + current + "(?)";
+        else if( old == 0 )
+            td.innerHTML = '' + current;
+        else:
+            td.innerHTML = '' + current + '(' + old + ')';
+        if( old != null && old > 0 ) td.className = "with_old";
     }
     
     function display_diffs(rse, prev_run, counts)
@@ -287,9 +294,7 @@
             for ( rse in diffs )
             {
                 var info = diffs[rse];
-                var prev_run = info.prev_run;
-                if( prev_run != null )
-                    display_diffs(rse, prev_run, diffs[rse])
+                display_diffs(rse, prev_run, info);
             }
         }
     };
