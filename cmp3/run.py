@@ -110,7 +110,7 @@ class CCRun(object):
                     yield line
 
     def missing_files(self):
-        print("missing file list:", self.missing_list_path())
+        #print("missing file list:", self.missing_list_path())
         return self.file_list(self.missing_list_path())
 
     def dark_files(self):

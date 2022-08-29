@@ -416,7 +416,6 @@ class CCDataSource(DataSource):
         return limited_line_reader(f, limit)
         
     def file_lists_diffs(self, rse, run):
-        # typ: 'D' or 'M' for 'dark' and 'missing'
         # compare dark or missing list from the run to the previous run
         # returns (prev_run, missing_old, missing_new, dark_old, dark_new) - sets
         # or (None, None, None, None, None)
@@ -431,17 +430,16 @@ class CCDataSource(DataSource):
         if this_dark is None or this_missing is None:
             return (None, None, None, None, None)         # one of the lists missing
 
-        i = this_i - 1
-        while i >= 0:
-            prev_run = runs[i]
+        prev_stats = prev_missing = prev_missing = None
+        prev_i = this_i - 1
+        if prev_i >= 0:
+            prev_run = runs[prev_i]
             prev_stats, _, _, _ = self.get_stats(rse, prev_run)
             if prev_stats is not None and prev_stats.get("cmp3", {}).get("status") == "done":
                 prev_dark = self.get_dark(rse, prev_run)
                 prev_missing = self.get_missing(rse, prev_run)
-                if prev_dark is not None and prev_missing is not None:
-                    break
-            i -= 1
-        else:
+
+        if prev_dark is None or prev_missing is None:
             return (None, None, None, None, None)         # no run to compare to
 
         this_dark = set(this_dark)
