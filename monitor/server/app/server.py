@@ -298,7 +298,9 @@ class Handler(WPHandler):
                         out[path] = error
                     failed = out
                 r["failed_subdirectories"] = failed
-                    
+        
+        prev_run, old_nmissing, old_ndark = data_source.file_lists_diffs_counts(rse, run)
+        
         return self.render_to_response("show_run.html", 
             rse=rse, run=run,
             errors = errors,
@@ -311,7 +313,8 @@ class Handler(WPHandler):
             cmp3=stats.get("cmp3"),
             stats=stats, summary=summary,
             ndark = ndark, nmissing=nmissing,
-            dark=self.display_file_list(dark),
+            old_ndark = old_ndark, old_nmissing = old_nmissing,
+            dark = self.display_file_list(dark),
             missing = self.display_file_list(missing),
             stats_parts=stats_parts,
             time_now = time.time()
