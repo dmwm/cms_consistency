@@ -41,13 +41,13 @@ if len(args) > 2:
 else:
     run = CCRun.last_run_for_rse(path, rse)
 
-if run is None:
-    print("Run not found", file=sys.stderr)
+if run is None or not run.is_complete():
+    print("Last run not found or incomplete", file=sys.stderr)
     sys.exit(1)
     
 prev_run = run.previous_run()
-if prev_run is None:
-    print("Previous run not found", file=sys.stderr)
+if prev_run is None or not prev_run.is_complete():
+    print("Previous run not found or incomplete", file=sys.stderr)
     sys.exit(1)
     
 old_dark, new_dark = diff(prev_run.dark_files(), run.dark_files())
