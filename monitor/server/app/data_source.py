@@ -425,8 +425,8 @@ class CCDataSource(DataSource):
             diffs = stats["diffs"]
             return (
                 diffs["prev_run"],
-                diffs["missing_old"], diffs["missing_new"],
-                diffs["dark_old"], diffs["dark_new"]
+                diffs["missing_old"],
+                diffs["dark_old"]
             )
 
         runs = self.list_runs(rse)
