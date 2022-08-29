@@ -115,7 +115,7 @@ class Handler(WPHandler):
         cc_infos = []
         for run in runs:
             stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
-            prev_run, missing_old, missing_new, dark_old, dark_new = data_source.file_lists_diffs(rse, run)
+            prev_run, missing_old, dark_old = data_source.file_lists_diffs_counts(rse, run)
             summary = data_source.run_summary(stats)
             start_time = summary["start_time"] or 0
             status = summary["status"]
@@ -125,22 +125,24 @@ class Handler(WPHandler):
             cc_infos.append((
                 run, 
                 {
-                    "start_time":       start_time, "ndark":ndark, "nmissing":nmissing, "status":status, "running":running,
+                    "start_time":       start_time, 
+                    "ndark":ndark, 
+                    "nmissing":nmissing, 
+                    "status":status, 
+                    "running":running,
 
                     "confirmed_dark":   summary["dark_stats"]["confirmed"], 
                     "acted_dark":       summary["dark_stats"]["acted_on"], 
                     "dark_status":      summary["dark_stats"]["action_status"],
                     "dark_status_reason": summary["dark_stats"].get("aborted_reason", ""),
-                    
+
                     "acted_missing":summary["missing_stats"]["acted_on"], 
                     "missing_status":summary["missing_stats"]["action_status"],
                     "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
                     "start_time_milliseconds":int(start_time*1000),
                     "prev_run":         prev_run,
-                    "old_missing":      len(missing_old) if missing_old is not None else None,
-                    "new_missing":      len(missing_new) if missing_new is not None else None,
-                    "old_dark":         len(dark_old) if dark_old is not None else None,
-                    "new_dark":         len(dark_new) if dark_new is not None else None
+                    "old_missing":      missing_old,
+                    "old_dark":         dark_old
                 }
             ))
         #print(infos)
@@ -349,9 +351,7 @@ class Handler(WPHandler):
                     prev_run=None,
                     last_run=None,
                     nmissing_old=None, 
-                    nmissing_new=None, 
-                    ndark_old=None, 
-                    ndark_new=None
+                    ndark_old=None,
             )
             last_stats = cc_data_source.latest_stats_for_rse(rse)
             if last_stats is not None:
@@ -360,14 +360,12 @@ class Handler(WPHandler):
                     rse_data["nmissing"] = last_stats["cmp3"]["missing"]
                     rse_data["ndark"] = last_stats["cmp3"]["dark"]
                     rse_data["last_run"] = last_run = last_stats["run"]
-                    prev_run, missing_old, missing_new, dark_old, dark_new = cc_data_source.file_lists_diffs(rse, last_run)
+                    prev_run, missing_old, dark_old = cc_data_source.file_lists_diffs(rse, last_run)
                     if prev_run is not None:
                         rse_data.update(dict(
                                 prev_run=prev_run,
-                                nmissing_old=len(missing_old), 
-                                nmissing_new=len(missing_new), 
-                                ndark_old=len(dark_old), 
-                                ndark_new=len(dark_new)
+                                nmissing_old=missing_old,
+                                ndark_old=dark_old
                         ))
             data[rse] = rse_data
         return json.dumps(data), "text/json"

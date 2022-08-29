@@ -415,20 +415,29 @@ class CCDataSource(DataSource):
             
         return limited_line_reader(f, limit)
         
-    def file_lists_diffs(self, rse, run):
+    def file_lists_diffs_counts(self, rse, run):
         # compare dark or missing list from the run to the previous run
-        # returns (prev_run, missing_old, missing_new, dark_old, dark_new) - sets
-        # or (None, None, None, None, None)
+        # returns (prev_run, missing old count, dark_old count)
+        # or (None, None, None)
+
+        stats = self.get_data(rse, run, "stats")
+        if stats is not None and "diffs" in stats:
+            diffs = stats["diffs"]
+            return (
+                diffs["prev_run"],
+                diffs["missing_old"], diffs["missing_new"],
+                diffs["dark_old"], diffs["dark_new"]
+            )
 
         runs = self.list_runs(rse)
         try:    this_i = runs.index(run)
         except ValueError:
-            return (None, None, None, None, None)         # run not found
+            return (None, None, None)         # run not found
 
         this_dark = self.get_dark(rse, run)
         this_missing = self.get_missing(rse, run)
         if this_dark is None or this_missing is None:
-            return (None, None, None, None, None)         # one of the lists missing
+            return (None, None, None)         # one of the lists missing
 
         prev_stats = prev_dark = prev_missing = None
         prev_i = this_i - 1
@@ -440,17 +449,17 @@ class CCDataSource(DataSource):
                 prev_missing = self.get_missing(rse, prev_run)
 
         if prev_dark is None or prev_missing is None:
-            return (None, None, None, None, None)         # no run to compare to
+            return (None, None, None)         # no run to compare to
 
         this_dark = set(this_dark)
         this_missing = set(this_missing)
         prev_dark = set(prev_dark)
         prev_missing = set(prev_missing)
 
-        return (prev_run, 
-            this_missing & prev_missing, this_missing - prev_missing, 
-            this_dark & prev_dark, this_dark - prev_dark
-        ) 
+        old_missing = len(this_missing & prev_missing)
+        old_dark = len(this_dark & prev_dark)
+
+        return (prev_run, old_missing, old_dark)
 
     def get_dark(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "D", limit)
