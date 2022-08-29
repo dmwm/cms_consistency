@@ -56,10 +56,8 @@ old_missing, new_missing = diff(prev_run.missing_files(), run.missing_files())
 diff_data = dict(
         run=run.Run,
         prev_run=prev_run.Run,
-        nmissing_old=len(old_missing), 
-        nmissing_new=len(new_missing), 
-        ndark_old=len(old_dark), 
-        ndark_new=len(new_dark)
+        missing_old=len(old_missing),
+        dark_old=len(old_dark)
 )
 
 if "-p" in opts:
