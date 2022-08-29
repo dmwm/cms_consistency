@@ -71,11 +71,11 @@ if "-p" in opts:
 
 if "-u" in opts:
     stats = Stats(run.stats_path())
-    stats.update(section_key, data)
+    stats.update(section_key, diff_data)
 
 if "-s" in opts:
     stats = Stats(opts["-s"])
-    stats.update(section_key, data)
+    stats.update(section_key, diff_data)
 
 
     
