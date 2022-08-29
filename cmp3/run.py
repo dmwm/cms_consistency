@@ -71,17 +71,36 @@ class CCRun(object):
         return sorted(runs)
         
     @staticmethod
+    def last_run_for_rse(dir_path, rse):
+        run_ids = CCRun.run_ids_for_rse(dir_path, rse)
+        if not run_ids:
+            return None
+        else:
+            return CCRun(dir_path, rse, run_ids[-1])
+        
+    @staticmethod
     def runs_for_rse(dir_path, rse, complete_only=True):
         runs = (CCRun(dir_path, rse, run_id) for run_id in CCRun.run_ids_for_rse(dir_path, rse))
         if complete_only:
             runs = (run for run in runs if run.is_complete())
         return runs
+        
+    def stats_path(self):
+        return f"{self.Path}/{self.RSE}_{self.Run}_stats.json"
             
     @staticmethod
     def get_stats(dir_path, rse, run):
         path = f"{dir_path}/{rse}_{run}_stats.json"
         stats = json.load(open(path, "r"))
         return stats
+        
+    def previous_run(self):
+        run_ids = CCRun.run_ids_for_rse(self.Path, self.RSE)
+        my_index = run_ids.index(self.Run)
+        if my_index == 0:
+            return None     # no previous run
+        else:
+            return CCRun(self.Path, self.RSE, run_ids[my_index-1])
     
     def file_list(self, path):
         with open(path, "r") as f:
