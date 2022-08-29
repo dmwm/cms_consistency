@@ -162,6 +162,9 @@ nmissing=`wc -l ${m_out}`
 echo "Dark list:    " $ndark
 echo "Missing list: " $nmissing
 
+# 4.1 Calculate diffs with previous run
+$python cmp3/diffs.py -u -s ${stats} $out $RSE $now
+
 #
 # 5. Declare missing and dark replicas
 #    -o ... turns it into "dry run" mode
