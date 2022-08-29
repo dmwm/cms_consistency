@@ -430,7 +430,7 @@ class CCDataSource(DataSource):
         if this_dark is None or this_missing is None:
             return (None, None, None, None, None)         # one of the lists missing
 
-        prev_stats = prev_missing = prev_missing = None
+        prev_stats = prev_dark = prev_missing = None
         prev_i = this_i - 1
         if prev_i >= 0:
             prev_run = runs[prev_i]
