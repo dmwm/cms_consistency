@@ -39,7 +39,10 @@
                                 {{info["status"] or ""}}
                             {%- endif -%}
                         </td>
-			            <td>{% if not info["nmissing"] is none %}{{info["nmissing"]}} ({{info["old_missing"]}}){% endif %}</td>
+			            <td>{% if not info["nmissing"] is none %}
+                                {{info["nmissing"]}} ({{info["old_missing"]|if_none("?")}})
+                            {% endif %}
+                        </td>
                         <td>{{info["acted_missing"]|none_as_blank}}</td>
                         <td class="{{info['missing_status']|none_as_blank}}">
                             {{info["missing_status"]|none_as_blank}}
@@ -47,7 +50,7 @@
                             {%- endif -%}
                         </td>
 			            <td>{% if not info["ndark"] is none %}
-                                {{info["ndark"]}} ({{info["old_dark"]}})
+                                {{info["ndark"]}} ({{info["old_dark"]|if_none("?")}})
                             {% endif %}
                         </td>
 			            <td>{{info["confirmed_dark"]|none_as_blank}}</td>

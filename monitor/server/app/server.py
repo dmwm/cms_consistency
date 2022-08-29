@@ -137,10 +137,10 @@ class Handler(WPHandler):
                     "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
                     "start_time_milliseconds":int(start_time*1000),
                     "prev_run":         prev_run,
-                    "old_missing":      len(missing_old or []),
-                    "new_missing":      len(missing_new or []),
-                    "old_dark":         len(dark_old or []),
-                    "new_dark":         len(dark_new or [])
+                    "old_missing":      len(missing_old) if missing_old is not None else None,
+                    "new_missing":      len(missing_new) if missing_new is not None else None,
+                    "old_dark":         len(dark_old) if dark_old is not None else None,
+                    "new_dark":         len(dark_new) if dark_new is not None else None
                 }
             ))
         #print(infos)
@@ -468,6 +468,9 @@ def none_as_blank(x):
     else:
         return str(x)
         
+def if_none(x, default=""):
+    return default if x is None else x
+        
 def format_gigabytes(x):
     x = x * 1024**3 # back to bytes
     mark_letters = " KMGTPX"
@@ -501,7 +504,8 @@ class App(WPApp):
             filters={
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
                 "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank,
-                "as_date":as_date, "format_gigabytes":format_gigabytes
+                "as_date":as_date, "format_gigabytes":format_gigabytes,
+                "if_none":if_none
             }
         )
         
