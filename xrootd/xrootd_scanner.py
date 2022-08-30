@@ -364,7 +364,7 @@ class Scanner(Task):
         # create the set of directories, which contain no files, recursively
         #
         empty_dirs = set(p for p, _ in dirs)
-        empty_dirs.add(self.Location)
+        empty_dirs.add(self.Client.absolute_path(self.Location))
         for path, _ in files:
             while path and path != '/':
                 path = self.parent(path)
