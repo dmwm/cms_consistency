@@ -362,15 +362,19 @@ class Scanner(Task):
         #
         # create the set of directories, which contain no files, recursively
         #
-        empty_dirs = set(p for p, _ in dirs)
-        empty_dirs.add(self.Client.absolute_path(self.Location))
-        for path, _ in files:
-            while path and path != '/':
-                path = self.parent(path)
-                try:
-                    empty_dirs.remove(path)
-                except KeyError:
-                    break
+        empty_dirs = set()
+        if recursive:
+            empty_dirs = set(p for p, _ in dirs)
+            for path, _ in files:
+                while path and path != '/':
+                    path = self.parent(path)
+                    try:
+                        empty_dirs.remove(path)
+                    except KeyError:
+                        break
+        if not files:
+            if recursive or not dirs:
+                empty_dirs.add(self.Client.absolute_path(self.Location))
 
         if status != "OK":
             stats += " " + reason
@@ -872,6 +876,10 @@ if __name__ == "__main__":
             break
 
     out_list.close()
+    if dir_list is not None:
+        dir_list.close()
+    if empty_dirs_file is not None:
+        empty_dirs_file.close()
 
     if failed or all_roots_failed:
         my_stats["status"] = "failed"
