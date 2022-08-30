@@ -24,7 +24,8 @@ t0 = time.time()
 
 Usage = """
 python db_list.py [options] -c <config.yaml> <rse_name>
-    -c <config file>        -- required
+    -c <YAML config file>       
+    -d <CFG config file>       
     -i <states>             -- include only these states
     -x <states>             -- exclude replica states
 """
@@ -78,19 +79,22 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:")
 opts = dict(opts)
 
-if not args or not "-c" in opts:
-        print (Usage)
-        sys.exit(2)
+if not args or ("-c" not in opts and "-d" not in opts):
+    print (Usage)
+    sys.exit(2)
 
 include_states = opts.get("-i", "*")
 exclude_states = opts.get("-x", "")
 
 rse_name = args[0]
 
-dbconfig = DBConfig.from_yaml(opts["-c"])
+if "-c" in opts:
+    dbconfig = DBConfig.from_yaml(opts["-c"])
+else:
+    dbconfig = DBConfig.from_cfg(opts["-d"])
 
 try:
     Base = declarative_base()
