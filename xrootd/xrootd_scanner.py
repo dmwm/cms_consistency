@@ -335,8 +335,7 @@ class Scanner(Task):
         words = path.rsplit('/', 1)
         if len(words) == 1:
             return ""               # relative path ??
-        else:
-            return words[0]
+        return words[0] or "/"
                 
     def run(self):
         #print("Scanner.run():", self.Master)
