@@ -134,4 +134,4 @@ for r in replicas.yield_per(10000):
     state = r.state
     name = r.name
     scope = r.scope
-    print(stats, name, path or "")
+    print(state, name, path or "")
