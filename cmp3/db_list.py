@@ -28,6 +28,7 @@ python db_list.py [options] -c <config.yaml> <rse_name>
     -d <CFG config file>       
     -i <states>             -- include only these states
     -x <states>             -- exclude replica states
+    -v                      -- verbose
 """
 
 
@@ -79,7 +80,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:v")
 opts = dict(opts)
 
 if not args or ("-c" not in opts and "-d" not in opts):
@@ -113,7 +114,7 @@ class RSE(Base):
         id = Column(GUID(), primary_key=True)
         rse = Column(String)
 
-engine = create_engine(dbconfig.DBURL,  echo=verbose)
+engine = create_engine(dbconfig.DBURL,  echo="-v" in opts)
 Session = sessionmaker(bind=engine)
 session = Session()
 
