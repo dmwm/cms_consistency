@@ -28,6 +28,9 @@ python db_list.py [options] -c <config.yaml> <rse_name>
     -d <CFG config file>       
     -i <states>             -- include only these states
     -x <states>             -- exclude replica states
+    -p                      -- include path
+    -s                      -- include scope
+    -S                      -- include state
     -v                      -- verbose
 """
 
@@ -80,7 +83,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:v")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vpS")
 opts = dict(opts)
 
 if not args or ("-c" not in opts and "-d" not in opts):
@@ -89,6 +92,9 @@ if not args or ("-c" not in opts and "-d" not in opts):
 
 include_states = opts.get("-i", "*")
 exclude_states = opts.get("-x", "")
+include_path = "-p" in opts
+include_scope = "-s" in opts
+include_state = "-S" in opts
 
 rse_name = args[0]
 
@@ -134,4 +140,11 @@ for r in replicas.yield_per(10000):
     state = r.state
     name = r.name
     scope = r.scope
-    print(state, name, path or "")
+    tup = (name,)
+    if include_scope:
+        tup = (scope,) + tup
+    if include_state:
+        tup = (state,) + tup
+    if include_path:
+        tup = tup + (path or "",)
+    print(*tup)
