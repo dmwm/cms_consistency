@@ -711,7 +711,7 @@ def scan_root(rse, config, client, my_stats, stats, stats_key,
     print("Directories ignored:  %d" % (master.IgnoredDirs,))
     print("Directories scanned:  %d" % (master.NScanned,))
     print("Directories:          %d" % (master.NDirectories,))
-    print("  empty directories:  %d" % (master.NEmptyDirs,)))
+    print("  empty directories:  %d" % (master.NEmptyDirs,))
     print("Failed directories:   %d" % (len(master.GaveUp),))
     if include_sizes:
         print("Total size:           %.3f GB" % (master.TotalSize/GB))
