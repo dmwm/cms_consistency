@@ -99,7 +99,7 @@ else:
 try:
     Base = declarative_base()
     if dbconfig.Schema:
-    	Base.metadata.schema = dbconfig.Schema
+        Base.metadata.schema = dbconfig.Schema
 
     class Replica(Base):
             __tablename__ = "replicas"
@@ -123,29 +123,15 @@ try:
             print ("RSE %s not found" % (rse_name,))
             sys.exit(1)
 
-    rse_id = rse.id
-
-    #print ("rse_id:", type(rse_id), rse_id)
-
-    batch = 100000
-
-    outputs = {
-        states:PartitionedList.create(nparts, prefix, zout) for states, prefix in filters.items()
-    }
-
-    all_replicas = '*' in all_states
-
-    replicas = session.query(Replica).filter(Replica.rse_id==rse_id)
+    replicas = session.query(Replica).filter(Replica.rse_id==rse.id)
     if include_states != '*':
         replicas = replicas.filter(Replica.state.in_(list(include_states)))
     if exclude_states:
         replicas = replicas.filter(Replica.state.not_in(list(exclude_states)))
-        
-    
-    for r in replicas.yield_per(batch):
+
+    for r in replicas.yield_per(10000):
         path = r.name
         state = r.state
         name = r.name
         scope = r.scope
-        
         print(stats, name, path or "")
