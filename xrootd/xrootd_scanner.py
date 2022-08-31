@@ -1,6 +1,6 @@
 from pythreader import TaskQueue, Task, DEQueue, PyThread, synchronized, ShellCommand, Primitive
 import re, json, os, os.path, traceback
-import subprocess, time, random
+import subprocess, time, random, gzip
 from part import PartitionedList
 from py3 import to_str
 from stats import Stats
