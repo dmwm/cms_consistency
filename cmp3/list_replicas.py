@@ -127,6 +127,13 @@ class Replica(Base):
         scope = Column(String, primary_key=True)
         name = Column(String, primary_key=True)
 
+class QuarantinedReplica(Base):
+        __tablename__ = replicas_table
+        state = Column(String)
+        rse_id = Column(GUID(), primary_key=True)
+        scope = Column(String, primary_key=True)
+        name = Column(String, primary_key=True)
+
 class RSE(Base):
         __tablename__ = "rses"
         id = Column(GUID(), primary_key=True)
@@ -151,7 +158,7 @@ rses = session.query(RSE)
 for r in rses:
     rse_names[r.id] = r.rse
 
-replicas = session.query(Replica)
+replicas = session.query(QuarantinedReplica) if replicas_table == "quarantined_replicas" else session.query(Replica) 
 if rse is not None:
     replicas = replicas.filter(Replica.rse_id==rse.id)
 
