@@ -85,7 +85,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vpsS")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vpsSr:n:")
 opts = dict(opts)
 
 if not args or ("-c" not in opts and "-d" not in opts):
