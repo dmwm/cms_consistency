@@ -1,45 +1,9 @@
 import os, glob, json, time, os, gzip, os.path, sys, re
-from pythreader import Primitive, synchronized, RWLock
-
-class StatsCache(Primitive):
-
-    def __init__(self):
-        Primitive.__init__(self)
-        self.RWLock = RWLock()
-        self.Cache = {}             # {path -> (mtime, data)}
-        self.HitRatio = 0.0
-    
-    def init(self, dir_path):
-        # pre-read all JSON files
-        with self.RWLock.exclusive:
-            for path in glob.glob(dir_path + "/*stats.json"):
-                try:    self.get(path)
-                except: pass
-
-    @synchronized
-    def get(self, path):
-        mtime = os.path.getmtime(path)
-        with self.RWLock.shared:
-            tup = self.Cache.get(path)
-            if tup:
-                my_mtime, data = tup
-                if mtime == my_mtime:
-                    self.HitRatio = self.HitRatio*0.99 + 0.01
-                    return data
-        with self.RWLock.exclusive:
-            data = json.load(open(path, "r"))
-            self.Cache[path] = (mtime, data)
-            self.HitRatio = self.HitRatio*0.99
-        return data
-        
-    def __len__(self):
-        return len(self.Cache)
 
 class DataSource(object):
     
-    def __init__(self, path, cache):
+    def __init__(self, path):
         self.Path = path
-        self.Cache = cache
         
     def is_mounted(self):
         return os.path.isdir(self.Path)
@@ -108,8 +72,7 @@ class DataSource(object):
     def read_stats(self, rse, run, path=None, raw=False):
         path = path or f"{self.Path}/{rse}_{run}_stats.json"
         try:
-#            data = json.loads(open(path, "r").read())
-            data = self.Cache.get(path)
+            data = json.loads(open(path, "r").read())
             if not raw:
                 data.setdefault("run", run)
                 data.setdefault("rse", rse)
@@ -215,8 +178,8 @@ class DataSource(object):
         
 class UMDataSource(DataSource):
 
-    def __init__(self, path, cache, ignore_list):
-        DataSource.__init__(self, path, cache)
+    def __init__(self, path, ignore_list):
+        DataSource.__init__(self, path)
         self.DefaultIgnoreRE = None if not ignore_list else re.compile("^(%s)" % ("|".join(ignore_list),))
 
     def postprocess_stats(self, data):
@@ -305,8 +268,8 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
-    def __init__(self, path, cache, new=False):
-        DataSource.__init__(self, path, cache)
+    def __init__(self, path, new=False):
+        DataSource.__init__(self, path)
         if new:
             self.DarkSection = "dark_action"
             self.MissingSection = "missing_action"
@@ -347,33 +310,34 @@ class CCDataSource(DataSource):
         ext = "json" if typ == "stats" else "list"
         path = f"{self.Path}/{rse}_{run}_{typ}.{ext}"
         #print("get_data: path:", path)
-        if not os.path.isfile(path):
+        try:
+            f = open(path, "r")
+        except:
+            #print("get_data: error ")
             return None
         if typ == "stats":
-            #stats = json.loads(f.read())
-            stats = self.Cache.get(path)
+            stats = json.loads(f.read())
             if "scanner" in stats:
                 scanner_stats = stats["scanner"]
                 if not "total_files" in scanner_stats:
                     nfiles = ndirectories = 0
                     for root_info in scanner_stats.get("roots", []):
-                        if not root_info.get("root_failed"):
-                            nfiles += root_info.get("files", 0)
-                            ndirectories += root_info.get("directories", 0)
+                        nfiles += root_info["files"]
+                        ndirectories += root_info["directories"]
                     scanner_stats["total_files"] = nfiles
                     scanner_stats["total_directories"] = ndirectories
             out = stats
         else:
             out = []
-            with open(path, "r") as f:
-                while limit is None or len(out) < limit:
-                    l = f.readline()
-                    if not l:
-                        break
-                    l = l.strip()
-                    if l:
-                        out.append(l)
+            while limit is None or len(out) < limit:
+                l = f.readline()
+                if not l:
+                    break
+                l = l.strip()
+                if l:
+                    out.append(l)
             return out
+        f.close()
         return out
                 
     def get_stats(self, rse, run):
@@ -382,7 +346,7 @@ class CCDataSource(DataSource):
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
-        confirmed_dark = stats.get(self.DarkSection,{}).get("confirmed_dark_files")
+        confirmed_dark = stats.get("cc_dark",{}).get("confirmed_dark_files")
         for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", self.DarkSection, self.MissingSection, "cmp2dark"]:
             d = stats.get(k)
             if isinstance(d, dict) and not "elapsed" in d:
@@ -415,51 +379,44 @@ class CCDataSource(DataSource):
             
         return limited_line_reader(f, limit)
         
-    def file_lists_diffs_counts(self, rse, run):
+    def file_lists_diffs(self, rse, run):
+        # typ: 'D' or 'M' for 'dark' and 'missing'
         # compare dark or missing list from the run to the previous run
-        # returns (prev_run, missing old count, dark_old count)
-        # or (None, None, None)
-
-        stats = self.get_data(rse, run, "stats")
-        if stats is not None and "diffs" in stats:
-            diffs = stats["diffs"]
-            return (
-                diffs["prev_run"],
-                diffs["missing_old"],
-                diffs["dark_old"]
-            )
+        # returns (prev_run, missing_old, missing_new, dark_old, dark_new) - sets
+        # or (None, None, None, None, None)
 
         runs = self.list_runs(rse)
         try:    this_i = runs.index(run)
         except ValueError:
-            return (None, None, None)         # run not found
+            return (None, None, None, None, None)         # run not found
 
         this_dark = self.get_dark(rse, run)
         this_missing = self.get_missing(rse, run)
         if this_dark is None or this_missing is None:
-            return (None, None, None)         # one of the lists missing
+            return (None, None, None, None, None)         # one of the lists missing
 
-        prev_stats = prev_dark = prev_missing = None
-        prev_i = this_i - 1
-        if prev_i >= 0:
-            prev_run = runs[prev_i]
+        i = this_i - 1
+        while i >= 0:
+            prev_run = runs[i]
             prev_stats, _, _, _ = self.get_stats(rse, prev_run)
             if prev_stats is not None and prev_stats.get("cmp3", {}).get("status") == "done":
                 prev_dark = self.get_dark(rse, prev_run)
                 prev_missing = self.get_missing(rse, prev_run)
-
-        if prev_dark is None or prev_missing is None:
-            return (None, None, None)         # no run to compare to
+                if prev_dark is not None and prev_missing is not None:
+                    break
+            i -= 1
+        else:
+            return (None, None, None, None, None)         # no run to compare to
 
         this_dark = set(this_dark)
         this_missing = set(this_missing)
         prev_dark = set(prev_dark)
         prev_missing = set(prev_missing)
 
-        old_missing = len(this_missing & prev_missing)
-        old_dark = len(this_dark & prev_dark)
-
-        return (prev_run, old_missing, old_dark)
+        return (prev_run, 
+            this_missing & prev_missing, this_missing - prev_missing, 
+            this_dark & prev_dark, this_dark - prev_dark
+        ) 
 
     def get_dark(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "D", limit)
@@ -546,14 +503,16 @@ class CCDataSource(DataSource):
             if "cmp2dark" in stats:
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
-            if self.DarkSection in stats:
-                summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
-                summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
-                summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")
+            if "cc_dark" in stats:
+                summary["dark_stats"]["acted_on"] = stats["cc_dark"].get("confirmed_dark_files")
+                summary["dark_stats"]["action_status"] = stats["cc_dark"].get("status", "").lower() or None
+                summary["dark_stats"]["aborted_reason"] = stats["cc_dark"].get("aborted_reason", "")
                 
-            if self.MissingSection in stats:
-                summary["missing_stats"]["acted_on"] = stats[self.MissingSection].get("confirmed_miss_files", 
-                                stats[self.MissingSection].get("confirmed_missing_files"))
-                summary["missing_stats"]["action_status"] = stats[self.MissingSection].get("status", "").lower() or None
-                summary["missing_stats"]["aborted_reason"] = stats[self.MissingSection].get("aborted_reason", "")
+            if "cc_miss" in stats:
+                summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_miss_files")
+                if summary["missing_stats"]["acted_on"] is None:
+                    summary["missing_stats"]["acted_on"] = stats["cc_miss"].get("confirmed_dark_files")       # there used to be a typo in older versions 
+                summary["missing_stats"]["action_status"] = stats["cc_miss"].get("status", "").lower() or None
+                summary["missing_stats"]["aborted_reason"] = stats["cc_miss"].get("aborted_reason", "")
+        #print("summary:", summary)
         return summary

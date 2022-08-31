@@ -195,15 +195,22 @@
 	            </script>
 
 	            <table class="data">
+                    <tr>
+                        <td></td>
+                        <th colspan=3>Latest run</th>
+                        <th>Repeated from prvious run</th>
+                    </tr>
 	                <tr>
 	                    <td class="field_name">Missing files</td><td>{{nmissing}}</td>
 	                    <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
 	                    <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                        <td>{{old_nmissing|none_as_blank}}</td>
 	                </tr>
 	                <tr>
 	                    <td class="field_name">Dark files</td><td>{{ndark}}</td>
 	                    <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
 	                    <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                        <td>{{old_ndark|none_as_blank}}</td>
 	                </tr>
 	            </table>
             
@@ -236,7 +243,7 @@
     {# {% endif %}  errors #}
 
     <h3>Raw JSON statistics</h3>
-    
+        <a href="./stats?rse={{rse}}&run={{run}}">link</a>
         <pre class="code">
         {{stats|as_json}}
         </pre>

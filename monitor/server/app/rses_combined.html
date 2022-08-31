@@ -14,9 +14,9 @@
 #}
 
 <p><span style="color:gray">sort by:</span>
-    <a href="?sort=rse">RSE</a> |
-    CC run <a href="?sort=-cc_run">(+)</a> <a href="?sort=cc_run">(-)</a> |
-    unmerged run  <a href="?sort=-um_run">(+)</a> <a href="?sort=um_run">(-)</a>
+    [<a href="?sort=rse">RSE</a>]
+    [CE run: <a href="?sort=-cc_run">latest</a> | <a href="?sort=cc_run">oldest</a>]
+    [Unmerged run:  <a href="?sort=-um_run">latest</a> | <a href="?sort=um_run">oldest</a>]
 </p>
 
 
@@ -43,6 +43,26 @@
         if( color == null )
             color=colors["other"];
         return color;
+    }
+    
+    function display_current_old(element_id, current, old)
+    {
+        var td = document.getElementById(element_id);
+        if( current == null )
+            td.innerHTML = "";
+        else if( old == null )
+            td.innerHTML = '' + current + "(?)";
+        else if( old == 0 )
+            td.innerHTML = '' + current;
+        else
+            td.innerHTML = '' + current + '(' + old + ')';
+        if( old != null && old > 0 ) td.className = "with_old";
+    }
+    
+    function display_diffs(rse, prev_run, counts)
+    {
+        display_current_old("nmissing_"+rse+"_td", counts.nmissing, counts.nmissing_old);
+        display_current_old("ndark_"+rse+"_td", counts.ndark, counts.ndark_old);
     }
     
     function display_um_status_chart(id_prefix, status_list)
@@ -161,12 +181,12 @@
     <th rowspan=2>Size</th>
 </tr>
 <tr>
-    <th>Detected</th>
+    <th>Detected (old)</th>
     <th>Confirmed</th>
     <th>Acted</th>
     <th>Action status</th>
 
-    <th>Detected</th>
+    <th>Detected (old)</th>
     <th>Acted</th>
     <th>Action status</th>
 </tr>
@@ -198,7 +218,7 @@
             <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
             
             {% set dark_stats = cc_summary["dark_stats"] %}
-            <td>{{dark_stats["detected"]|none_as_blank}}</td>
+            <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
             <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
             <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
@@ -212,7 +232,7 @@
             </td>
             
             {% set missing_stats = cc_summary["missing_stats"] %}
-            <td>{{missing_stats["detected"]|none_as_blank}}</td>
+            <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
             <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
             <td class="{{missing_stats['action_status']|none_as_blank}}">
                 {{missing_stats['action_status']|none_as_blank}}
@@ -269,35 +289,59 @@
         }
     };
     
-    function request_history_info(rse_lst)
+    var diffs_receiver = {
+        data_received: function(diffs) {
+            for ( rse in diffs )
+            {
+                var info = diffs[rse];
+                display_current_old("nmissing_"+rse+"_td", info.nmissing, info.nmissing_old);
+                display_current_old("ndark_"+rse+"_td", info.ndark, info.ndark_old);
+            }
+        }
+    };
+    
+    function request_info(rse_lst)
     {
-        var batch_size = 5;
+        var batch_size = 10;
         var batch = [];
         var requests = [];
 
-        function request_batch(rse_batch)
+        function request_batch(rse_batch, requests)
         {
             var url = "./status_history?rses=" + rse_batch.join(",");
-            return HTTPRequest(url, history_receiver, null, "json");
+            requests.push(HTTPRequest(url, history_receiver, null, "json"));
+            var url = "./lists_diffs?rses=" + rse_batch.join(",");
+            requests.push(HTTPRequest(url, diffs_receiver, null, "json"));
         }
     
-        rse_lst = rse_lst.sort(() => Math.random() - 0.5);
-        
-        for( rse of rse_lst )
+        function batch_requests(url_base, rse_list, batch_size, receiver)
         {
-            batch.push(rse);
-            if( batch.length >= batch_size )
+            // randomize
+            var randomized = rse_lst.sort(() => Math.random() - 0.5);
+            var batch = [];
+            var requests = [];
+            for( rse of randomized )
             {
-                requests.push(request_batch(batch));
-                batch = [];
-            }   
+                batch.push(rse);
+                if( batch.length >= batch_size )
+                {
+                    var url = url_base + "?rses=" + batch.join(",");
+                    requests.push(HTTPRequest(url, receiver, null, "json"));
+                    batch = [];
+                }   
+            }
+            if( batch.length > 0 )
+            {
+                var url = url_base + "?rses=" + batch.join(",");
+                requests.push(HTTPRequest(url, receiver, null, "json"));
+            }
+            return requests;
         }
-        if( batch.length > 0 )
-            requests.push(request_batch(batch));
-        return requests;
+        batch_requests("./status_history", rse_list, 20, history_receiver);
+        batch_requests("./lists_diffs", rse_list, 2, diffs_receiver);
     }
     
-    var requests=request_history_info(rse_list);
+    var requests=request_info(rse_list);
     //HTTPRequest("./status_history", history_receiver, null, "json");
     
 </script>

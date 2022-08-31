@@ -1,11 +1,11 @@
 #!/bin/sh
 
-version="3.1"
+version="2.0"
 
 echo site_cmp3 version: $version
 
 if [ "$1" == "" ]; then
-	echo 'Usage: site_ce.sh <config file> (<rucio.cfg>|-) <RSE name> <scratch dir> <out dir> [<cert file> [<key file>]]'
+	echo 'Usage: site_cmp3.sh <config file> (<rucio.cfg>|-) <RSE name> <scratch dir> <out dir> [<cert file> [<key file>]]'
 	exit 2
 fi
 
@@ -17,27 +17,18 @@ scratch=$4
 out=$5
 cert=$6
 key=$7
-scope=cms
 
 echo "config_file:               $config_file"
 echo "rucio_config_file:         $rucio_config_file"
-echo "scope:                     $scope"
 echo "RSE:                       $RSE"
 echo "scratch:                   $scratch"
 echo "out:                       $out"
 echo "cert:                      $cert"
 echo "key:                       $key"
 
-if [ ! -f /consistency/config.yaml ]; then
-    cp $config_file /consistency/config.yaml    # to make it editable
-    echo Config file $config_file copied to /consistency/config.yaml
-fi
-
-config_file=/consistency/config.yaml
-
 python=${PYTHON:-python}
 
-export PYTHONPATH=`pwd`:`pwd`/cmp3
+export PYTHONPATH=`pwd`/cmp3:`pwd`
 
 echo will use python: $python
 
@@ -84,7 +75,6 @@ cat > ${stats} <<_EOF_
     "start_time":   ${timestamp}.0,
     "start_date_time_utc":  "${now_date_time}",
     "run":          "${now}",
-    "scope":        "${scope}",
     "rse":          "${RSE}",
     "scratch":      "${scratch}",
     "out":          "${out}",
@@ -125,7 +115,7 @@ echo Site dump ...
 echo
 
 echo "Site scan..." > ${scanner_errors}
-$python xrootd/xrootd_scanner.py -z -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
+$python xrootd_scanner.py -z -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then
     echo "Site scan failed. Status code: $scanner_status" >> ${scanner_errors}
@@ -156,29 +146,14 @@ $python cmp3/cmp5.py -s ${stats} \
     ${am_prefix} ${ad_prefix} \
     ${d_out} ${m_out}
 
-ndark=`wc -l ${d_out}`
-nmissing=`wc -l ${m_out}`
-
-echo "Dark list:    " $ndark
-echo "Missing list: " $nmissing
-
-# 4.1 Calculate diffs with previous run
-$python cmp3/diffs.py -u -s ${stats} $out $RSE $now
-
-#
-# 5. Declare missing and dark replicas
-#    -o ... turns it into "dry run" mode
-#
-
-missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
-dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
-m_action_list=${out}/${RSE}_${now}_M_action.list
-d_action_list=${out}/${RSE}_${now}_D_action.list
-$python actions/declare_missing.py -o ${m_action_list} -c ${config_file} -s $stats $out $scope $RSE 2>> ${missing_action_errors}
-$python actions/declare_dark.py    -o ${d_action_list} -c ${config_file} -s $stats $out        $RSE 2>> ${dark_action_errors}
+echo "Dark list:    " `wc -l ${d_out}`
+echo "Missing list: " `wc -l ${m_out}`
 
 end_time=`date -u +%s`
 
-$python cmp3/stats.py $stats << _EOF_
+$python cmp3/stats.py stats.json << _EOF_
 { "end_time":${end_time}.0 }
 _EOF_
+
+
+

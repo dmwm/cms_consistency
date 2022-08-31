@@ -1,7 +1,7 @@
 import getopt, os, time, re, gzip, json, traceback
 import sys, uuid
 
-from config import DBConfig, CCConfiguration, ConfigYAMLBackend
+from config import DBConfig, DBDumpConfiguration
 from part import PartitionedList
 
 from sqlalchemy import create_engine
@@ -122,12 +122,12 @@ else:
 
 #print("dbconfig: url:", dbconfig.DBURL, "schema:", dbconfig.Schema)
 
-config = CCConfiguration(ConfigYAMLBackend(opts["-c"]), rse_name)
+config = DBDumpConfiguration(rse_name, opts["-c"])
 
 stats = None if stats_file is None else Stats(stats_file)
 
 if stats:
-    stats[stats_key] = {
+    stats.update_section(stats_key, {
         "status":"started",
         "version":Version,
         "rse":rse_name,
@@ -139,8 +139,8 @@ if stats:
         "exception":[],  
         "ignored_files":0,
         "ignore_list":None
-    }
-    
+    })
+
 try:
     Base = declarative_base()
     if dbconfig.Schema:
@@ -168,8 +168,7 @@ try:
     if not subdir.endswith("/"):    subdir = subdir + "/"
     print(f"Filtering files under {subdir} only")
 
-    ignore_list = config.DBDumpIgnoreSubdirs            # relative to the root
-    ignore_list = [subdir + path for path in ignore_list]
+    ignore_list = config.IgnoreList           
     if ignore_list:
         print("Ignore list:")
         for path in ignore_list:
@@ -257,17 +256,16 @@ except:
     lines = traceback.format_exc().split("\n")
     t1 = time.time()
     if stats is not None:
-        stats[stats_key].update({
+        stats.update_section(stats_key, {
             "status":"failed",
             "end_time":t1,
             "exception":lines,
             "ignore_list":ignore_list
         })
-        stats.save()
     raise
 else:    
     if stats is not None:
-        stats[stats_key].update({
+        stats.update_section(stats_key, {
             "status":"done",
             "end_time":t1,
             "files":n,
@@ -276,6 +274,3 @@ else:
             "directories":len(dirs),
             "ignore_list":ignore_list
         })
-        stats.save()
-
-

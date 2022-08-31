@@ -1,4 +1,4 @@
-import json, os.path, traceback
+import json, os.path, traceback, copy
 
 class Stats(object):
     
@@ -25,9 +25,35 @@ class Stats(object):
             self.Data[name] = value
             d = value
         return d
-        
-    def update(self, data):
-        self.Data.update(data)
+    
+    def __update_deep(self, data, update):
+        # data and update are dictionaries
+        assert isinstance(data, dict) and isinstance(update, dict)
+        for k, v in update.items():
+            if isinstance(v, dict):
+                if not k in data:
+                    data[k] = copy.deepcopy(v)
+                else:
+                    data_v = data[k]
+                    if isinstance(data_v, dict):
+                        self.__update_deep(data_v, v)
+                    else:
+                        data[k] = copy.deepcopy(v)
+            elif isinstance(v, list):
+                data[k] = v[:]
+            else:
+                data[k] = v
+                
+    def update(self, __update=None, **kw):
+        if __update is None:    __update = kw
+        assert isinstance(__update, dict)
+        self.__update_deep(self.Data, __update)
+        self.save()        
+
+    def update_section(self, section, __update=None, **kw):
+        if __update is None:    __update = kw
+        assert isinstance(__update, dict)
+        self.__update_deep(self.Data.setdefault(section, {}), __update)
         self.save()
         
     def save(self):
@@ -41,7 +67,7 @@ class Stats(object):
         data = json.loads(data or "{}")
         data.update(self.Data)
         open(self.Path, "w").write(json.dumps(data, indent=4))
-        
+
 
 def write_stats(my_stats, stats_file, stats_key = None):
     if stats_file:

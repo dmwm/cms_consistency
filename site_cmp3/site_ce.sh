@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="3.1"
+version="3.0"
 
 echo site_cmp3 version: $version
 
@@ -27,13 +27,6 @@ echo "scratch:                   $scratch"
 echo "out:                       $out"
 echo "cert:                      $cert"
 echo "key:                       $key"
-
-if [ ! -f /consistency/config.yaml ]; then
-    cp $config_file /consistency/config.yaml    # to make it editable
-    echo Config file $config_file copied to /consistency/config.yaml
-fi
-
-config_file=/consistency/config.yaml
 
 python=${PYTHON:-python}
 
@@ -162,9 +155,6 @@ nmissing=`wc -l ${m_out}`
 echo "Dark list:    " $ndark
 echo "Missing list: " $nmissing
 
-# 4.1 Calculate diffs with previous run
-$python cmp3/diffs.py -u -s ${stats} $out $RSE $now
-
 #
 # 5. Declare missing and dark replicas
 #    -o ... turns it into "dry run" mode
@@ -179,6 +169,6 @@ $python actions/declare_dark.py    -o ${d_action_list} -c ${config_file} -s $sta
 
 end_time=`date -u +%s`
 
-$python cmp3/stats.py $stats << _EOF_
+$python cmp3/stats.py stats.json << _EOF_
 { "end_time":${end_time}.0 }
 _EOF_

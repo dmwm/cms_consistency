@@ -89,6 +89,9 @@ class ConfigBackend(object):
     def get_dbdump(self, rse_name="*"):
         return self.get_config(rse_name).get("dbdump", {})
 
+    def get_action(self, action, rse_name="*"):
+        return self.get_config(rse_name).get(action + "_action", {})
+
     #
     # Methods implementing RSE/common logic
     #
@@ -102,7 +105,12 @@ class ConfigBackend(object):
             raise KeyError(f"Required field {name} not found")
         else:
             return default
-            
+    
+    def action_param(self, rse_name, action, param, default=None, required=False):
+        specific = self.get_action(action, rse_name)
+        common = self.get_action(action)
+        return self.get_value(param, specific, common, default, required)
+    
     def scanner_param(self, rse_name, param, default=None, required=False):
         # 1. rses->rse->param
         # 2. rses->*->param
@@ -193,10 +201,12 @@ class ConfigRucioBackend(ConfigBackend):
                 self.Common = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX)
                 scanner = self.Common["scanner"] = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX + ".scanner")
                 dbdump = self.Common["dbdump"] = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX + ".dbdump")
-                
+                self.Common["missing_action"] = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX + ".missing_action")
+                self.Common["dark_action"] = self.ConfigClient.get_config(self.CONFIG_SECTION_PREFIX + ".dark_action")
+
                 # parse roots config
                 self.CommonRoots = self.roots_as_dict(json.loads(scanner.get("roots", "[]")))
-                        
+
             return self.Common
         else:
             cfg = self.RSESpecific.get(rse)
@@ -239,54 +249,88 @@ class ConfigRucioBackend(ConfigBackend):
             cfg = (self.RSERoots.get(rse) or {}).get(root)
             #print(f"Rucio backend: get_root({root}, {rse}): cfg:", cfg)
             return cfg
-        
-class CCConfiguration(object):
+
+
+class CEConfiguration(object):
     
-    def __init__(self, backend, rse):
+    def __init__(self, rse, source, **args):
+        if source == "rucio":
+            backend = ConfigRucioBackend(**args)
+        else:
+            backend = ConfigYAMLBackend(source)
         self.Backend = backend
         self.RSE = rse
-
         self.NPartitions = int(backend.rse_param(rse, "npartitions", 10))
+        self.IgnoreList = self.rse_param(rse, "ignore_list", [])
+        
+    def __contains__(self, name):
+        try:    _ = self[name]
+        except KeyError:    return False
+        else:   return True
 
-        self.Server = backend.scanner_param(rse, "server", None)
-        self.ServerRoot = backend.scanner_param(rse, "server_root", "/store", required=True)
-        self.ScannerTimeout = int(backend.scanner_param(rse, "timeout", 300))
-        self.RootList = backend.root_list(rse)
-        self.RemovePrefix = backend.scanner_param(rse, "remove_prefix", "/")
-        self.AddPrefix = backend.scanner_param(rse, "add_prefix", "/store/")
-        self.NWorkers = int(backend.scanner_param(rse, "nworkers", 8))
-        self.IncludeSizes = backend.scanner_param(rse, "include_sizes", "yes") == "yes"
-        self.RecursionThreshold = int(backend.scanner_param(rse, "recursion", 1))
-        self.ServerIsRedirector = backend.scanner_param(rse, "is_redirector", True)
-        self.IgnoreList = backend.rse_param(rse, "ignore_list", [])
-        self.DBDumpPathRoot = backend.dbdump_param(rse, "path_root", "/")
-        self.DBDumpIgnoreSubdirs = backend.dbdump_param(rse, "ignore", [])
+    def __getattr__(self, name):
+        return getattr(self.Backend, name)
+
+    def get(self, name, default=None):
+        try:    return self[name]
+        except KeyError: return default
+
+
+class ScannerConfiguration(CEConfiguration):
+    
+    def __init__(self, rse, source, **source_agrs):
+        CEConfiguration.__init__(self, rse, source, **source_agrs)
+
+        self.Server = self.scanner_param(rse, "server", None)
+        self.ServerRoot = self.scanner_param(rse, "server_root", "/store", required=True)
+        self.ScannerTimeout = int(self.scanner_param(rse, "timeout", 300))
+        self.RootList = self.root_list(rse)
+        self.RemovePrefix = self.scanner_param(rse, "remove_prefix", "/")
+        self.AddPrefix = self.scanner_param(rse, "add_prefix", "/store/")
+        self.NWorkers = int(self.scanner_param(rse, "nworkers", 8))
+        self.IncludeSizes = self.scanner_param(rse, "include_sizes", "yes") == "yes"
+        self.RecursionThreshold = int(self.scanner_param(rse, "recursion", 1))
+        self.ServerIsRedirector = self.scanner_param(rse, "is_redirector", True)
 
     def ignore_subdirs(self, root):
-        return self.Backend.root_param(self.RSE, root, "ignore", [])
+        return self.root_param(self.RSE, root, "ignore", [])
 
-    @staticmethod
-    def rse_config(rse, backend_type, *backend_args):
-        if backend_type == "rucio":
-            backend = ConfigRucioBackend(*backend_args)
-        elif backend_type == "yaml":
-            backend = ConfigYAMLBackend(*backend_args)
-        else:
-            raise ValueError(f"Unknown configuration backend type {backend_type}")
-        return CCConfiguration(backend, rse)
+    def __getitem__(self, name):
+        return self.scanner_param(self.RSE, name, required=True)
 
+class DBDumpConfiguration(CEConfiguration):
+
+    def __init__(self, rse, *params, **agrs):
+        CEConfiguration.__init__(self, rse, *params, **agrs)
+        self.DBDumpPathRoot = self.dbdump_param(rse, "path_root", "/")
+
+    def __getitem__(self, name):
+        return self.dbdump_param(self.RSE, name, required=True)
+
+class ActionConfiguration(CEConfiguration):
+    
+    def __init__(self, rse, source, action, **source_agrs):
+        CEConfiguration.__init__(self, rse, source, **source_agrs)
+        self.Action = action
+        self.AbortThreshold = float(self.action_param(rse, action, "max_fraction", 0.05))
+        self.MaxAgeOfLastRun = int(self.action_param(rse, action, "max_age_last_run", 1))               # days
+
+        if action == "dark":
+            self.ConfirmationWindow = int(self.action_param(rse, action, "confirmation_window", 35))            # days
+            self.MinAgeOfFirstRun = int(self.action_param(rse, action, "min_age_first_run", 25))
+            self.MinRuns = int(self.action_param(rse, action, "min_runs", 3))
+
+    def __getitem__(self, name):
+        return self.action_param(self.RSE, self.Action, name, required=True)
+        
+        
 if __name__ == "__main__":
     import sys, getopt
     opts, args = getopt.getopt(sys.argv[1:], "c:r")
     opts = dict(opts)
     rse, param = args[:2]
     
-    if "-c" in opts:
-        backend = ConfigYAMLBackend(opts["-c"])
-    elif "-r" in opts:
-        backend = ConfigRucioBackend()
-    
-    cfg = CCConfiguration(backend, rse)
+    cfg = CEConfiguration(rse, opts["-c"])
     print(getattr(cfg, param))
         
         
