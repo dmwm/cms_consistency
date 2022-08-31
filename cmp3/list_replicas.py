@@ -167,17 +167,17 @@ for r in rses:
 
 replicas = session.query(model) 
 if rse is not None:
-    replicas = replicas.filter(Replica.rse_id==rse.id)
+    replicas = replicas.filter(model.rse_id==rse.id)
 
 if include_states != '*':
-    replicas = replicas.filter(Replica.state.in_(list(include_states)))
+    replicas = replicas.filter(model.state.in_(list(include_states)))
 
 if exclude_states:
-    replicas = replicas.filter(Replica.state.not_in(list(exclude_states)))
+    replicas = replicas.filter(model.state.not_in(list(exclude_states)))
     
 if names is not None:
     names = names.split(',')
-    replicas = replicas.filter(Replica.name.in_(names))
+    replicas = replicas.filter(model.name.in_(names))
 
 for r in replicas.yield_per(10000):
     path = r.name
