@@ -33,6 +33,7 @@ python db_list.py [options]
     -x <states>             -- exclude replica states
     -s                      -- include scope
     -S                      -- include state
+    -R                      -- include RSE name
     -v                      -- verbose
 """
 
@@ -85,7 +86,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vsSr:n:t:")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vsSr:n:t:R")
 opts = dict(opts)
 
 if "-c" not in opts and "-d" not in opts:
@@ -96,6 +97,7 @@ include_states = opts.get("-i", "*")
 exclude_states = opts.get("-x", "")
 include_scope = "-s" in opts
 include_state = "-S" in opts
+include_rse = "-R" in opts
 rse_name = opts.get("-r")
 names = opts.get("-n")
 replicas_table = opts.get("-t", "replicas")
@@ -137,11 +139,10 @@ if rse_name is not None:
 #
 # get RSE names mapping
 #
-
+rse_names = {}
 rses = session.query(RSE)
 for r in rses:
-    print(r.rse, r.id)
-
+    rse_names[r.id] = r.rse
 
 replicas = session.query(Replica)
 if rse is not None:
@@ -163,6 +164,8 @@ for r in replicas.yield_per(10000):
     name = r.name
     scope = r.scope
     tup = (name,)
+    if include_rse:
+        tup = (rse_names[r.rse_id],) + tup
     if include_scope:
         tup = (scope,) + tup
     if include_state:
