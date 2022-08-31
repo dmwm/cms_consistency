@@ -88,7 +88,7 @@ class GUID(TypeDecorator):
 opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vpsSr:n:")
 opts = dict(opts)
 
-if not args or ("-c" not in opts and "-d" not in opts):
+if "-c" not in opts and "-d" not in opts:
     print (Usage)
     sys.exit(2)
 
@@ -97,10 +97,8 @@ exclude_states = opts.get("-x", "")
 include_path = "-p" in opts
 include_scope = "-s" in opts
 include_state = "-S" in opts
-rse = opts.get("-r")
+rse_name = opts.get("-r")
 names = opts.get("-n")
-
-rse_name = args[0]
 
 if "-c" in opts:
     dbconfig = DBConfig.from_yaml(opts["-c"])
@@ -128,7 +126,8 @@ engine = create_engine(dbconfig.DBURL,  echo="-v" in opts)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-if rse is not None:
+rse = None
+if rse_name is not None:
     rse = session.query(RSE).filter(RSE.rse == rse_name).first()
     if rse is None:
             print ("RSE %s not found" % (rse_name,))
