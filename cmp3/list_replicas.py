@@ -180,8 +180,6 @@ if names is not None:
     replicas = replicas.filter(model.name.in_(names))
 
 for r in replicas.yield_per(10000):
-    path = r.name
-    state = r.state
     name = r.name
     scope = r.scope
     tup = (name,)
@@ -190,5 +188,5 @@ for r in replicas.yield_per(10000):
     if include_scope:
         tup = (scope,) + tup
     if include_state:
-        tup = (state,) + tup
+        tup = (r.state,) + tup
     print(*tup)
