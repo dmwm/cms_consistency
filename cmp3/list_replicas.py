@@ -128,10 +128,10 @@ class BadReplica(Base):
 class QuarantinedReplica(Base):
     """Represents the quarantined replicas"""
     __tablename__ = 'quarantined_replicas'
-    rse_id = Column(GUID())
+    rse_id = Column(GUID(), primary_key=True)
     path = Column(String)
-    scope = Column(String)
-    name = Column(String)
+    scope = Column(String, primary_key=True)
+    name = Column(String, primary_key=True)
 
 class RSE(Base):
         __tablename__ = "rses"
