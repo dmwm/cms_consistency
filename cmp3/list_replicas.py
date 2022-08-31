@@ -129,7 +129,6 @@ class Replica(Base):
 
 class QuarantinedReplica(Base):
         __tablename__ = replicas_table
-        state = Column(String)
         rse_id = Column(GUID(), primary_key=True)
         scope = Column(String, primary_key=True)
         name = Column(String, primary_key=True)
