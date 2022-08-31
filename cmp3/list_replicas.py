@@ -28,7 +28,7 @@ python db_list.py [options]
     -d <CFG config file>       
     -r <RSE>
     -n <name>[,...]
-    -t (replicas|bad_replicas)  -- table to use, default: replicas
+    -t (replicas|bad|quarantined)  -- table to use, default: replicas
     -i <states>             -- include only these states
     -x <states>             -- exclude replica states
     -s                      -- include scope
@@ -102,7 +102,14 @@ rse_name = opts.get("-r")
 names = opts.get("-n")
 replicas_table = opts.get("-t", "replicas")
 
-assert replicas_table in ("replicas", "bad_replicas")
+replicas_tables = {
+    "replicas": "replicas",
+    "bad": "bad_replicas",
+    "quarantined": "quarantined_replicas",
+}
+assert replicas_table in replicas_tables
+replicas_table = replicas_tables[replicas_table]
+
 
 if "-c" in opts:
     dbconfig = DBConfig.from_yaml(opts["-c"])
