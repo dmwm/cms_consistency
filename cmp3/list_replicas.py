@@ -34,6 +34,7 @@ python db_list.py [options]
     -s                      -- include scope
     -S                      -- include state
     -R                      -- include RSE name
+    -P                      -- include path
     -v                      -- verbose
 """
 
@@ -86,7 +87,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vsSr:n:t:R")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vsSr:n:t:RP")
 opts = dict(opts)
 
 if "-c" not in opts and "-d" not in opts:
@@ -96,6 +97,7 @@ if "-c" not in opts and "-d" not in opts:
 include_states = opts.get("-i", "*")
 exclude_states = opts.get("-x", "")
 include_scope = "-s" in opts
+include_path = "-P" in opts
 include_state = "-S" in opts
 include_rse = "-R" in opts
 rse_name = opts.get("-r")
@@ -189,4 +191,6 @@ for r in replicas.yield_per(10000):
         tup = (scope,) + tup
     if include_state:
         tup = (r.state,) + tup
+    if include_path:
+        tup = tup + (r.path,)
     print(*tup)
