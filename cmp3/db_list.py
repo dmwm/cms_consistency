@@ -23,9 +23,11 @@ t0 = time.time()
 #from sqlalchemy import schema
 
 Usage = """
-python db_list.py [options] -c <config.yaml> <rse_name>
+python db_list.py [options]
     -c <YAML config file>       
     -d <CFG config file>       
+    -r <RSE>
+    -n <name>[,...]
     -i <states>             -- include only these states
     -x <states>             -- exclude replica states
     -p                      -- include path
@@ -95,6 +97,8 @@ exclude_states = opts.get("-x", "")
 include_path = "-p" in opts
 include_scope = "-s" in opts
 include_state = "-S" in opts
+rse = opts.get("-r")
+names = opts.get("-n")
 
 rse_name = args[0]
 
@@ -124,16 +128,25 @@ engine = create_engine(dbconfig.DBURL,  echo="-v" in opts)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-rse = session.query(RSE).filter(RSE.rse == rse_name).first()
-if rse is None:
-        print ("RSE %s not found" % (rse_name,))
-        sys.exit(1)
+if rse is not None:
+    rse = session.query(RSE).filter(RSE.rse == rse_name).first()
+    if rse is None:
+            print ("RSE %s not found" % (rse_name,))
+            sys.exit(1)
 
-replicas = session.query(Replica).filter(Replica.rse_id==rse.id)
+replicas = session.query(Replica)
+if rse is not None:
+    replicas = replicas.filter(Replica.rse_id==rse.id)
+
 if include_states != '*':
     replicas = replicas.filter(Replica.state.in_(list(include_states)))
+
 if exclude_states:
     replicas = replicas.filter(Replica.state.not_in(list(exclude_states)))
+    
+if names is not None:
+    names = names.split(',')
+    replicas = replicas.filter(Replica.name.in_(names))
 
 for r in replicas.yield_per(10000):
     path = r.name
