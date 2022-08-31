@@ -102,15 +102,6 @@ rse_name = opts.get("-r")
 names = opts.get("-n")
 replicas_table = opts.get("-t", "replicas")
 
-replicas_tables = {
-    "replicas": "replicas",
-    "bad": "bad_replicas",
-    "quarantined": "quarantined_replicas",
-}
-assert replicas_table in replicas_tables
-replicas_table = replicas_tables[replicas_table]
-
-
 if "-c" in opts:
     dbconfig = DBConfig.from_yaml(opts["-c"])
 else:
@@ -121,7 +112,14 @@ if dbconfig.Schema:
     Base.metadata.schema = dbconfig.Schema
 
 class Replica(Base):
-        __tablename__ = replicas_table
+        __tablename__ = "replicas"
+        state = Column(String)
+        rse_id = Column(GUID(), primary_key=True)
+        scope = Column(String, primary_key=True)
+        name = Column(String, primary_key=True)
+
+class BadReplica(Base):
+        __tablename__ = "bad_replicas"
         state = Column(String)
         rse_id = Column(GUID(), primary_key=True)
         scope = Column(String, primary_key=True)
@@ -139,6 +137,14 @@ class RSE(Base):
         __tablename__ = "rses"
         id = Column(GUID(), primary_key=True)
         rse = Column(String)
+
+models = {
+    "replicas": Replica,
+    "bad": BadReplica,
+    "quarantined": QuarantinedReplica
+}
+assert replicas_table in models
+model = models[replicas_table]
 
 engine = create_engine(dbconfig.DBURL,  echo="-v" in opts)
 Session = sessionmaker(bind=engine)
@@ -159,7 +165,7 @@ rses = session.query(RSE)
 for r in rses:
     rse_names[r.id] = r.rse
 
-replicas = session.query(QuarantinedReplica) if replicas_table == "quarantined_replicas" else session.query(Replica) 
+replicas = session.query(model) 
 if rse is not None:
     replicas = replicas.filter(Replica.rse_id==rse.id)
 
