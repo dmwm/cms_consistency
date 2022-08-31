@@ -55,7 +55,6 @@ am_prefix=${a_prefix}_M
 ad_prefix=${a_prefix}_D
 bm_prefix=${b_prefix}_M
 bd_prefix=${b_prefix}_D
-r_prefix=${scratch}/${RSE}_R
 
 now=`date -u +%Y_%m_%d_%H_%M`
 timestamp=`date -u +%s`
@@ -102,7 +101,6 @@ rm -f ${am_prefix}.*
 rm -f ${ad_prefix}.*
 rm -f ${bd_prefix}.*
 rm -f ${bm_prefix}.*
-rm -f ${r_prefix}.*
 
 # 1. DB dump "before"
 echo
@@ -124,8 +122,16 @@ echo
 echo Site dump ...
 echo
 
+r_prefix=${scratch}/${RSE}_R
+rm -f ${r_prefix}.*
+
+empty_dirs_out=${out}/${RSE}_${now}_ED.list
+
 echo "Site scan..." > ${scanner_errors}
-$python xrootd/xrootd_scanner.py -z -o ${r_prefix} -c ${config_file} -s ${stats} ${RSE} 2>> ${scanner_errors}
+$python xrootd/xrootd_scanner.py -z -c ${config_file} -s ${stats} \
+    -o ${r_prefix} \
+    -e ${empty_dirs_out} \
+    ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then
     echo "Site scan failed. Status code: $scanner_status" >> ${scanner_errors}

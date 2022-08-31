@@ -5,7 +5,7 @@ from part import PartitionedList
 from py3 import to_str
 from stats import Stats
 
-Version = "2.0"
+Version = "2.1"
 
 GB = 1024*1024*1024
 
@@ -383,10 +383,10 @@ class Scanner(Task):
                 self.Master.scanner_failed(self, f"{status}: {reason}")
 
         else:
-            counts = " %8d %-8d" % (len(files), len(dirs))
+            counts = " files:%8d dirs:%8d empty:%8d" % (len(files), len(dirs), len(empty_dirs))
             if self.IncludeSizes:
                 total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
-                counts += " %.3f" % (total_size/GB,)
+                counts += " size:%.3fGB" % (total_size/GB,)
             self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, empty_dirs)
@@ -826,7 +826,10 @@ if __name__ == "__main__":
         "roots":[], 
         "start_time":time.time(),
         "end_time": None,
-        "status":   "started"
+        "status":   "started",
+        "files_output_prefix":          output,
+        "dirs_output_prefix":           dir_output,
+        "empty_dirs_output_file":       empty_dir_output
     }
     
     if stats is not None:
