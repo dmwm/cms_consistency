@@ -158,6 +158,4 @@ for r in replicas.yield_per(10000):
         tup = (scope,) + tup
     if include_state:
         tup = (state,) + tup
-    if include_path:
-        tup = tup + (path or "",)
     print(*tup)
