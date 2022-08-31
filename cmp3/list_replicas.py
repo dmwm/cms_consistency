@@ -131,9 +131,9 @@ class QuarantinedReplica(Base):
     """Represents the quarantined replicas"""
     __tablename__ = 'quarantined_replicas'
     rse_id = Column(GUID())
-    path = Column(String(1024))
-    scope = Column(InternalScopeString(get_schema_value('SCOPE_LENGTH')))
-    name = Column(String(get_schema_value('NAME_LENGTH')))
+    path = Column(String)
+    scope = Column(String)
+    name = Column(String)
 
 class RSE(Base):
         __tablename__ = "rses"
