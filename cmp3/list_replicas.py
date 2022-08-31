@@ -28,9 +28,9 @@ python db_list.py [options]
     -d <CFG config file>       
     -r <RSE>
     -n <name>[,...]
+    -t (replicas|bad_replicas)  -- table to use, default: replicas
     -i <states>             -- include only these states
     -x <states>             -- exclude replica states
-    -p                      -- include path
     -s                      -- include scope
     -S                      -- include state
     -v                      -- verbose
@@ -85,7 +85,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vpsSr:n:")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vsSr:n:t:")
 opts = dict(opts)
 
 if "-c" not in opts and "-d" not in opts:
@@ -94,11 +94,13 @@ if "-c" not in opts and "-d" not in opts:
 
 include_states = opts.get("-i", "*")
 exclude_states = opts.get("-x", "")
-include_path = "-p" in opts
 include_scope = "-s" in opts
 include_state = "-S" in opts
 rse_name = opts.get("-r")
 names = opts.get("-n")
+replicas_table = opts.get("-t", "replicas")
+
+assert replicas_table in ("replicas", "bad_replicas")
 
 if "-c" in opts:
     dbconfig = DBConfig.from_yaml(opts["-c"])
@@ -110,8 +112,7 @@ if dbconfig.Schema:
     Base.metadata.schema = dbconfig.Schema
 
 class Replica(Base):
-        __tablename__ = "replicas"
-        path = Column(String)
+        __tablename__ = replicas_table
         state = Column(String)
         rse_id = Column(GUID(), primary_key=True)
         scope = Column(String, primary_key=True)
