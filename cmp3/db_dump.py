@@ -271,5 +271,3 @@ else:
             "directories":len(dirs),
             "ignore_list":ignore_list
         })
-
-
