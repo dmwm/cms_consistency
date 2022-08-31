@@ -134,6 +134,15 @@ if rse_name is not None:
             print ("RSE %s not found" % (rse_name,))
             sys.exit(1)
 
+#
+# get RSE names mapping
+#
+
+rses = session.query(RSE)
+for r in rses:
+    print(r.rse, r.id)
+
+
 replicas = session.query(Replica)
 if rse is not None:
     replicas = replicas.filter(Replica.rse_id==rse.id)
