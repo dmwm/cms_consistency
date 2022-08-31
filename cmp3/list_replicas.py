@@ -128,10 +128,12 @@ class Replica(Base):
         name = Column(String, primary_key=True)
 
 class QuarantinedReplica(Base):
-        __tablename__ = replicas_table
-        rse_id = Column(GUID(), primary_key=True)
-        scope = Column(String, primary_key=True)
-        name = Column(String, primary_key=True)
+    """Represents the quarantined replicas"""
+    __tablename__ = 'quarantined_replicas'
+    rse_id = Column(GUID())
+    path = Column(String(1024))
+    scope = Column(InternalScopeString(get_schema_value('SCOPE_LENGTH')))
+    name = Column(String(get_schema_value('NAME_LENGTH')))
 
 class RSE(Base):
         __tablename__ = "rses"
