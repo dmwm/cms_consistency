@@ -38,6 +38,7 @@ config_file=/consistency/config.yaml
 python=${PYTHON:-python}
 
 export PYTHONPATH=`pwd`:`pwd`/cmp3
+export RUCIO_CONFIG=/consistency/rucio-client.cfg
 
 echo will use python: $python
 
