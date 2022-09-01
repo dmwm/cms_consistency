@@ -25,7 +25,7 @@ python declare_dark.py [options] <storage_path> <rse>
     -n <number>                 - min number of runs to use to produce the confirmed dark list, default = 3
 """
 
-def dark_action(storage_dir, rse, out, stats, stats_key, account):
+def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run):
     t0 = time.time()
     my_stats = {
         "version": Version,
@@ -109,7 +109,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account):
                             print(f, file=out)
                         if out is not sys.stdout:
                             out.close()                 # yes, paranoia
-                    else:
+                    if not dry_run:
                         try:
                             from rucio.client.replicaclient import ReplicaClient
                             client = ReplicaClient(account=account)
@@ -139,7 +139,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:va:")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:va:d")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -165,6 +165,7 @@ max_age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
 fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
 min_runs = int(opts.get("-n", config.get("min_runs", 3)))
 account = opts.get("-a")
+dry_run = "-d" in opts
 
 stats_file = opts.get("-s")
 stats = stats_key = None
@@ -184,7 +185,7 @@ if "-v" in opts:
     print("  max dark files fraction:     ", fraction)
     print()
 
-run_stats = dark_action(storage_path, rse, out, stats, stats_key, account)
+run_stats = dark_action(storage_path, rse, out, stats, stats_key, account, dry_run)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
