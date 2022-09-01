@@ -383,10 +383,10 @@ class Scanner(Task):
                 self.Master.scanner_failed(self, f"{status}: {reason}")
 
         else:
-            counts = " files:%8d dirs:%8d empty:%8d" % (len(files), len(dirs), len(empty_dirs))
+            counts = " files: %-8d dirs: %-8d empty: %-8d" % (len(files), len(dirs), len(empty_dirs))
             if self.IncludeSizes:
                 total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
-                counts += " size:%.3fGB" % (total_size/GB,)
+                counts += " size: %10.3fGB" % (total_size/GB,)
             self.message("done", stats+counts)
             if self.Master is not None:
                 self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, empty_dirs)
