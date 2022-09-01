@@ -9,6 +9,7 @@ Version = "1.2"
 
 Usage = """
 python declare_dark.py [options] <storage_path> <rse>
+    -a <account>                - Rucio account to use
     -o (-|<out file>)           - write confirmed dark list and write it to the file or stdout if "-", instead of sending to Rucio
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "dark_action"
