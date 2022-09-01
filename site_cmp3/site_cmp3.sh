@@ -180,8 +180,8 @@ missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
 dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
 m_action_list=${out}/${RSE}_${now}_M_action.list
 d_action_list=${out}/${RSE}_${now}_D_action.list
-$python actions/declare_missing.py -o ${m_action_list} -c ${config_file} -s $stats $out $scope $RSE 2>> ${missing_action_errors}
-$python actions/declare_dark.py    -o ${d_action_list} -c ${config_file} -s $stats $out        $RSE 2>> ${dark_action_errors}
+$python actions/declare_missing.py -d -a root -o ${m_action_list} -c ${config_file} -s $stats $out $scope $RSE 2>> ${missing_action_errors}
+$python actions/declare_dark.py       -a root -o ${d_action_list} -c ${config_file} -s $stats $out        $RSE 2>> ${dark_action_errors}
 
 end_time=`date -u +%s`
 
