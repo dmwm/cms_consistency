@@ -113,7 +113,8 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account):
                         try:
                             from rucio.client.replicaclient import ReplicaClient
                             client = ReplicaClient(account=account)
-                            client.quarantine_replicas(list(confirmed), rse=rse)
+                            replicas = [{"path":path} for path in confirmed]
+                            client.quarantine_replicas(replicas, rse=rse)
                         except Exception as e:
                             error = f"rucio error: {e}"
                             status = "failed"
