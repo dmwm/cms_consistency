@@ -25,7 +25,7 @@ python declare_dark.py [options] <storage_path> <rse>
     -n <number>                 - min number of runs to use to produce the confirmed dark list, default = 3
 """
 
-def dark_action(storage_dir, rse, out, stats, stats_key):
+def dark_action(storage_dir, rse, out, stats, stats_key, account):
     t0 = time.time()
     my_stats = {
         "version": Version,
@@ -112,7 +112,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key):
                     else:
                         try:
                             from rucio.client.replicaclient import ReplicaClient
-                            client = ReplicaClient()
+                            client = ReplicaClient(account=account)
                             client.quarantine_replicas(confirmed, rse=rse)
                         except Exception as e:
                             error = f"rucio error: {e}"
@@ -138,7 +138,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:v")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:va:")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -163,6 +163,7 @@ min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
 max_age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
 fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
 min_runs = int(opts.get("-n", config.get("min_runs", 3)))
+account = opts.get("-a")
 
 stats_file = opts.get("-s")
 stats = stats_key = None
@@ -182,7 +183,7 @@ if "-v" in opts:
     print("  max dark files fraction:     ", fraction)
     print()
 
-run_stats = dark_action(storage_path, rse, out, stats, stats_key)
+run_stats = dark_action(storage_path, rse, out, stats, stats_key, account)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
