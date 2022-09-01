@@ -132,6 +132,10 @@ fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
 account = opts.get("-a")
 dry_run = "-d" in opts
 
+if dry_run:
+    print("====== dry run mode ======")
+
+
 stats_file = opts.get("-s")
 stats = None
 if stats_file is not None:

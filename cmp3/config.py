@@ -312,7 +312,7 @@ class ActionConfiguration(CEConfiguration):
     def __init__(self, rse, source, action, **source_agrs):
         CEConfiguration.__init__(self, rse, source, **source_agrs)
         self.Action = action
-        self.AbortThreshold = float(self.action_param(rse, action, "max_fraction", 0.05))
+        self.AbortThreshold = float(self.action_param(rse, action, "max_fraction", 0.01))
         self.MaxAgeOfLastRun = int(self.action_param(rse, action, "max_age_last_run", 1))               # days
 
         if action == "dark":

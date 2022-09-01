@@ -170,6 +170,9 @@ min_runs = int(opts.get("-n", config.get("min_runs", 3)))
 account = opts.get("-a")
 dry_run = "-d" in opts
 
+if dry_run:
+    print("====== dry run mode ======")
+
 stats_file = opts.get("-s")
 stats = stats_key = None
 if stats_file is not None:
