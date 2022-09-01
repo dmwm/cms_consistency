@@ -9,9 +9,11 @@ Version = "1.2"
 
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
+    -d                          - dry run - do not declare to Rucio
+    -a <account>                - Rucio account to use
+    -o (-|<out file>)           - write confirmed dark list to stdout (-) or to a file
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "missing_action"
-    -o (-|<out file>)           - produce confirmed missing list and write it to the file or stdout if "-", instead of sending to Rucio
     -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
     -v                          - verbose output
 
@@ -21,11 +23,13 @@ python declare_missing.py [options] <storage_path> <scope> <rse>
     -m <days>                   - max age for the most recent run, integer, default = 1 day
 """
 
-def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key):
+def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key, account, dry_run):
     
     t0 = time.time()
     my_stats = {
         "version": Version,
+        "rucio_account": account,
+        "dry_run": dry_run,
         "elapsed": None,
         "start_time": t0,
         "end_time": None,
@@ -74,11 +78,11 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key)
                 for f in latest_run.missing_files():
                     print(f, file=out)
                 if out is not sys.stdout:
-                    out.close()                 # yes, paranoia
-            else:
+                    out.close()                 
+            if not dry_run:
                 try:
                     from rucio.client.replicaclient import ReplicaClient
-                    client = ReplicaClient()
+                    client = ReplicaClient(account=account)
                     missing_list = [{"scope":scope, "rse":rse, "name":f} for f in latest_run.missing_files()]
                     client.declare_bad_replicas(missing_list, "detected missing by CC")
                 except Exception as e:
@@ -103,7 +107,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:m:f:s:S:c:v")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:m:f:s:S:c:vda:")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -125,6 +129,8 @@ if "-c" in opts:
 
 age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
 fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
+account = opts.get("-a")
+dry_run = "-d" in opts
 
 stats_file = opts.get("-s")
 stats = None
@@ -134,6 +140,7 @@ stats_key = opts.get("-S", "missing_action")
 
 if "-v" in opts:
     print("\nParameters:")
+    print("  dry run:                     ", dry_run)
     print("  stats file:                  ", stats_file)
     print("  stats key:                   ", stats_key)
     print("  config:                      ", opts.get("-c"))
@@ -141,7 +148,7 @@ if "-v" in opts:
     print("  max missing files fraction:  ", fraction)
     print()
 
-final_stats = missing_action(storage_path, rse, scope, age_last, out, stats, stats_key)
+final_stats = missing_action(storage_path, rse, scope, age_last, out, stats, stats_key, account, dry_run)
 
 print("Final status:", final_stats["status"])
 if final_stats["status"] == "aborted":

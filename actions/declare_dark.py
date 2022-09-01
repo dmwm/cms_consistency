@@ -9,8 +9,9 @@ Version = "1.2"
 
 Usage = """
 python declare_dark.py [options] <storage_path> <rse>
+    -d                          - dry run - do not declare to Rucio
     -a <account>                - Rucio account to use
-    -o (-|<out file>)           - write confirmed dark list and write it to the file or stdout if "-", instead of sending to Rucio
+    -o (-|<out file>)           - write confirmed dark list to stdout (-) or to a file
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "dark_action"
     -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
@@ -29,6 +30,8 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run):
     t0 = time.time()
     my_stats = {
         "version": Version,
+        "rucio_account": account,
+        "dry_run": dry_run,
         "elapsed": None,
         "start_time": t0,
         "end_time": None,
@@ -175,6 +178,7 @@ stats_key = opts.get("-S", "dark_action")
 
 if "-v" in opts:
     print("\nParameters:")
+    print("  dry run:                     ", dry_run)
     print("  stats file:                  ", stats_file)
     print("  stats key:                   ", stats_key)
     print("  config:                      ", opts.get("-c"))
