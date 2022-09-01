@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="3.1"
+version="3.2"
 
 echo site_cmp3 version: $version
 
@@ -38,7 +38,6 @@ config_file=/consistency/config.yaml
 python=${PYTHON:-python}
 
 export PYTHONPATH=`pwd`:`pwd`/cmp3
-export RUCIO_CONFIG=/consistency/rucio-client.cfg
 
 echo will use python: $python
 
