@@ -87,7 +87,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     client.declare_bad_replicas(missing_list, "detected missing by CC")
                 except Exception as e:
                     status = "failed"
-                    error = "Rucio declaration error: {e}"
+                    error = f"Rucio declaration error: {e}"
 
     t1 = time.time()
     my_stats.update(
