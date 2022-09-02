@@ -305,14 +305,10 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
-    def __init__(self, path, cache, new=False):
+    def __init__(self, path, cache):
         DataSource.__init__(self, path, cache)
-        if new:
-            self.DarkSection = "dark_action"
-            self.MissingSection = "missing_action"
-        else:
-            self.DarkSection = "cc_dark"
-            self.MissingSection = "cc_miss"
+        self.DarkSection = "dark_action"
+        self.MissingSection = "missing_action"
     
     def is_mounted(self):
         return os.path.isdir(self.Path)
