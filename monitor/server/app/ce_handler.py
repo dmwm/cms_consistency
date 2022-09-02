@@ -227,7 +227,7 @@ class CEHandler(WPHandler):
             errors = ["%s failed" % failed_comp]
             failed_stats = stats[failed_comp]
             if failed_stats.get("error"):
-                errors.append("error: %s", failed_stats["error"])
+                errors.append("error: %s" % (failed_stats["error"],))
                 
         stats_parts = [(part, part_name, stats.get(part)) for part, part_name in 
             [
