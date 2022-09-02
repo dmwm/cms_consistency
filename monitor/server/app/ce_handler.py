@@ -272,7 +272,7 @@ class CEHandler(WPHandler):
         
         prev_run, old_nmissing, old_ndark = data_source.file_lists_diffs_counts(rse, run)
         
-        return self.render_to_response("show_run.html", 
+        return self.render_to_response("ce_run.html", 
             rse=rse, run=run,
             errors = errors,
             dark_truncated = dark_truncated, 
