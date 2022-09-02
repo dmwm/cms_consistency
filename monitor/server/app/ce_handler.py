@@ -79,7 +79,7 @@ class CEHandler(WPHandler):
             order = None
             if summary.get("failed"):
                 order = 0
-            elif summary["missing_stats"].get("status") != "done" or summary["dark_stats"].get("status") != "done":
+            elif summary["missing_stats"].get("action_status") != "done" or summary["dark_stats"].get("action_status") != "done":
                 order = 1
             elif summary["status"] == "started":
                 order = 2
