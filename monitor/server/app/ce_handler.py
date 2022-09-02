@@ -1,8 +1,7 @@
 from webpie import WPApp, WPHandler, WPStaticHandler
 import sys, glob, json, time, os, gzip
 from datetime import datetime
-from wm_handler import WMHandler, UMDataSource
-from data_source import CCDataSource, UMDataSource, StatsCache
+from data_source import CCDataSource, StatsCache
 
 Version = "1.11.11"
 
@@ -117,24 +116,10 @@ class CEHandler(WPHandler):
                 }
             ))
         #print(infos)
-        
-        um_data_source = self.UMDataSource
-        um_runs = um_data_source.all_stats_for_rse(rse)
-        um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
-        um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
-        
-        try:
-            for r in um_runs:
-                r["elapsed_time_hours"] = r["start_time_milliseconds"] = None
-                if r.get("start_time"):
-                    r["start_time_milliseconds"] = int(r["start_time"]*1000)
-                    if r.get("end_time"):
-                        r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
-                r.setdefault("total_size_gb", None)
-                
+                        
         except KeyError:
             raise ValueError(f"key error in: {r}")
-        return self.render_to_response("ce_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
+        return self.render_to_response("ce_rse.html", rse=rse, cc_runs=cc_infos,)
         
     def common_paths(self, lst, space="&nbsp;"):
         lst = sorted(lst)
