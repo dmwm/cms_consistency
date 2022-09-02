@@ -46,7 +46,7 @@ class CEHandler(WPHandler):
         cc_stats = data_source.latest_stats_per_rse()
         cc_summaries = {rse: data_source.run_summary(stats) for rse, stats in cc_stats.items()}
 
-        all_rses = sorted(cc_stats.keys()))
+        all_rses = sorted(cc_stats.keys())
 
         infos = [
             {
