@@ -147,7 +147,7 @@
     {% set cc_summary = info["summary"] %}
 
     <tr>
-        <!-- rse: {{rse}} order:{{order}} -->
+        <!-- rse: {{rse}} order:{{info["order"]}} summary:{{cc_summary}} -->
         <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
         <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
             <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
