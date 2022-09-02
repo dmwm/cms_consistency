@@ -307,12 +307,8 @@ class CCDataSource(DataSource):
     
     def __init__(self, path, cache, new=False):
         DataSource.__init__(self, path, cache)
-        if new:
-            self.DarkSection = "dark_action"
-            self.MissingSection = "missing_action"
-        else:
-            self.DarkSection = "cc_dark"
-            self.MissingSection = "cc_miss"
+        self.DarkSection = "dark_action"
+        self.MissingSection = "missing_action"
     
     def is_mounted(self):
         return os.path.isdir(self.Path)
@@ -525,6 +521,7 @@ class CCDataSource(DataSource):
             "running": running_comp,            
             "missing_stats" : {
                 "detected":         None,
+                "confirmed":        None,
                 "acted_on":         None,
                 "action_status":    None
             },
@@ -540,13 +537,15 @@ class CCDataSource(DataSource):
             summary["error"] = stats["error"]
         
         if "cmp3" in stats and stats["cmp3"]["status"] == "done":
-            summary["missing_stats"]["detected"] = stats["cmp3"]["missing"]
+            summary["missing_stats"]["detected"] = summary["missing_stats"]["confirmed"] = stats["cmp3"]["missing"]
             summary["dark_stats"]["detected"] = stats["cmp3"]["dark"]
             
             if "cmp2dark" in stats:
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
             if self.DarkSection in stats:
+                if "confirmed_dark_files" in stats[self.DarkSection]:
+                    summary["dark_stats"]["confirmed"] = stats[self.DarkSection].get("confirmed_dark_files")
                 summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
                 summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
                 summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")

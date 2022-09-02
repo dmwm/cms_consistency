@@ -163,7 +163,6 @@
         {% set dark_stats = cc_summary["dark_stats"] %}
         <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
         <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
-        <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
         <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
             {{dark_stats['action_status']|none_as_blank}}
             {#
@@ -176,15 +175,8 @@
 
         {% set missing_stats = cc_summary["missing_stats"] %}
         <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
-        <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
         <td class="{{missing_stats['action_status']|none_as_blank}}">
             {{missing_stats['action_status']|none_as_blank}}
-            {#
-            {%- if missing_stats['action_status'] == "aborted" and 
-                    missing_stats['aborted_reason'] -%}
-                    : {{ missing_stats['aborted_reason'] }}
-            {%- endif %}
-            #}
         </td>
     </tr>
 {% endfor %}

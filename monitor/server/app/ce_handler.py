@@ -32,6 +32,9 @@ def display_file_list(lst):
 
 class CEHandler(WPHandler):
     
+    DarkSection = "dark_action"
+    MissingSection = "missing_action"
+    
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
         self.static = WPStaticHandler(*params, **args)
