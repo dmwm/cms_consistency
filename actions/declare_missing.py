@@ -11,14 +11,14 @@ Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
     -d                          - dry run - do not declare to Rucio
     -a <account>                - Rucio account to use
-    -o (-|<out file>)           - write confirmed dark list to stdout (-) or to a file
+    -o (-|<out file>)           - write missing file list to stdout (-) or to a file
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "missing_action"
     -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
     -v                          - verbose output
 
     The following will override values read from the configuration:
-    -f <ratio>                  - max allowed fraction of confirmed missing files to total number of files found by the scanner,
+    -f <ratio>                  - max allowed fraction of missing files to total number of files found by the scanner,
                                   floating point, default = 0.05
     -m <days>                   - max age for the most recent run, integer, default = 1 day
 """

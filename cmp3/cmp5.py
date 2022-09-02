@@ -123,8 +123,8 @@ def main():
                 "missing": nm,
                 "dark": nd,
                 "status": "done",
-                "missing_list_file": out_missing,
-                "dark_list_file": out_dark
+                "missing_list_file": out_missing.rsplit('/', 1)[-1],        # file names only
+                "dark_list_file": out_dark.rsplit('/', 1)[-1]
             })
                 
         if stats is not None:
