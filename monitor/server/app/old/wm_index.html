@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Unmerged Files Monitor{% endblock %}
+
+{% block link_menu %}<a href="./stats">JSON data</a>{% endblock %}
+
+{% block content %}
+
+<table class="data">    
+    <tr>
+        <th>RSE</th><th>Last run</th><th>Elapsed time</th><th>Status</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Size</th><th>Error</th>
+    </tr>
+    {% for rse in rses %}
+        {% set info = data[rse] %}
+        <tr>
+            <td><a href="./rse?rse={{rse}}">{{rse}}</a></td>
+            <td>{{info["start_time"]|as_dt}} - {{info["end_time"]|as_dt}}</td>
+            <td>{% if info["end_time"] and info["start_time"] %}{{(info["end_time"]-info["start_time"])|hms}}
+                    {%- endif -%}
+            </td>
+            <td>{{info["status"] or ''}}</td>
+            <td>{{info["files"]}}</td>
+            <td>{{info["directories"]}}</td>
+            <td>{{info["empty_directories"]}}</td>
+            <td>{% if not info["total_size_gb"] is none %}
+                    {{info["total_size_gb"]|format_gigabytes}}
+                {% endif %}
+            </td>
+            <td>{{info["error"] or ''}}</td>
+        </tr>
+    {% endfor %}    
+</table>
+
+{% endblock %}
