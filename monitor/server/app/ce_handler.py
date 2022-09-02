@@ -66,7 +66,30 @@ class CEHandler(WPHandler):
             infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time") or -1, x["rse"]), reverse=True)
         
         return self.render_to_response("ce_index.html", infos=infos)
+    
+    def problems(self, request, relpath, **args):
+        data_source = self.CCDataSource
+
+        cc_stats = data_source.latest_stats_per_rse()
+        cc_summaries = {rse: data_source.run_summary(stats) for rse, stats in cc_stats.items()}
+        all_rses = sorted(cc_stats.keys())
+
+        problems = []
+        for rse, summary in cc_summaries.items():
+            order = None
+            if summary.get("failed"):
+                order = 0
+            elif summary["missing_stats"]["status"] != "done" or summary["dark_stats"]["status"] != "done":
+                order = 1
+            elif summary["status"] == "started":
+                order = 2
+            if order is not None:
+                problems.append({"rse":rse, "summary": summary, "order": order})
+                
+        problems = sorted(problems, key=lambda x: x["order"])
+        return self.render_to_response("ce_index.html", infos=problems)
         
+    
     def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"
         

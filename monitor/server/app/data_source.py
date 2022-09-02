@@ -305,10 +305,11 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
+    DarkSection = "dark_action"
+    MissingSection = "missing_action"
+
     def __init__(self, path, cache, new=False):
         DataSource.__init__(self, path, cache)
-        self.DarkSection = "dark_action"
-        self.MissingSection = "missing_action"
     
     def is_mounted(self):
         return os.path.isdir(self.Path)
@@ -471,7 +472,7 @@ class CCDataSource(DataSource):
         else:
             return None, None
 
-    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
+    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3", DarkSection, MissingSection]
 
     def run_summary(self, stats):
         status = None
