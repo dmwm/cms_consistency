@@ -1,34 +1,353 @@
 {% extends 'base.html' %}
 
-{% block title %}Unmerged Files Monitor{% endblock %}
+{% block html_head %}
+    <script type="text/javascript" src="./static/js/request.js"></script>
+{% endblock %}
 
-{% block link_menu %}<a href="./stats">JSON data</a>{% endblock %}
 
 {% block content %}
 
-<table class="data">    
+{#
+    {% for r in rses %}
+        <p><a href="./show_rse?rse={{r}}">{{r}}</a></p>
+    {% endfor %}
+#}
+
+<p><span style="color:gray">sort by:</span>
+    [<a href="?sort=rse">RSE</a>]
+    [CE run: <a href="?sort=-cc_run">latest</a> | <a href="?sort=cc_run">oldest</a>]
+    [Unmerged run:  <a href="?sort=-um_run">latest</a> | <a href="?sort=um_run">oldest</a>]
+</p>
+
+
+<script type="text/javascript">
+
+    var DX = 5;
+    var DY0 = 4;
+    var DY = DY0*3;
+    var N = 10;
+
+    var colors={
+        "started": "#AAF", 
+        "done": "#AFA", 
+        "failed": "#FAA", 
+        "aborted": "#EDA",
+        "null": "#FFF",
+        "other": "#BBB" 
+    };
+    
+    function cell_color(sts)
+    {
+        if( sts == null )   sts = "null";
+        var color = colors[sts];
+        if( color == null )
+            color=colors["other"];
+        return color;
+    }
+    
+    function display_current_old(element_id, current, old)
+    {
+        var td = document.getElementById(element_id);
+        if( current == null )
+            td.innerHTML = "";
+        else if( old == null )
+            td.innerHTML = '' + current + "(?)";
+        else if( old == 0 )
+            td.innerHTML = '' + current;
+        else
+            td.innerHTML = '' + current + '(' + old + ')';
+        if( old != null && old > 0 ) td.className = "with_old";
+    }
+    
+    function display_diffs(rse, prev_run, counts)
+    {
+        display_current_old("nmissing_"+rse+"_td", counts.nmissing, counts.nmissing_old);
+        display_current_old("ndark_"+rse+"_td", counts.ndark, counts.ndark_old);
+    }
+    
+    function display_um_status_chart(id_prefix, status_list)
+    {
+        var td = document.getElementById(id_prefix+"_td");
+        if ( td == null )
+            return;
+        
+        var loading_img = document.getElementById(id_prefix+"_loading");
+        td.removeChild(loading_img);
+        
+        var canvas = document.createElement("canvas");
+        var n = Math.min(N, status_list.length);
+        canvas.setAttribute("height", DY);
+        canvas.setAttribute("width", DX*N);
+        
+        var x = DX*(N-n);
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0,0,DX*N,DY);      
+        for( var i = 0; i < n; i++ )
+        {
+            var sts = status_list[i];
+            var color = cell_color(sts);
+            ctx.fillStyle = color;
+            ctx.fillRect(x,0,DX,DY);
+            x += DX;
+        }
+        td.appendChild(canvas);
+    };
+    
+    function display_cc_status_chart(id_prefix, status_list)
+    {
+        var td = document.getElementById(id_prefix+"_td");
+        if ( td == null )
+            return;
+        
+        var loading_img = document.getElementById(id_prefix+"_loading");
+        td.removeChild(loading_img);
+        td.style["text-align"] = "right";
+        
+        var canvas = document.createElement("canvas");
+        var n = Math.min(N, status_list.length);
+        canvas.setAttribute("height", DY);
+        canvas.setAttribute("width", DX*N);
+        canvas.style.visibility=""
+        
+        var x = DX*(N-n);
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0,0,DX*N,DY);      
+        for( var i = 0; i < n; i++ )
+        {
+            var row = status_list[i];
+            var cc_color = cell_color(row.cc);
+            var dark_color = cell_color(row.dark);
+            var missing_color = cell_color(row.missing);
+            
+            ctx.fillStyle = dark_color;
+            ctx.fillRect(x,0,DX,DY0);
+            
+            ctx.fillStyle = missing_color;
+            ctx.fillRect(x,DY0,DX,DY0);
+            
+            ctx.fillStyle = cc_color;
+            ctx.fillRect(x,2*DY0,DX,DY0);
+            
+            
+            x += DX;
+        }
+        td.appendChild(canvas);
+    };
+    
+    function init_status_chart(id_prefix)
+    {
+        return;
+        
+        var canvas = document.getElementById(canvas_id);
+        if( canvas == null )
+            return;
+
+        var img = document.createElement("IMG");
+        img.setAttribute("src", "./static/images/loading.gif");
+        img.setAttribute("width", 40);
+        img.setAttribute("height", 12);
+        img.setAttribute("id", id_prefix + "_loading");
+        loading_images.push(img);
+        
+        var td = document.getElementById(id_prefix + "_td");
+        td.appendChild(img);
+    };
+    
+    var rse_list = [];
+    
+</script>
+
+
+
+<table class="data" id="data">
+
+<tr>
+    <th rowspan=3>RSE</th>
+    <th colspan=10>Consistency Enforcement</th>
+    <th colspan=6>Unmerged Files</th>
+</tr>
+<tr>
+    <th rowspan=2>History</th>
+    <th rowspan=2>Last run</th>
+    <th rowspan=2>Status</th>
+    <th colspan=4>Dark files</th>
+    <th colspan=3>Missing files</th>
+
+    <th rowspan=2>History</th>
+    <th rowspan=2>Last run</th>
+    <th rowspan=2>Elapsed time</th>
+    <th rowspan=2>Status</th>
+    <th rowspan=2>Files</th>
+    <th rowspan=2>Size</th>
+</tr>
+<tr>
+    <th>Detected (old)</th>
+    <th>Confirmed</th>
+    <th>Acted</th>
+    <th>Action status</th>
+
+    <th>Detected (old)</th>
+    <th>Acted</th>
+    <th>Action status</th>
+</tr>
+
+
+{% for info in infos %}
+    {% set rse = info["rse"] %}
+    
+    <script type="text/javascript">
+        rse_list.push("{{rse}}");
+    </script>
+    
+    {% set cc_summary = info["cc_summary"] %}
+    {% set um_summary = info["um_summary"] %}
+
     <tr>
-        <th>RSE</th><th>Last run</th><th>Elapsed time</th><th>Status</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Size</th><th>Error</th>
-    </tr>
-    {% for rse in rses %}
-        {% set info = data[rse] %}
-        <tr>
-            <td><a href="./rse?rse={{rse}}">{{rse}}</a></td>
-            <td>{{info["start_time"]|as_dt}} - {{info["end_time"]|as_dt}}</td>
-            <td>{% if info["end_time"] and info["start_time"] %}{{(info["end_time"]-info["start_time"])|hms}}
-                    {%- endif -%}
+        <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
+        {% if cc_summary is none %}
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        {% else %}
+            <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
+                <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
             </td>
-            <td>{{info["status"] or ''}}</td>
-            <td>{{info["files"]}}</td>
-            <td>{{info["directories"]}}</td>
-            <td>{{info["empty_directories"]}}</td>
-            <td>{% if not info["total_size_gb"] is none %}
-                    {{info["total_size_gb"]|format_gigabytes}}
+            <script type="text/javascript">
+                init_status_chart("{{rse}}_cc_status");
+            </script>
+                
+            <td><a href="./show_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_date}}</a></td>
+            <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
+            
+            {% set dark_stats = cc_summary["dark_stats"] %}
+            <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
+            <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
+            <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
+            <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
+                {{dark_stats['action_status']|none_as_blank}}
+                {#
+                {%- if dark_stats['action_status'] == "aborted" and 
+                        dark_stats['aborted_reason'] -%}
+                        : {{ dark_stats['aborted_reason'] }}
+                {%- endif %}
+                #}
+            </td>
+            
+            {% set missing_stats = cc_summary["missing_stats"] %}
+            <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
+            <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
+            <td class="{{missing_stats['action_status']|none_as_blank}}">
+                {{missing_stats['action_status']|none_as_blank}}
+                {#
+                {%- if missing_stats['action_status'] == "aborted" and 
+                        missing_stats['aborted_reason'] -%}
+                        : {{ missing_stats['aborted_reason'] }}
+                {%- endif %}
+                #}
+            </td>
+        {% endif %}
+        
+        {% if um_summary is none %}
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+        {% else %}
+            <td id="{{rse}}_um_status_td" style="vertical-align: middle; text-align: center">
+                <img src="./static/images/loading.gif" height=4 id="{{rse}}_um_status_loading"/>
+            </td>
+            <script type="text/javascript">
+                init_status_chart("{{rse}}_um_status");
+            </script>
+
+            <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_date}}</a></td>
+            <td>{{um_summary['elapsed_time']|hms}}</td>
+            <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
+            <td>{{um_summary["files"]|none_as_blank}}</td>
+            <td>{% if not um_summary["total_size_gb"] is none %}
+                    {{um_summary["total_size_gb"]|format_gigabytes}}
                 {% endif %}
             </td>
-            <td>{{info["error"] or ''}}</td>
-        </tr>
-    {% endfor %}    
+        {% endif %}
+    </tr>
+{% endfor %}
+            
 </table>
+
+<script type="text/javascript">
+    var history_receiver = {
+        data_received: function(hist) {
+            for ( rse in hist )
+            {
+                var info = hist[rse];
+                var um_total = info.um_total;
+                var cc_total = info.cc_total;
+                var um_errors = um_total-info.um_success;
+                var cc_errors = cc_total-info.cc_success;
+                
+                if( um_total > 0 )
+                    display_um_status_chart(rse+"_um_status", info.um_status_history.slice(-N));
+                
+                if( cc_total > 0 )
+                    display_cc_status_chart(rse+"_cc_status", info.cc_status_history.slice(-N));
+            }
+        }
+    };
+    
+    var diffs_receiver = {
+        data_received: function(diffs) {
+            for ( rse in diffs )
+            {
+                var info = diffs[rse];
+                display_current_old("nmissing_"+rse+"_td", info.nmissing, info.nmissing_old);
+                display_current_old("ndark_"+rse+"_td", info.ndark, info.ndark_old);
+            }
+        }
+    };
+    
+    function request_info(rse_lst)
+    {
+        var batch_size = 10;
+        var batch = [];
+        var requests = [];
+
+        function request_batch(rse_batch, requests)
+        {
+            var url = "./status_history?rses=" + rse_batch.join(",");
+            requests.push(HTTPRequest(url, history_receiver, null, "json"));
+            var url = "./lists_diffs?rses=" + rse_batch.join(",");
+            requests.push(HTTPRequest(url, diffs_receiver, null, "json"));
+        }
+    
+        function batch_requests(url_base, rse_list, batch_size, receiver)
+        {
+            // randomize
+            var randomized = rse_lst.sort(() => Math.random() - 0.5);
+            var batch = [];
+            var requests = [];
+            for( rse of randomized )
+            {
+                batch.push(rse);
+                if( batch.length >= batch_size )
+                {
+                    var url = url_base + "?rses=" + batch.join(",");
+                    requests.push(HTTPRequest(url, receiver, null, "json"));
+                    batch = [];
+                }   
+            }
+            if( batch.length > 0 )
+            {
+                var url = url_base + "?rses=" + batch.join(",");
+                requests.push(HTTPRequest(url, receiver, null, "json"));
+            }
+            return requests;
+        }
+        batch_requests("./status_history", rse_list, 20, history_receiver);
+        batch_requests("./lists_diffs", rse_list, 2, diffs_receiver);
+    }
+    
+    var requests=request_info(rse_list);
+    //HTTPRequest("./status_history", history_receiver, null, "json");
+    
+</script>
+    
+    
+    
+    
 
 {% endblock %}
