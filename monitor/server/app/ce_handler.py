@@ -115,11 +115,7 @@ class CEHandler(WPHandler):
                     "old_dark":         dark_old
                 }
             ))
-        #print(infos)
-                        
-        except KeyError:
-            raise ValueError(f"key error in: {r}")
-        return self.render_to_response("ce_rse.html", rse=rse, cc_runs=cc_infos,)
+        return self.render_to_response("ce_rse.html", rse=rse, cc_runs=cc_infos)
         
     def common_paths(self, lst, space="&nbsp;"):
         lst = sorted(lst)
