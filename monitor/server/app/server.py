@@ -45,7 +45,7 @@ class Handler(WPHandler):
         
     def new(self, request, relpath, **args):
         # redirect all requests to "new" handler to self
-        return self.redirect("./" + (relpath or "index"))
+        return self.redirect("../" + (relpath or "index"))
 
     def index(self, request, relpath, sort="rse", **args):
         #
