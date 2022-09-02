@@ -12,11 +12,19 @@ class CCRun(object):
     def is_complete(self):
         return self.Stats.get("cmp3", {}).get("status") == "done"
         
+    def absolute_path(self, path):
+        if not path.startswith("/"):
+            path = self.Path + '/' + path
+        return path
+        
     def dark_list_path(self):
-        return self.Stats["cmp3"]["dark_list_file"]
+        return self.absolute_path(self.Stats["cmp3"]["dark_list_file"])
+
+    def confirmed_dark_list_path(self):
+        return self.absolute_path(self.Stats["dark_action"]["confirmed_dark_output"])
 
     def missing_list_path(self):
-        return self.Stats["cmp3"]["missing_list_file"]
+        return self.absolute_path(self.Stats["cmp3"]["missing_list_file"])
         
     def missing_file_count(self):
         return self.Stats["cmp3"]["missing"]
@@ -115,6 +123,9 @@ class CCRun(object):
 
     def dark_files(self):
         return self.file_list(self.dark_list_path())
+        
+    def confirmed_dark_files(self):
+        return self.file_list(self.confirmed_dark_list_path())
         
         
         
