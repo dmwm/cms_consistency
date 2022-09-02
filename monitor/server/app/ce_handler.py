@@ -53,7 +53,7 @@ class CEHandler(WPHandler):
         infos = [
             {
                 "rse":        rse,
-                "cc_summary":   cc_summaries.get(rse)
+                "summary":   cc_summaries.get(rse)
             } 
             for rse in all_rses
         ]
