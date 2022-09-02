@@ -69,7 +69,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
 
         elif first_run.Timestamp > now - timedelta(days=min_age_first):
             status = "aborted"
-            aborted_reason = "oldest run is not old enough: %s, required: > %d days old" % (latest_run.Timestamp, min_age_first)
+            aborted_reason = "oldest run is not old enough: %s, required: > %d days old" % (first_run.Timestamp, min_age_first)
 
         else:
             confirmed = set(recent_runs[0].dark_files())
