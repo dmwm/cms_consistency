@@ -239,7 +239,9 @@
 <div id="body">
     <h1>{% block title %}CMS Data Consistency Enforcement{% endblock %}</h1>
 
-    <p class="link_menu">{% block link_menu %}{% endblock %}</p>
+    <p class="link_menu"><a href="{{GLOBAL_AppTopPath}}/ce/index">CE home</a>&nbsp;<a href="{{GLOBAL_AppTopPath}}/um/index">UM home</a>&nbsp;
+        {%- block link_menu %}{% endblock -%}
+    </p>
 
     <div id="headline" style="clear:both">
 	<h2>{% block headline %}{% endblock %}</h2>
