@@ -84,7 +84,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     from rucio.client.replicaclient import ReplicaClient
                     client = ReplicaClient(account=account)
                     missing_list = [{"scope":scope, "rse":rse, "name":f} for f in latest_run.missing_files()]
-                    client.declare_bad_replicas(missing_list, "detected missing by CC")
+                    client.declare_bad_file_replicas(missing_list, "detected missing by CC")
                 except Exception as e:
                     status = "failed"
                     error = f"Rucio declaration error: {e}"

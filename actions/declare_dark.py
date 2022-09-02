@@ -26,30 +26,9 @@ python declare_dark.py [options] <storage_path> <rse>
     -n <number>                 - min number of runs to use to produce the confirmed dark list, default = 3
 """
 
-def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run):
-    t0 = time.time()
-    my_stats = {
-        "version": Version,
-        "rucio_account": account,
-        "dry_run": dry_run,
-        "elapsed": None,
-        "start_time": t0,
-        "end_time": None,
-        "status": "started",
-        "detected_dark_files": None,
-        "confirmed_dark_files": None,
-        "aborted_reason": None,
-        "error": None,
-        "runs_compared": None,
-        "configuration": {
-            "confirmation_window": window,
-            "min_age_first_run": min_age_first,
-            "max_age_last_run": max_age_last,
-            "min_runs": min_runs,
-            "max_fraction": fraction
-        }
-    }
-
+def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_stats):
+    
+    my_stats["start_time"] = t0 = time.time()
     if stats is not None:
         stats.update_section(stats_key, my_stats)
 
@@ -103,24 +82,23 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run):
         
             status = "done"
             if confirmed:
+                if out is not None:
+                    for f in sorted(confirmed):
+                        print(f, file=out)
+                    if out is not sys.stdout:
+                        out.close()                 
                 if ratio > fraction:
                     status = "aborted"
                     aborted_reason = "too many dark files: %d (%.2f%% > %.2f%%)" % (confirmed_dark_count, ratio*100.0, fraction*100.0)
-                else:
-                    if out is not None:
-                        for f in sorted(confirmed):
-                            print(f, file=out)
-                        if out is not sys.stdout:
-                            out.close()                 # yes, paranoia
-                    if not dry_run:
-                        try:
-                            from rucio.client.replicaclient import ReplicaClient
-                            client = ReplicaClient(account=account)
-                            replicas = [{"path":path} for path in confirmed]
-                            client.quarantine_replicas(replicas, rse=rse)
-                        except Exception as e:
-                            error = f"rucio error: {e}"
-                            status = "failed"
+                elif not dry_run:
+                    try:
+                        from rucio.client.replicaclient import ReplicaClient
+                        client = ReplicaClient(account=account)
+                        replicas = [{"path":path} for path in confirmed]
+                        client.quarantine_replicas(replicas, rse=rse)
+                    except Exception as e:
+                        error = f"rucio error: {e}"
+                        status = "failed"
 
     t1 = time.time()
     my_stats.update(
@@ -150,11 +128,14 @@ if not args or "-h" in opts or "-?" in opts:
     sys.exit(2)
 
 out = None
-if "-o" in opts:
-    if opts["-o"] == "-":
+out_path = opts.get("-o")
+out_filename = out_path.rsplit('/', 1)[-1] if out_path else None
+if out_path:
+    if out_path == "-":
         out = sys.stdout
     else:
-        out = open(opts["-o"], "w")
+        out = open(out_path, "w")
+
 
 storage_path, rse = args
 
@@ -192,7 +173,33 @@ if "-v" in opts:
     print("  max dark files fraction:     ", fraction)
     print()
 
-run_stats = dark_action(storage_path, rse, out, stats, stats_key, account, dry_run)
+my_stats = {
+    "version": Version,
+    "rucio_account": account,
+    "dry_run": dry_run,
+    "elapsed": None,
+    "start_time": None,
+    "end_time": None,
+    "status": "started",
+    "detected_dark_files": None,
+    "confirmed_dark_files": None,
+    "confirmed_dark_output": out_filename,
+    "aborted_reason": None,
+    "error": None,
+    "runs_compared": None,
+    "configuration": {
+        "confirmation_window": window,
+        "min_age_first_run": min_age_first,
+        "max_age_last_run": max_age_last,
+        "min_runs": min_runs,
+        "max_fraction": fraction
+    }
+}
+
+if stats is not None:
+    stats.update_section(stats_key, my_stats)
+
+run_stats = dark_action(storage_path, rse, out, stats, stats_key, account, dry_run, my_stats)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
