@@ -190,7 +190,7 @@ class UMHandler(WPHandler):
         for run in runs:
             stats = data_source.get_stats(rse, run)
             infos.append((run, data_source.run_summary(stats)))
-        return self.render_to_response("um_rse.html", rse=rse, cc_runs=cc_infos)
+        return self.render_to_response("um_rse.html", rse=rse, infos=infos)
 
     def show_run(self, request, relpath, rse=None, run=None, **args):
         if not rse or not run:

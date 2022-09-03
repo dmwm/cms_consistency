@@ -13,73 +13,13 @@
 {% block content %}
 
 <table class="placement">
-    <tr>
-        <td colspan=3 style="padding-top: 30px"><h1>Consistency Enforcement</h1>
-        </td>
-    </tr>
-	<tr>
-		<td colspan=2>
-			<table class="data">
-			    <tr>
-			        <th rowspan=2>Run</th><th rowspan=2>Start time</th><th rowspan=2>Status</th><th colspan=3>Missing</th><th colspan=4>Dark</th>
-			    </tr>
-			    <tr>
-			        <th>Detected (old)</th><th>Acted</th><th>Action status</th>
-			        <th>Detected (old)</th><th>Confirmed</th><th>Acted</th><th>Action status</th>
-			    </tr>
-			    {% for t, info in cc_runs %}
-			        <tr>
-			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
-			            <td>{{info["start_time"]|as_dt}}</td>
-			            <td class="{{info['status'] or ''}}">
-                            {%- if info["status"] == "started" and "running" in info -%}
-                                {{info["running"] or ""}} started
-                            {%- else -%}
-                                {{info["status"] or ""}}
-                            {%- endif -%}
-                        </td>
-			            <td>{% if not info["nmissing"] is none %}
-                                {{info["nmissing"]}} ({{info["old_missing"]|if_none("?")}})
-                            {% endif %}
-                        </td>
-                        <td>{{info["acted_missing"]|none_as_blank}}</td>
-                        <td class="{{info['missing_status']|none_as_blank}}">
-                            {{info["missing_status"]|none_as_blank}}
-                            {%- if info["missing_status_reason"] %}: {{info["missing_status_reason"]}}
-                            {%- endif -%}
-                        </td>
-			            <td>{% if not info["ndark"] is none %}
-                                {{info["ndark"]}} ({{info["old_dark"]|if_none("?")}})
-                            {% endif %}
-                        </td>
-			            <td>{{info["confirmed_dark"]|none_as_blank}}</td>
-                        <td>{{info["acted_dark"]|none_as_blank}}</td>
-                        <td class="{{info['dark_status']|none_as_blank}}">{{info["dark_status"]|none_as_blank}}
-                            {%- if info["dark_status_reason"] %}: {{info["dark_status_reason"]}}
-                            {%- endif -%}
-                        </td>
-			        </tr>
-			    {% endfor %}
-    
-			</table>
-		</td>
-		<td style="padding:1px 50px">
-			<div id="cc_chart"></div>
-		</td>
-	</tr>
-
-    <tr>
-        <td colspan=3 style="padding-top: 30px"><h1>Unmerged Files</h1>
-        </td>
-    </tr>
-
 	<tr>
 		<td>
 			<table class="data">
 			    <tr>
 			        <th rowspan>Run</th><th rowspan>Start time</th><th rowspan>Status</th><th>Files</th><th>Size, TB</th>
 			    </tr>
-                {% for info in um_runs %}
+                {% for info in infos %}
                     <tr>
                         <td><a href="./unmerged/show_run?rse={{rse}}&run={{info['run']}}">{{info["run"]}}</td>
                         <td>{{info["start_time"]|as_dt}}</td>
