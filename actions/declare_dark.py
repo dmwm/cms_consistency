@@ -19,7 +19,7 @@ python declare_dark.py [options] <storage_path> <rse>
 
     The following will override values read from the configuration:
     -f <ratio, floating point>  - max allowed fraction of confirmed dark files to total number of files found by the scanner,
-                                  default = 0.05
+                                  default = 0.01
     -w <days>                   - max age for oldest run to use for confirmation, default = 35 days
     -m <days>                   - max age for the most recent run, default = 1 day
     -M <days>                   - min age for oldest run, default = 25
@@ -146,7 +146,7 @@ if "-c" in opts:
 window = int(opts.get("-w", config.get("confirmation_window", 35)))
 min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
 max_age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
-fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
+fraction = float(opts.get("-f", config.get("max_fraction", 0.01)))
 min_runs = int(opts.get("-n", config.get("min_runs", 3)))
 account = opts.get("-a")
 dry_run = "-d" in opts

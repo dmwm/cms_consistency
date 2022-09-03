@@ -22,6 +22,12 @@ cert=""
 unmerged_out_dir=""
 unmerged_config=""
 
+if [ ! -f /consistency/config.yaml ]; then
+    cp $config /consistency/config.yaml    # to make it editable
+    echo Config file $config copied to /consistency/config.yaml
+fi
+config=/consistency/config.yaml
+
 python=${PYTHON:-python3}
 
 

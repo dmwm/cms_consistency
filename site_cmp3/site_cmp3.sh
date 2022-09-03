@@ -173,7 +173,7 @@ $python cmp3/diffs.py -u -s ${stats} $out $RSE $now
 
 #
 # 5. Declare missing and dark replicas
-#    -o ... turns it into "dry run" mode
+#    -d turns it into "dry run" mode
 #
 
 missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
