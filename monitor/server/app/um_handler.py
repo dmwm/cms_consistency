@@ -50,48 +50,17 @@ class Handler(WPHandler):
         #
         # list available RSEs
         #
-        cc_data_source = self.CCDataSource
         um_data_source = self.UMDataSource
 
-        cc_stats = cc_data_source.latest_stats_per_rse()
-        cc_summaries = {rse: cc_data_source.run_summary(stats) for rse, stats in cc_stats.items()}
-        #print("cc stats available for:", list(cc_stats.keys()))
-
         um_stats = um_data_source.latest_stats_per_rse()
-        um_summaries = {rse: um_data_source.run_summary(stats) for rse, stats in um_stats.items()}
-        
-        #print("um_stats:")
-        #for rse, stats in um_stats.items():
-        #    print (rse, stats)
-        #sys.stdout.flush()
-        
-        all_rses = set(cc_stats.keys()) | set(um_stats.keys())
-        all_rses = sorted(list(all_rses))
+        infos = sorted(list(um_stats.items()))                  # sort by RSE name by default
 
-        infos = [
-            {
-                "rse":        rse,
-                "cc_summary":   cc_summaries.get(rse),
-                "um_summary":   um_summaries.get(rse)
-            } 
-            for rse in all_rses
-        ]
-
-        def none_as(x, v):
-            return v if x is None else x
-        
-        if sort == "rse":
-            infos = sorted(infos, key=lambda x: x["rse"])
-        elif sort == "cc_run":
-            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time") or -1, x["rse"]))
-        elif sort == "-cc_run":
-            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time") or -1, x["rse"]), reverse=True)
-        elif sort == "um_run":
-            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time") or -1, x["rse"]))
+        if sort == "um_run":
+            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]))
         elif sort == "-um_run":
-            infos = sorted(infos, key=lambda x: ((x["um_summary"] or {}).get("start_time") or -1, x["rse"]), reverse=True)
+            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]), reverse=True)
         
-        return self.render_to_response("rses_combined.html", infos=infos)
+        return self.render_to_response("um_index.html", infos=infos)
         
     def probe(self, request, relpath, **args):
         return self.CCDataSource.status(), "text/plain"
