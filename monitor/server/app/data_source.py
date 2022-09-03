@@ -219,6 +219,9 @@ class UMDataSource(DataSource):
         DataSource.__init__(self, path, cache)
         self.DefaultIgnoreRE = None if not ignore_list else re.compile("^(%s)" % ("|".join(ignore_list),))
 
+    def get_stats(self, rse, run):
+        return self.read_stats(rse, run)
+
     def postprocess_stats(self, data):
         out = {"run": data["run"], "rse":data["rse"]}
         if "error" in data:

@@ -25,19 +25,19 @@ class UMHandler(WPHandler):
     
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
-        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.StatsCache, self.App.UMIgnoreList)
+        self.DataSource = UMDataSource(self.App.UMPath, self.App.StatsCache, self.App.UMIgnoreList)
         self.static = WPStaticHandler(*params, **args)
     
     def version(self, request, replapth, **args):
         return json.dumps(Version), "text/json"
     
     def rses(self, request, replapth, **args):
-        ds = self.UMDataSource
+        ds = self.DataSource
         data = ds.latest_stats()
         return json.dumps(data), "text/json" 
 
     def ___stats(self, request, replapth, **args):
-        ds = self.UMDataSource
+        ds = self.DataSource
         data = ds.latest_stats_per_rse()
         return json.dumps(data), "text/json" 
     
@@ -105,7 +105,7 @@ class UMHandler(WPHandler):
         if exclude:
             exclude = exclude.split(",")
 
-        ds = self.UMDataSource
+        ds = self.DataSource
         
         try:
             if format == "raw":
@@ -141,7 +141,7 @@ class UMHandler(WPHandler):
             return 404, "not found"
             
     def rse_statistics_data(self, request, relpath, rse=None, **args):
-        runs = self.UMDataSource.all_stats_for_rse(rse)
+        runs = self.DataSource.all_stats_for_rse(rse)
         # filter out all errors
         runs = [r for r in runs if not r.get("error")]
         return json.dumps(runs), "text/json"
@@ -154,7 +154,7 @@ class UMHandler(WPHandler):
         #
         # list available RSEs
         #
-        um_data_source = self.UMDataSource
+        um_data_source = self.DataSource
         attention = attention == "yes"
 
         um_stats = um_data_source.latest_stats_per_rse()
@@ -182,17 +182,20 @@ class UMHandler(WPHandler):
         return self.render_to_response("um_index.html", infos=summaries)
         
     def show_rse(self, request, relpath, rse=None, **args):
-        if not rse:
-            return "RSE must be specified", 400
-        data_source = self.UMDataSource
-        last_run = data_source.latest_run(rse)
-
-        self.render_to_response("um_rse.html")
+        data_source = self.DataSource
+        runs = data_source.list_runs(rse)
+        runs = sorted(runs, reverse=True)
         
+        infos = []
+        for run in runs:
+            stats = data_source.get_stats(rse, run)
+            infos.append((run, data_source.run_summary(stats)))
+        return self.render_to_response("um_rse.html", rse=rse, cc_runs=cc_infos)
+
     def show_run(self, request, relpath, rse=None, run=None, **args):
         if not rse or not run:
             return "RSE and run must be specified", 400
-        data_source = self.UMDataSource
+        data_source = self.DataSource
         
         latest_stats_for_rse = data_source.latest_stats_for_rse(rse)
 
@@ -205,17 +208,17 @@ class UMHandler(WPHandler):
         
     def stats(self, request, relpath, rse=None, run=None):
         if run:
-            stats = self.UMDataSource.read_stats(rse, run)
+            stats = self.DataSource.read_stats(rse, run)
         elif rse:
-            stats = self.UMDataSource.latest_stats_for_rse(rse)
+            stats = self.DataSource.latest_stats_for_rse(rse)
         else:
-            stats = self.UMDataSource.latest_stats_per_rse()
+            stats = self.DataSource.latest_stats_per_rse()
         return json.dumps(stats), "text/json"
         
     MAX_HISTORY = 10
 
     def status_history(self, request, relpath, rses=None, **args):
-        um_data_source = self.UMDataSource
+        um_data_source = self.DataSource
 
         if rses is None:
             rses = set(um_data_source.list_rses())
@@ -240,11 +243,11 @@ class UMHandler(WPHandler):
         return json.dumps(data), "text/json"
         
     def ls(self, request, relpath, rse="*", **args):
-        lst = self.UMDataSource.ls(rse)
+        lst = self.DataSource.ls(rse)
         return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"] or "", d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
         
     def raw_stats(self, request, relpath, rse=None, run=None):
-        f = self.UMDataSource.open_stats_file(rse, run)
+        f = self.DataSource.open_stats_file(rse, run)
         return self.read_file(f), "text/json"
         
         
