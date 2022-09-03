@@ -1,6 +1,6 @@
 from part import part, PartitionedList
 import sys, getopt, re, gzip
-from config import CCConfiguration
+from config import CEConfiguration
 try:
     import tqdm
     Use_tqdm = True
@@ -26,8 +26,6 @@ def main():
     if not args or not ("-o" in opts):
         print(Usage)
         sys.exit(2)
-
-
     
     nparts = None
     out_prefix = opts["-o"]
@@ -37,9 +35,9 @@ def main():
         rse = opts["-r"]
         cfg = opts["-c"]
         if cfg == "rucio":
-            config = CCConfiguration.rse_config(rse, "rucio")
+            config = CEConfiguration.rse_config(rse, "rucio")
         else:
-            config = CCConfiguration.rse_config(rse, "yaml", opts["-c"])
+            config = CEConfiguration.rse_config(rse, "yaml", opts["-c"])
         ignore_list = config.IgnoreList
         nparts = config.NPartitions
     zout = "-z" in opts
