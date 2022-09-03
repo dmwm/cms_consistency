@@ -150,11 +150,12 @@ class UMHandler(WPHandler):
     # GUI
     #
         
-    def index(self, request, relpath, sort="rse", **args):
+    def index(self, request, relpath, sort="rse", attention=False, **args):
         #
         # list available RSEs
         #
         um_data_source = self.UMDataSource
+        attention = attention == "yes"
 
         um_stats = um_data_source.latest_stats_per_rse()
         summaries = [(rse, um_data_source.run_summary(stats)) for rse, stats in um_stats.items()]
@@ -162,12 +163,21 @@ class UMHandler(WPHandler):
             summary["rse"] = rse
         summaries = [summary for _, summary in summaries]
 
-        if sort == "um_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, x["rse"]))
-        elif sort == "-um_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, x["rse"]), reverse=True)
+        if attention:
+            summaries = [s for s in summaries if s["status"] != "done"]
+            sort_order = {
+                "failed": 0,
+                "started": 1,
+                "*": 2
+            }
+            summaries = sorted(summaries, key=lambda s: (sort_order.get(s["status"], sort_order["*"]), s["rse"]))
         else:
-            summaries = sorted(summaries, key=lambda s: s["rse"])
+            if sort == "um_run":
+                summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, x["rse"]))
+            elif sort == "-um_run":
+                summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, x["rse"]), reverse=True)
+            else:
+                summaries = sorted(summaries, key=lambda s: s["rse"])
         
         return self.render_to_response("um_index.html", infos=summaries)
         
