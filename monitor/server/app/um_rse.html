@@ -19,14 +19,14 @@
 			    <tr>
 			        <th rowspan>Run</th><th rowspan>Start time</th><th rowspan>Status</th><th>Files</th><th>Size, TB</th>
 			    </tr>
-                {% for info in infos %}
+                {% for run, summary in summaries %}
                     <tr>
-                        <td><a href="./unmerged/show_run?rse={{rse}}&run={{info['run']}}">{{info["run"]}}</td>
-                        <td>{{info["start_time"]|as_dt}}</td>
-                        <td class="{{info['status']}}">{{info["status"]}}</td>
-                        <td>{{info["files"]|none_as_blank}}</td>
-                        <td>{% if not info["total_size_gb"] is none %}
-                                {{"%.3f"|format(info["total_size_gb"]/1024.0)}}
+                        <td><a href="./unmerged/show_run?rse={{rse}}&run={{info['run']}}">{{summary["run"]}}</td>
+                        <td>{{summary["start_time"]|as_dt}}</td>
+                        <td class="{{info['status']}}">{{summary["status"]}}</td>
+                        <td>{{summary["files"]|none_as_blank}}</td>
+                        <td>{% if not summary["total_size_gb"] is none %}
+                                {{"%.3f"|format(summary["total_size_gb"]/1024.0)}}
                             {% endif %}
                         </td>
                     </tr>
@@ -49,46 +49,6 @@
 
 
 <script type="text/javascript">
-			
-	function drawCCChart()
-	{
-		// runs is in reversed order
-		var data = [
-			{% for t, info in cc_runs|reverse %}
-            {{',' if not loop.first }}
-            [	    new Date({{info["start_time_milliseconds"]}}), 
-					{{info["ndark"] if info["ndark"] is not none else "null"}},
-					{{info["nmissing"] if info["nmissing"] is not none else "null"}}
-				]
-			{% endfor %}
-		];
-	
-		var options = {
-                  title: 'Statistics by run',
-                  legend: { position: "top" },
-                  width: 400,
-                  height: 300,
-				  colors: ["#888", "FA8"],
-                  hAxis: {
-                      format: "M/d/yy",
-                      title: "Date"
-                  },
-                  vAxis: {
-                      logScale: true,
-                      title: "Number of files"
-                  }
-		        };
-                
-        var dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('date', 'Date');
-        dataTable.addColumn('number', 'Detected dark');
-        dataTable.addColumn('number', 'Detected missing');
-        dataTable.addRows(data);
-        
-		var chart = new google.visualization.LineChart(document.getElementById('cc_chart'));
-		chart.draw(dataTable, options);
-	}
-
 	function drawUMSpaceChart()
 	{
 
@@ -198,7 +158,6 @@
 
     function drawCharts()
     {
-        drawCCChart();
         drawUMTimeChart();
         drawUMSpaceChart();
     }
