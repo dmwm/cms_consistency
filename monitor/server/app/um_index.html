@@ -127,7 +127,7 @@
         </script>
 
         <td><a href="./show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_date}}</a></td>
-        <td>{{um_summary['elapsed_time']}{{um_summary['elapsed_time']|hms}}</td>
+        <td>{{um_summary['elapsed_time']|hms}}</td>
         <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
         <td>{{um_summary["files"]|none_as_blank}}</td>
         <td>{% if not um_summary["total_size_gb"] is none %}
