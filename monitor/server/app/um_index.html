@@ -111,8 +111,7 @@
 </tr>
 
 
-{% for info in infos %}
-    {% set rse = info["rse"] %}
+{% for rse, info in infos %}
     
     <script type="text/javascript">
         rse_list.push("{{rse}}");
