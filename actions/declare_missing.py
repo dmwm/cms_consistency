@@ -128,7 +128,7 @@ if "-c" in opts:
     config = ActionConfiguration(rse, opts["-c"], "missing")
 
 age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
-fraction = float(opts.get("-f", config.get("max_fraction", 0.05)))
+fraction = float(opts.get("-f", config.get("max_fraction", 0.01)))
 account = opts.get("-a")
 dry_run = "-d" in opts
 
