@@ -97,7 +97,7 @@ echo timestamp: $timestamp
 dump_url=root://${server}/cms:${dump_path}/dump_${timestamp}.gz
 
 # HACK
-# dump_url=root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/dump_20210730.gz
+# dump_url=root://ceph-gw1.gridpp.rl.ac.uk/cms:/store/accounting/dump_20220902.gz
 
 echo dump_url: $dump_url
 
