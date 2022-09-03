@@ -21,7 +21,7 @@ class JSONParseError(Exception):
     def __str__(self):
         return f"Error parsing JSON file {self.Path}"
 
-class WMHandler(WPHandler):
+class UMHandler(WPHandler):
     
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
