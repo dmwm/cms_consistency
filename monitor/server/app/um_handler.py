@@ -146,42 +146,6 @@ class UMHandler(WPHandler):
         return json.dumps(runs), "text/json"
 
     def status_history(self, request, relpath, rses=None, **args):
-        um_data_source = self.UMDataSource
-        cc_data_source = self.CCDataSource
-
-        if rses is None:
-            rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
-        else:
-            rses = rses.split(",")
-            
-        data = {}      # {rse -> (cc_total, um_total, cc_success, um_success)}
-        
-        for rse in rses:
-            if not rse: continue
-            um_summaries = [um_data_source.run_summary(x) for x in um_data_source.all_stats_for_rse(rse)]
-            cc_summaries = [cc_data_source.run_summary(x) for x in cc_data_source.all_stats_for_rse(rse)]
-            
-            um_total = um_success = cc_total = cc_success = 0
-            
-            um_total = len(um_summaries)
-            um_success = len([x for x in um_summaries if x.get("status") == "done"])
-            cc_total = len(cc_summaries)
-            cc_success = len([x for x in cc_summaries if x.get("status") == "done"])
-            
-            data[rse] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success,
-                cc_status_history=[
-                    {
-                        "cc":       x.get("status"),
-                        "missing":  x.get("missing_stats",{}).get("action_status"),
-                        "dark":     x.get("dark_stats",{}).get("action_status")
-                    }
-                    for x in cc_summaries
-                ][-self.MAX_HISTORY:],
-                um_status_history=[x.get("status") for x in um_summaries][-self.MAX_HISTORY:]
-            )
-            
-        return json.dumps(data), "text/json"
-        
 
         
     #
@@ -239,6 +203,42 @@ class UMHandler(WPHandler):
         else:
             stats = self.UMDataSource.latest_stats_per_rse()
         return json.dumps(stats), "text/json"
+        
+        um_data_source = self.UMDataSource
+        cc_data_source = self.CCDataSource
+
+        if rses is None:
+            rses = set(um_data_source.list_rses()) | set(cc_data_source.list_rses())
+        else:
+            rses = rses.split(",")
+            
+        data = {}      # {rse -> (cc_total, um_total, cc_success, um_success)}
+        
+        for rse in rses:
+            if not rse: continue
+            um_summaries = [um_data_source.run_summary(x) for x in um_data_source.all_stats_for_rse(rse)]
+            cc_summaries = [cc_data_source.run_summary(x) for x in cc_data_source.all_stats_for_rse(rse)]
+            
+            um_total = um_success = cc_total = cc_success = 0
+            
+            um_total = len(um_summaries)
+            um_success = len([x for x in um_summaries if x.get("status") == "done"])
+            cc_total = len(cc_summaries)
+            cc_success = len([x for x in cc_summaries if x.get("status") == "done"])
+            
+            data[rse] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success,
+                cc_status_history=[
+                    {
+                        "cc":       x.get("status"),
+                        "missing":  x.get("missing_stats",{}).get("action_status"),
+                        "dark":     x.get("dark_stats",{}).get("action_status")
+                    }
+                    for x in cc_summaries
+                ][-self.MAX_HISTORY:],
+                um_status_history=[x.get("status") for x in um_summaries][-self.MAX_HISTORY:]
+            )
+            
+        return json.dumps(data), "text/json"
         
     def ls(self, request, relpath, rse="*", **args):
         lst = self.UMDataSource.ls(rse)
