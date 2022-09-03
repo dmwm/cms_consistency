@@ -1,4 +1,4 @@
-from webpie import WPApp, WPHandler
+from webpie import WPHandler, WPStaticHandler
 import sys, glob, json, time, os, gzip, re, os.path, zlib
 from datetime import datetime
 from data_source import UMDataSource
