@@ -129,7 +129,7 @@
             init_status_chart("{{rse}}_um_status");
         </script>
 
-        <td><a href="./unmerged/show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_date}}</a></td>
+        <td><a href="./show_run?rse={{rse}}&run={{um_summary['run']}}">{{um_summary['start_time']|as_date}}</a></td>
         <td>{{um_summary['elapsed_time']|hms}}</td>
         <td class="{{um_summary['status']}}">{{um_summary["status"]}}</td>
         <td>{{um_summary["files"]|none_as_blank}}</td>

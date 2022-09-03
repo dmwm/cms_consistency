@@ -149,21 +149,29 @@ class WMHandler(WPHandler):
     # GUI
     #
         
-    def index(self, request, relpath, **args):
-        data = self.UMDataSource.latest_stats_per_rse()
-        rses = sorted(list(data.keys()))
-        return self.render_to_response("wm_index.html", rses = rses, data=data)
+    def index(self, request, relpath, sort="rse", **args):
+        #
+        # list available RSEs
+        #
+        um_data_source = self.UMDataSource
+
+        um_stats = um_data_source.latest_stats_per_rse()
+        infos = sorted(list(um_stats.items()))                  # sort by RSE name by default
+
+        if sort == "um_run":
+            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]))
+        elif sort == "-um_run":
+            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]), reverse=True)
         
-    def rse(self, request, relpath, rse=None, **args):
+        return self.render_to_response("um_index.html", infos=infos)
+        
+    def show_rse(self, request, relpath, rse=None, **args):
         if not rse:
             return "RSE must be specified", 400
         data_source = self.UMDataSource
         last_run = data_source.latest_run(rse)
 
-        if not last_run:
-            return f"Data for RSE {rse} not found", 404
-            
-        self.redirect(f"./show_run?rse={rse}&run={last_run}")
+        self.render_to_response("um_rse.html")
         
     def show_run(self, request, relpath, rse=None, run=None, **args):
         if not rse or not run:
@@ -175,7 +183,7 @@ class WMHandler(WPHandler):
         run_stats = data_source.read_stats(rse, run)
         raw_stats = data_source.read_stats(rse, run, raw=True)
 
-        return self.render_to_response("wm_run.html", rse=rse, run=run, run_stats=run_stats,
+        return self.render_to_response("um_run.html", rse=rse, run=run, run_stats=run_stats,
             raw_stats = raw_stats, is_latest_run = run == latest_stats_for_rse["run"]
         )
         
