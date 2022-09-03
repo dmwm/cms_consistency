@@ -34,10 +34,7 @@ def main():
     if "-c" in opts:
         rse = opts["-r"]
         cfg = opts["-c"]
-        if cfg == "rucio":
-            config = CEConfiguration.rse_config(rse, "rucio")
-        else:
-            config = CEConfiguration.rse_config(rse, "yaml", opts["-c"])
+        config = CEConfiguration.rse_config(rse, cfg)
         ignore_list = config.IgnoreList
         nparts = config.NPartitions
     zout = "-z" in opts
