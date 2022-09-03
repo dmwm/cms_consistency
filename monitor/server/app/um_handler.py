@@ -156,14 +156,19 @@ class UMHandler(WPHandler):
         um_data_source = self.UMDataSource
 
         um_stats = um_data_source.latest_stats_per_rse()
-        infos = sorted(list(um_stats.items()))                  # sort by RSE name by default
+        summaries = [(rse, um_data_source.run_summary(stats)) for rse, stats in um_stats.items()]
+        for rse, summary in summaries:
+            summary["rse"] = rse
+        summaries = [summary for _, summary in summaries]
 
         if sort == "um_run":
-            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]))
+            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, x["rse"]))
         elif sort == "-um_run":
-            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]), reverse=True)
+            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, x["rse"]), reverse=True)
+        else:
+            summaries = sorted(summaries, key=lambda s: s["rse"])
         
-        return self.render_to_response("um_index.html", infos=infos)
+        return self.render_to_response("um_index.html", infos=summaries)
         
     def show_rse(self, request, relpath, rse=None, **args):
         if not rse:

@@ -111,8 +111,8 @@
 </tr>
 
 
-{% for rse, um_summary in infos %}
-    
+{% for um_summary in infos %}
+    {% set rse=um_summary["rse"] %}
     <script type="text/javascript">
         rse_list.push("{{rse}}");
     </script>

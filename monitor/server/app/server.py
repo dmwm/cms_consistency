@@ -1,7 +1,7 @@
 from webpie import WPApp, WPHandler, WPStaticHandler
 import sys, glob, json, time, os, gzip
 from datetime import datetime
-from wm_handler import WMHandler
+from um_handler import UMHandler
 from ce_handler import CEHandler
 from data_source import CCDataSource, UMDataSource, StatsCache
 
@@ -35,7 +35,7 @@ class Handler(WPHandler):
     
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
-        self.unmerged = WMHandler(*params, **args)
+        self.unmerged = UMHandler(*params, **args)
         self.ce = CEHandler(*params, **args)
 
     def new(self, request, relpath, **args):
