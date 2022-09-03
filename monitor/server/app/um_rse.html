@@ -23,7 +23,7 @@
                     <tr>
                         <td><a href="./unmerged/show_run?rse={{rse}}&run={{summary['run']}}">{{summary["run"]}}</td>
                         <td>{{summary["start_time"]|as_dt}}</td>
-                        <td class="{{info['status']}}">{{summary["status"]}}</td>
+                        <td class="{{summary['status']}}">{{summary["status"]}}</td>
                         <td>{{summary["files"]|none_as_blank}}</td>
                         <td>{% if not summary["total_size_gb"] is none %}
                                 {{"%.3f"|format(summary["total_size_gb"]/1024.0)}}
