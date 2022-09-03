@@ -26,6 +26,7 @@ class UMHandler(WPHandler):
     def __init__(self, *params, **args):
         WPHandler.__init__(self, *params, **args)
         self.UMDataSource = UMDataSource(self.App.UMPath, self.App.StatsCache, self.App.UMIgnoreList)
+        self.static = WPStaticHandler(*params, **args)
     
     def version(self, request, replapth, **args):
         return json.dumps(Version), "text/json"
