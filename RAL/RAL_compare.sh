@@ -14,6 +14,7 @@
 config=$1
 rucio_config_file=$2
 RSE=$3
+scope=cms
 scratch=$4
 out=$5
 key=""
@@ -265,5 +266,20 @@ $python cmp3/cmp5.py -s ${stats} \
 echo Dark list:    `wc -l ${d_out}`
 echo Missing list: `wc -l ${m_out}`
 
-    
+# Calculate diffs with previous run
+$python cmp3/diffs.py -u -s ${stats} $out $RSE $run
+
+#
+# 5. Declare missing and dark replicas
+#    -d turns it into "dry run" mode
+#
+
+missing_action_errors=${out}/${RSE}_${run}_missing_action.errors
+dark_action_errors=${out}/${RSE}_${run}_dark_action.errors
+m_action_list=${out}/${RSE}_${run}_M_action.list
+d_action_list=${out}/${RSE}_${run}_D_action.list
+
+$python actions/declare_missing.py -d -a root -o ${m_action_list} -c ${config} -s $stats $out $scope $RSE 2> $missing_action_errors
+$python actions/declare_dark.py    -d -a root -o ${d_action_list} -c ${config} -s $stats $out        $RSE 2> $dark_action_errors
+
 
