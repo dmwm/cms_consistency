@@ -101,7 +101,7 @@ if __name__ == "__main__":
             data = json.loads(data)
         jf.set_at_path(path, data)
         jf.save()
-        
+
     opts, args = getopt.getopt(sys.argv[1:], "c")
     if not args:
         print(Usage)
