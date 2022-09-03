@@ -187,8 +187,6 @@ for attempt in $attempts; do
         sleep $sleep_interval
     else
         echo download succeeded
-        n=`wc -l ${site_dump_tmp}`
-        echo "$n lines in the list"
         echo partitioning ...
         n=`$python cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
         echo "$n lines after partitioning"
