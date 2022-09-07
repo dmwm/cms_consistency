@@ -179,7 +179,7 @@ class UMHandler(WPHandler):
             else:
                 summaries = sorted(summaries, key=lambda s: s["rse"])
         
-        return self.render_to_response("um_index.html", infos=summaries)
+        return self.render_to_response("um_index.html", infos=summaries, sort_options=not attention)
         
     def show_rse(self, request, relpath, rse=None, **args):
         data_source = self.DataSource

@@ -58,7 +58,7 @@ class CEHandler(WPHandler):
         else:
             summaries = sorted(summaries, key=lambda s: s["rse"])
 
-        return self.render_to_response("ce_index.html", summaries=summaries)
+        return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
 
     def attention(self, request, relpath, **args):
         data_source = self.CCDataSource
@@ -83,7 +83,7 @@ class CEHandler(WPHandler):
         if problems:
             problems = sorted(problems, key=lambda s: s["order"])
 
-        return self.render_to_response("ce_index.html", summaries=problems)
+        return self.render_to_response("ce_index.html", summaries=problems, sort_options=False)
     
     def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"
