@@ -5,15 +5,19 @@
 {% endblock %}
 
 
-{% block link_menu %}
-<a href="./attention">attention</a>&nbsp;&nbsp;
-<span style="color:gray">sort by:</span>
-    [<a href="?sort=rse">RSE</a>]
-    [CE run: <a href="?sort=-ce_run">latest</a> | <a href="?sort=ce_run">oldest</a>]
+{% block link_menu %}&nbsp;|&nbsp;<a href="./attention">attention</a>
 {% endblock %}
 
 
+
 {% block content %}
+
+<p class="link_menu">
+    <span style="color:gray">sort by:</span>
+    [<a href="?sort=rse">RSE</a>]
+    [CE run: <a href="?sort=-ce_run">latest</a> | <a href="?sort=ce_run">oldest</a>]
+</p>
+
 
 <script type="text/javascript">
 

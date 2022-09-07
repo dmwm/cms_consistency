@@ -14,17 +14,12 @@
 
 {% block content %}
 
-{#
-    {% for r in rses %}
-        <p><a href="./show_rse?rse={{r}}">{{r}}</a></p>
-    {% endfor %}
-#}
-
-<p><span style="color:gray">sort by:</span>
+<p class="link_menu">
+    <span style="color:gray">sort by:</span>
     [<a href="?sort=rse">RSE</a>]
-    [CE run: <a href="?sort=-cc_run">latest</a> | <a href="?sort=cc_run">oldest</a>]
-    [Unmerged run:  <a href="?sort=-um_run">latest</a> | <a href="?sort=um_run">oldest</a>]
+    [CE run: <a href="?sort=-ce_run">latest</a> | <a href="?sort=ce_run">oldest</a>]
 </p>
+
 
 
 <script type="text/javascript">
