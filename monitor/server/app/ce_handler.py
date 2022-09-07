@@ -58,17 +58,18 @@ class CEHandler(WPHandler):
         else:
             summaries = sorted(summaries, key=lambda s: s["rse"])
 
-        return self.render_to_response("ce_index.html", infos=summaries)
+        return self.render_to_response("ce_index.html", summaries=summaries)
 
-    def problems(self, request, relpath, **args):
+    def attention(self, request, relpath, **args):
         data_source = self.CCDataSource
 
-        cc_stats = data_source.latest_stats_per_rse()
-        cc_summaries = {rse: data_source.run_summary(stats) for rse, stats in cc_stats.items()}
-        all_rses = sorted(cc_stats.keys())
+        stats = data_source.latest_stats_per_rse()
+        summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
+        for rse, summary in summaries.items():
+            summary["rse"] = rse
 
         problems = []
-        for rse, summary in cc_summaries.items():
+        for summary in summaries.values():
             order = None
             if summary.get("failed"):
                 order = 0
@@ -77,11 +78,12 @@ class CEHandler(WPHandler):
             elif summary["status"] == "started":
                 order = 2
             if order is not None:
-                problems.append({"rse":rse, "summary": summary, "order": order})
-                
-        problems = sorted(problems, key=lambda x: x["order"])
-        return self.render_to_response("ce_index.html", infos=problems)
-        
+                summary["order"] = order
+                problems.append(summary)
+        if problems:
+            problems = sorted(problems, key=lambda s: s["order"])
+
+        return self.render_to_response("ce_index.html", summaries=problems)
     
     def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"

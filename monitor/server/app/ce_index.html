@@ -13,10 +13,12 @@
     {% endfor %}
 #}
 
-<p><span style="color:gray">sort by:</span>
+{% block link_menu %}
+<a href="./attention">attention</a>&nbsp;&nbsp;
+<span style="color:gray">sort by:</span>
     [<a href="?sort=rse">RSE</a>]
     [CE run: <a href="?sort=-ce_run">latest</a> | <a href="?sort=ce_run">oldest</a>]
-</p>
+{% endblock %}
 
 
 <script type="text/javascript">
@@ -136,17 +138,14 @@
 </tr>
 
 
-{% for info in infos %}
-    {% set rse = info["rse"] %}
+{% for summary in summaries %}
+    {% set rse = summary["rse"] %}
     
     <script type="text/javascript">
         rse_list.push("{{rse}}");
     </script>
     
-    {% set cc_summary = info["summary"] %}
-
     <tr>
-        <!-- rse: {{rse}} order:{{info["order"]}} summary:{{cc_summary}} -->
         <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
         <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
             <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
@@ -156,13 +155,13 @@
             init_status_chart("{{rse}}_cc_status");
         </script>
 
-        <td><a href="./show_run?rse={{rse}}&run={{cc_summary['run']}}">{{cc_summary['start_time']|as_date}}</a></td>
-        <td class="{{cc_summary['status']}}">{{cc_summary["status"]|none_as_blank}}</td>
+        <td><a href="./show_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_date}}</a></td>
+        <td class="{{summary['status']}}">{{summary["status"]|none_as_blank}}</td>
 
-        {% set dark_stats = cc_summary["dark_stats"] %}
+        {% set dark_stats = summary["dark_stats"] %}
         <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
         <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
-        <td class="{{cc_summary['dark_stats']['action_status']|none_as_blank}}">
+        <td class="{{summary['dark_stats']['action_status']|none_as_blank}}">
             {{dark_stats['action_status']|none_as_blank}}
             {#
             {%- if dark_stats['action_status'] == "aborted" and 
@@ -172,7 +171,7 @@
             #}
         </td>
 
-        {% set missing_stats = cc_summary["missing_stats"] %}
+        {% set missing_stats = summary["missing_stats"] %}
         <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
         <td class="{{missing_stats['action_status']|none_as_blank}}">
             {{missing_stats['action_status']|none_as_blank}}
