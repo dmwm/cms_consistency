@@ -163,7 +163,7 @@ class ConfigYAMLBackend(ConfigBackend):
         self.Config = cfg
         self.Roots = {}             # {rse -> {root -> root_config}} 
         for rse, data in cfg.items():
-            roots = data.get("scanner", {}).get("roots")
+            roots = (data or {}).get("scanner", {}).get("roots")
             if roots is not None:
                 self.Roots[rse] = self.roots_as_dict(roots)
         #print("ConfigYAMLBackend.Config:", self.Config)
