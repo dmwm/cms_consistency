@@ -5,7 +5,7 @@ from um_handler import UMHandler
 from ce_handler import CEHandler
 from data_source import CCDataSource, UMDataSource, StatsCache
 
-Version = "1.11.11"
+Version = "2.0.0"
 
 def display_file_list(lst):
     Indent = "    "
