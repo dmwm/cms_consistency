@@ -1,7 +1,8 @@
 from webpie import WPApp, WPHandler, WPStaticHandler
 import sys, glob, json, time, os, gzip
 from datetime import datetime
-from data_source import CCDataSource, StatsCache
+from wm_handler import WMHandler, UMDataSource
+from data_source import CCDataSource, UMDataSource, StatsCache
 
 Version = "1.11.11"
 
@@ -29,62 +30,42 @@ def display_file_list(lst):
     return out
     
 
-class CEHandler(WPHandler):
+class Handler(WPHandler):
     
-    DarkSection = "dark_action"
-    MissingSection = "missing_action"
-    
-    def __init__(self, *params, **args):
+    def __init__(self, *params, new=False, **args):
         WPHandler.__init__(self, *params, **args)
+        self.WM = self.unmerged = WMHandler(*params, **args)
         self.static = WPStaticHandler(*params, **args)
-        self.CCDataSource = CCDataSource(self.App.CCPath, self.App.StatsCache)
+        self.IsNew = new
+        if not new:
+            self.new = Handler(*params, new=True, **args)
+
+        self.CCDataSource = CCDataSource(self.App.CCPath, self.App.StatsCache, new)
+        self.DarkSection = self.CCDataSource.DarkSection
+        self.MissingSection = self.CCDataSource.MissingSection
+        
+        self.UMDataSource = UMDataSource(self.App.UMPath, self.App.StatsCache, self.App.UMIgnoreList)
 
     def index(self, request, relpath, sort="rse", **args):
         #
         # list available RSEs
         #
-        data_source = self.CCDataSource
+        um_data_source = self.UMDataSource
 
-        stats = data_source.latest_stats_per_rse()
-        summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
-        for rse, summary in summaries.items():
-            summary["rse"] = rse
-        summaries = summaries.values()
+        um_stats = um_data_source.latest_stats_per_rse()
+        infos = sorted(list(um_stats.items()))                  # sort by RSE name by default
 
-        if sort == "ce_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]))
-        elif sort == "-ce_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]), reverse=True)
-        else:
-            summaries = sorted(summaries, key=lambda s: s["rse"])
-
-        return self.render_to_response("ce_index.html", summaries=summaries)
-
-    def attention(self, request, relpath, **args):
-        data_source = self.CCDataSource
-
-        stats = data_source.latest_stats_per_rse()
-        summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
-        for rse, summary in summaries.items():
-            summary["rse"] = rse
-
-        problems = []
-        for summary in summaries.values():
-            order = None
-            if summary.get("failed"):
-                order = 0
-            elif summary["missing_stats"].get("action_status") != "done" or summary["dark_stats"].get("action_status") != "done":
-                order = 1
-            elif summary["status"] == "started":
-                order = 2
-            if order is not None:
-                summary["order"] = order
-                problems.append(summary)
-        if problems:
-            problems = sorted(problems, key=lambda s: s["order"])
-
-        return self.render_to_response("ce_index.html", summaries=problems)
-    
+        if sort == "um_run":
+            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]))
+        elif sort == "-um_run":
+            infos = sorted(infos, key=lambda x: (x[1].get("start_time") or -1, x[0]), reverse=True)
+        
+        return self.render_to_response("um_index.html", infos=infos)
+        
+    def probe(self, request, relpath, **args):
+        return self.CCDataSource.status(), "text/plain"
+        return "OK" if self.CCDataSource.is_mounted() else ("Data directory unreachable", 500)
+        
     def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"
         
@@ -133,7 +114,25 @@ class CEHandler(WPHandler):
                     "old_dark":         dark_old
                 }
             ))
-        return self.render_to_response("ce_rse.html", rse=rse, cc_runs=cc_infos)
+        #print(infos)
+        
+        um_data_source = self.UMDataSource
+        um_runs = um_data_source.all_stats_for_rse(rse)
+        um_runs = [r for r in um_runs if "start_time" in r and "end_time" in r]
+        um_runs = sorted(um_runs, key=lambda r: r["run"], reverse=True)
+        
+        try:
+            for r in um_runs:
+                r["elapsed_time_hours"] = r["start_time_milliseconds"] = None
+                if r.get("start_time"):
+                    r["start_time_milliseconds"] = int(r["start_time"]*1000)
+                    if r.get("end_time"):
+                        r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
+                r.setdefault("total_size_gb", None)
+                
+        except KeyError:
+            raise ValueError(f"key error in: {r}")
+        return self.render_to_response("show_rse.html", rse=rse, cc_runs=cc_infos, um_runs=um_runs)
         
     def common_paths(self, lst, space="&nbsp;"):
         lst = sorted(lst)
@@ -222,7 +221,7 @@ class CEHandler(WPHandler):
             errors = ["%s failed" % failed_comp]
             failed_stats = stats[failed_comp]
             if failed_stats.get("error"):
-                errors.append("error: %s" % (failed_stats["error"],))
+                errors.append("error: %s", failed_stats["error"])
                 
         stats_parts = [(part, part_name, stats.get(part)) for part, part_name in 
             [
@@ -271,7 +270,7 @@ class CEHandler(WPHandler):
         
         prev_run, old_nmissing, old_ndark = data_source.file_lists_diffs_counts(rse, run)
         
-        return self.render_to_response("ce_run.html", 
+        return self.render_to_response("show_run.html", 
             rse=rse, run=run,
             errors = errors,
             dark_truncated = dark_truncated, 
@@ -346,6 +345,7 @@ class CEHandler(WPHandler):
     MAX_HISTORY = 10
         
     def status_history(self, request, relpath, rses=None, **args):
+        um_data_source = self.UMDataSource
         cc_data_source = self.CCDataSource
 
         if rses is None:
@@ -357,14 +357,17 @@ class CEHandler(WPHandler):
         
         for rse in rses:
             if not rse: continue
+            um_summaries = [um_data_source.run_summary(x) for x in um_data_source.all_stats_for_rse(rse)]
             cc_summaries = [cc_data_source.run_summary(x) for x in cc_data_source.all_stats_for_rse(rse)]
             
-            cc_total = cc_success = 0
+            um_total = um_success = cc_total = cc_success = 0
             
+            um_total = len(um_summaries)
+            um_success = len([x for x in um_summaries if x.get("status") == "done"])
             cc_total = len(cc_summaries)
             cc_success = len([x for x in cc_summaries if x.get("status") == "done"])
             
-            data[rse] = dict(cc_total=cc_total, cc_success=cc_success,
+            data[rse] = dict(cc_total=cc_total, um_total=um_total, um_success=um_success, cc_success=cc_success,
                 cc_status_history=[
                     {
                         "cc":       x.get("status"),
@@ -373,6 +376,7 @@ class CEHandler(WPHandler):
                     }
                     for x in cc_summaries
                 ][-self.MAX_HISTORY:],
+                um_status_history=[x.get("status") for x in um_summaries][-self.MAX_HISTORY:]
             )
             
         return json.dumps(data), "text/json"
@@ -380,3 +384,137 @@ class CEHandler(WPHandler):
     def ls(self, request, relpath, rse="*", **args):
         lst = self.CCDataSource.ls(rse)
         return ["%s -> %s %s %s %s %s\n" % (d["path"], d["real_path"] or "", d["size"], d["ctime"], d["ctime_text"], d["error"]) for d in lst], "text/plain"
+        
+def as_dt(t):
+    # datetim in UTC
+    if t is None:
+        return ""
+    dt = datetime.utcfromtimestamp(t)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+    
+def as_JSON_Date(t):
+    # datetim in UTC
+    if t is None:
+        return "null"
+    dt = datetime.utcfromtimestamp(t)
+    # JavaScript Date() takes month starting from 0
+    return dt.strftime("new Date(%d, %d, %d)" % (dt.year, dt.month-1, dt.day))  
+    
+def as_date(t):
+    # datetim in UTC
+    if t is None:
+        return "null"
+    dt = datetime.utcfromtimestamp(t)
+    # JavaScript Date() takes month starting from 0
+    return dt.strftime("%Y/%m/%d")
+    
+def as_json(d):
+    return "\n"+json.dumps(d, indent=4)
+    
+def hms(t):
+    
+    if t is None:
+        return ""
+    if t < 100:
+        return "%.2fs" % (t)
+    
+    t = int(t)
+    s = t % 60
+    t //= 60
+    m = t % 60
+    h = t // 60
+    
+    if h == 0:
+        return f"{m}m{s}s"
+    else:
+        return f"{h}h{m}m"
+        
+def path_type(path):
+    return "dir" if path.endswith("/") else "file"
+    
+def none_as_blank(x):
+    if x is None:
+        return ''
+    else:
+        return str(x)
+        
+def if_none(x, default=""):
+    return default if x is None else x
+        
+def format_gigabytes(x):
+    x = x * 1024**3 # back to bytes
+    mark_letters = " KMGTPX"
+    mark_values = [1024**i for i,c in enumerate(mark_letters)]
+    the_l, the_v = "", 1
+    for l, v in zip(mark_letters, mark_values):
+        if x < v:
+            break
+        the_l, the_v = l, v
+    x = x/the_v
+    if the_l == " ": the_l = ""
+    return "%.1f%s" % (x, the_l)
+
+class App(WPApp):
+
+    Version = Version
+    
+    def __init__(self, handler, home, cc_path, prefix, um_path, um_ignore_list):
+        WPApp.__init__(self, handler, prefix=prefix)
+        self.CCPath = cc_path
+        self.UMPath = um_path
+        self.UMIgnoreList = um_ignore_list
+        self.Home = home
+        self.StatsCache = StatsCache()
+        self.StatsCache.init(cc_path)
+        self.StatsCache.init(um_path)
+        print("Stats cache initialized with", len(self.StatsCache), "entries")
+
+    def init(self):
+        self.initJinjaEnvironment(tempdirs=[self.Home], 
+            filters={
+                "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
+                "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank,
+                "as_date":as_date, "format_gigabytes":format_gigabytes,
+                "if_none":if_none
+            }
+        )
+        
+        
+Usage = """
+python server.py [-r <url prefix to remove>] <port> <cc data path> <wm data path>
+"""
+
+if __name__ == "__main__":
+    import sys, getopt
+
+    #print("server.py: sys.argv:", sys.argv)
+
+    opts, args = getopt.getopt(sys.argv[1:], "r:ld", ["um-ignore="])
+    opts = dict(opts)
+
+    if not args:
+        print (Usage)
+        sys.exit(2) 
+    
+    port = int(args[0])
+    cc_path, wm_path = args[1:]
+    
+    prefix = opts.get("-r")
+    logging="-l" in opts
+    debug=sys.stdout if "-d" in opts else None
+
+    um_ignore_list = opts.get("--um-ignore", [])
+    if um_ignore_list:
+        um_ignore_list = um_ignore_list.split(",")
+
+    print("Starting server:\n  port %s\n  CC path %s\n  WM path %s" % (port, cc_path, wm_path))
+
+    sys.stdout.flush()
+    home = os.path.dirname(__file__) or "."
+    App(Handler, home, cc_path, prefix, wm_path, um_ignore_list).run_server(port, logging=logging, debug=debug)
+
+        
+        
+        
+        
+        

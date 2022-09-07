@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block html_head %}
+<style type="text/css">
+    .failed_dirs td {
+        padding:    0;
+    }
+    
+    td.failed_dir_path {
+        font: 10px monospace;
+        text-align: left;
+        border: 0;
+    }
+
+    td.failed_dir_error {
+        font-size: 10px;
+        text-align: left;
+        border: 0;
+    }
+</style>
+{% endblock %}
+
+{% block headline %}Consistency Enforcement run {{run}} for RSE {{rse}}{% endblock %}
+
+{% block link_menu %}&nbsp;|&nbsp;<a href="./show_rse?rse={{rse}}">{{rse}} (CE)</a>{% endblock %}
+
+{% block content %}
+
+    {% if errors %}
+    
+        <h3>Run errors</h3>
+        <p class=error>
+        {% for e in errors %}
+            {{e}}<br/>
+        {% endfor %}
+        </p>
+
+    {% endif %}
+            <h3>Steps statistics</h3>
+            
+            <table class="data">
+				<tr>
+					<th>Step</th>
+					<th>Version</th>
+					<th>Start time</th>
+					<th>Status</th>
+					<th>End time</th>
+					<th>Elapsed time</th>
+					<th>Files</th>
+					<th>Directories</th>
+				</tr>
+				
+				{% for step, step_name, stats in stats_parts %}
+                    <!--
+                        stats:
+                             {% for k, v in stats.items() %}
+                                {{k}}: {{v}}
+                            {% endfor %}
+                    -->
+					<tr>
+						<td>{{step_name}}</td>
+						<td>{% if step == "scanner" %}
+								{{stats["scanner"]["type"]}}&nbsp;{{stats["scanner"]["version"]}}
+							{% else %}
+								{% if "version" in stats %}{{stats["version"]}}{% endif %}
+							{% endif %}
+						</td>
+						<td>{% if "start_time" in stats %}{{stats["start_time"]|as_dt|default("")}}{% endif %}</td>
+						<td class="{{stats['status'] or ''}}">
+                            {%- if step == "scanner" and "scanning" in stats -%}
+                                scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
+                            {%- else -%}
+                                {{stats["status"]}}
+                            {%- endif -%}
+                        </td>
+						<td>{% if "end_time" in stats %}{{stats["end_time"]|as_dt|default("")}}{% endif %}</td>
+						<td>
+                            {% if "elapsed" in stats %}         {{stats["elapsed"]|hms}}
+                            {% elif "start_time" in stats %}    {{(time_now-stats["start_time"])|hms}}
+                            {% endif %}
+                        </td>
+						<td>
+							{%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["files"]|default("")}}
+							{%- elif step == "scanner" %}{{stats["total_files"]|default("")}}
+							{%- elif step == "cmp3" -%}
+								{%- if stats["dark"] is not none %}&nbsp;dark: {{stats["dark"]}}{% endif -%}
+								{%- if stats["missing"] is not none %}&nbsp;missing: {{stats["missing"]}}{% endif -%}
+                            {%- elif step == "cmp2dark" and stats is not none -%}
+                                {%- if "join_list_files" in stats %} confirmed:&nbsp;{{ stats["join_list_files"]|default("") }}{% endif -%}
+                            {%- elif step == "cc_dark" and stats is not none -%}
+                                acted:&nbsp;{{ stats["confirmed_dark_files"]|default("") }}
+                            {%- elif step == "cc_miss" and stats is not none -%}
+                                acted:&nbsp;{{ stats["confirmed_miss_files"]|default("") }}
+							{%- endif -%}
+						</td>
+						<td>
+							{%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["directories"]|default("")}}
+							{%- elif step == "scanner" %}{{stats["total_directories"]|default("")}}
+							{%- endif -%}
+						</td>
+					</tr>
+				{% endfor %}
+            </table>
+            
+            {% if cmp3 is not none and summary is not none and cmp3["status"] == "done" %}
+                {% set missing_stats = summary["missing_stats"] %}
+                {% set dark_stats = summary["dark_stats"] %}
+            
+                <h3>Action summary</h3>
+                <table class="data">
+                    <tr>
+                        <td></td><th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
+                    </tr>
+                    <tr>
+                        <td class="field_name">Missing files</td>
+                        <td>{{missing_stats["detected"]|none_as_blank}}</td>
+                        <td>n/a</td>
+                        <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
+                        <td class="{{missing_stats['action_status'] or ''}}">{{summary["missing_stats"]["action_status"]|none_as_blank}}
+                        {%- if missing_stats['action_status'] == "aborted" and 
+                                missing_stats['aborted_reason'] -%}
+                                : {{ missing_stats['aborted_reason'] }}
+                        {%- endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="field_name">Dark files</td>
+                        <td>{{dark_stats["detected"]|none_as_blank}}</td>
+                        <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
+                        <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
+                        <td class="{{dark_stats['action_status'] or ''}}">{{dark_stats["action_status"]|none_as_blank}}
+                        {%- if dark_stats['action_status'] == "aborted" and 
+                                dark_stats['aborted_reason'] -%}
+                                : {{ dark_stats['aborted_reason'] }}
+                        {%- endif %}
+                        </td>
+                    </tr>
+                </table>
+            {% endif %}
+            
+			{% if scanner is not none %}
+			
+	            <h3>Site scan details</h3>
+	            <table class="data">
+	                <tr><td class=field_name>Server address</td><td>{{scanner["server"]}}</td></tr>
+	                <tr><td class=field_name>Server root</td><td>{{scanner["server_root"]}}</td></tr>
+	            </table>
+
+	            <p></p>
+
+	            <table class="data">
+	                <tr>
+	                    <th>Location</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Elapsed time</th>
+	                        <th>Error</th><th colspan=2>Failed subdirectories</th>
+	                </tr>
+	                {% for d in scanner_roots %}
+    	                    <tr>
+    	                        <td class=field_name>{{d["root"]}}</td>
+                                <td>{{d["files"]}}</td>
+                                <td>{{d["directories"]}}</td>
+                                <td>{{d["empty_directories"]}}</td>
+                                <td>{{d["elapsed_time"]|hms}}</td>
+                                <td style="text-align:left">{{d["error"] or ""}}</td>
+                                <td>
+                                    {% if d["failed_subdirectories"]|length %}
+                                        <table class="failed_dirs">
+                                            {% for path, error in d["failed_subdirectories"].items()|sort %}
+                                                <tr><td class="failed_dir_path">{{path}}</td><td class="failed_dir_error">{{error}}</td></tr>
+                                            {% endfor %}
+                                        </table>
+                                    {% endif %}
+                                </td>
+    	                    </tr>
+	                {% endfor %}
+	            </table>
+
+			{% endif %}
+			
+			{% if cmp3 is not none %}
+            
+	            <h3>Comparison results</h3>
+            
+	            <script type="text/javascript">
+	                function show(lst)
+	                {
+	                    var o = document.getElementById(lst+"_list");
+	                    if( o )
+	                        o.classList.toggle("shown");
+	                    o = document.getElementById(lst+"_list_toggle");
+	                    if( o.innerHTML == "hide" )
+	                        o.innerHTML = "show";
+	                    else
+	                        o.innerHTML = "hide";
+	                };
+	            </script>
+
+	            <table class="data">
+                    <tr>
+                        <td></td>
+                        <th colspan=3>Latest run</th>
+                        <th>Repeated from prvious run</th>
+                    </tr>
+	                <tr>
+	                    <td class="field_name">Missing files</td><td>{{nmissing}}</td>
+	                    <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
+	                    <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                        <td>{{old_nmissing|none_as_blank}}</td>
+	                </tr>
+	                <tr>
+	                    <td class="field_name">Dark files</td><td>{{ndark}}</td>
+	                    <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
+	                    <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                        <td>{{old_ndark|none_as_blank}}</td>
+	                </tr>
+	            </table>
+            
+	            {% if missing %}
+            
+	            <div id="missing_list" class="hidden">
+	                <a id="missing_list_ref"></a>
+	                <h4>Missing files {% if missing_truncated %} (truncated){% endif %}</h4>
+	                {% for f in missing %}
+	                    <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+	                {%- endfor %}
+	            </div>
+            
+	            {% endif %}
+            
+	            {% if dark %}
+
+	            <div id="dark_list" class="hidden">
+	                <a id="dark_list_ref"></a>
+	                <h4>Dark files{% if dark_truncated %} (truncated){% endif %}</h4>
+	                {% for f in dark %}
+	                    <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+	                {%- endfor %}
+	            </div>
+            
+	            {% endif %}
+            
+	        {% endif %}	{# if cmp3 is not none #}
+
+    {# {% endif %}  errors #}
+
+    <h3>Raw JSON statistics</h3>
+        <a href="./stats?rse={{rse}}&run={{run}}">link</a>
+        <pre class="code">
+        {{stats|as_json}}
+        </pre>
+
+
+{% endblock %}

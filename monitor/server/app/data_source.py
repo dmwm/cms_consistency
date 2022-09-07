@@ -219,6 +219,9 @@ class UMDataSource(DataSource):
         DataSource.__init__(self, path, cache)
         self.DefaultIgnoreRE = None if not ignore_list else re.compile("^(%s)" % ("|".join(ignore_list),))
 
+    def get_stats(self, rse, run):
+        return self.read_stats(rse, run)
+
     def postprocess_stats(self, data):
         out = {"run": data["run"], "rse":data["rse"]}
         if "error" in data:
@@ -305,10 +308,11 @@ class UMDataSource(DataSource):
         
 class CCDataSource(DataSource):
     
-    def __init__(self, path, cache):
+    DarkSection = "dark_action"
+    MissingSection = "missing_action"
+
+    def __init__(self, path, cache, new=False):
         DataSource.__init__(self, path, cache)
-        self.DarkSection = "dark_action"
-        self.MissingSection = "missing_action"
     
     def is_mounted(self):
         return os.path.isdir(self.Path)
@@ -471,7 +475,7 @@ class CCDataSource(DataSource):
         else:
             return None, None
 
-    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
+    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3", DarkSection, MissingSection]
 
     def run_summary(self, stats):
         status = None
@@ -521,6 +525,7 @@ class CCDataSource(DataSource):
             "running": running_comp,            
             "missing_stats" : {
                 "detected":         None,
+                "confirmed":        None,
                 "acted_on":         None,
                 "action_status":    None
             },
@@ -536,13 +541,15 @@ class CCDataSource(DataSource):
             summary["error"] = stats["error"]
         
         if "cmp3" in stats and stats["cmp3"]["status"] == "done":
-            summary["missing_stats"]["detected"] = stats["cmp3"]["missing"]
+            summary["missing_stats"]["detected"] = summary["missing_stats"]["confirmed"] = stats["cmp3"]["missing"]
             summary["dark_stats"]["detected"] = stats["cmp3"]["dark"]
             
             if "cmp2dark" in stats:
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
             if self.DarkSection in stats:
+                if "confirmed_dark_files" in stats[self.DarkSection]:
+                    summary["dark_stats"]["confirmed"] = stats[self.DarkSection].get("confirmed_dark_files")
                 summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
                 summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
                 summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")
