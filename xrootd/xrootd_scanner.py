@@ -159,6 +159,8 @@ class XRootDClient(Primitive):
             is_file = (not last_item in (".", "..")) and "." in last_item
         #print("parse:", line,"->",is_file, size, canonic_path(path))
         return is_file, size, canonic_path(path)
+        
+    HostPortRE = re.compile(r"[a-zA-Z-]+(\.[a-zA-Z0-9-]+)*(\:[0-9]+)?")
 
     def get_underlying_servers(self, redirector, location, timeout):
         # location is relative to site root
@@ -174,8 +176,8 @@ class XRootDClient(Primitive):
         )
 
         if retcode == 0:
-            lst = [x.split()[0] for x in out.split("\n") if " server " in x.lower()]
-            lst = [x for x in lst if x]
+            lst = [x.split()[0] for x in out.split("\n") if " server " in x.lower() and "read" in x.lower()]
+            lst = [x for x in lst if x and self.HostPortRE.match(x)]
             if lst:
                 servers = lst
         return servers
