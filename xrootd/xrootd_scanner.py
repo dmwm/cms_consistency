@@ -650,7 +650,8 @@ def scan_root(rse, config, client, my_stats, stats, stats_key,
        "timeout":timeout,
        "recursive_threshold":recursive_threshold,
        "max_scanners":max_scanners,
-       "ignore_subdirectories": ignore_subdirs
+       "ignore_subdirectories": ignore_subdirs,
+       "servers": client.Servers
     }
 
     my_stats["scanning"] = root_stats
@@ -744,7 +745,8 @@ def scan_root(rse, config, client, my_stats, stats, stats_key,
         "end_time":t1,
         "elapsed_time": t1-t0,
         "total_size_gb": total_size,
-        "ignored_subdirectories": ignore_subdirs
+        "ignored_subdirectories": ignore_subdirs,
+        "servers": client.Servers
     })
 
     del my_stats["scanning"]
