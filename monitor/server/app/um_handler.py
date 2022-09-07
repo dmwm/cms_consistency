@@ -189,7 +189,14 @@ class UMHandler(WPHandler):
         summaries = []
         for run in runs:
             stats = data_source.get_stats(rse, run)
-            summaries.append((run, data_source.run_summary(stats)))
+            r = data_source.run_summary(stats)
+            r["elapsed_time_hours"] = r["start_time_milliseconds"] = None
+            if r.get("start_time"):
+                r["start_time_milliseconds"] = int(r["start_time"]*1000)
+                if r.get("end_time"):
+                    r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
+            r.setdefault("total_size_gb", None)
+            summaries.append((run, r))
         return self.render_to_response("um_rse.html", rse=rse, summaries=summaries)
 
     def show_run(self, request, relpath, rse=None, run=None, **args):

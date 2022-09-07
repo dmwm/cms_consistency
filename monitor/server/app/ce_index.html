@@ -5,14 +5,6 @@
 {% endblock %}
 
 
-{% block content %}
-
-{#
-    {% for r in rses %}
-        <p><a href="./show_rse?rse={{r}}">{{r}}</a></p>
-    {% endfor %}
-#}
-
 {% block link_menu %}
 <a href="./attention">attention</a>&nbsp;&nbsp;
 <span style="color:gray">sort by:</span>
@@ -20,6 +12,8 @@
     [CE run: <a href="?sort=-ce_run">latest</a> | <a href="?sort=ce_run">oldest</a>]
 {% endblock %}
 
+
+{% block content %}
 
 <script type="text/javascript">
 
