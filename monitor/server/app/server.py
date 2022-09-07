@@ -45,6 +45,9 @@ class Handler(WPHandler):
     def index(self, request, relpath, sort="rse", **args):
         return self.redirect("./ce/index")
         
+    def probe(self, request, relpath, **args):
+        return self.ce.probe(request, relpath, **args)
+        
 def as_dt(t):
     # datetim in UTC
     if t is None:

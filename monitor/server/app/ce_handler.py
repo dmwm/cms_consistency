@@ -38,6 +38,10 @@ class CEHandler(WPHandler):
         WPHandler.__init__(self, *params, **args)
         self.static = WPStaticHandler(*params, **args)
         self.CCDataSource = CCDataSource(self.App.CCPath, self.App.StatsCache)
+        
+    def probe(self, request, relpath, **args):
+        return self.CCDataSource.status(), "text/plain"
+        return "OK" if self.CCDataSource.is_mounted() else ("CE data directory unreachable", 500)
 
     def index(self, request, relpath, sort="rse", **args):
         #
