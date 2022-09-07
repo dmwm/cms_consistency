@@ -21,7 +21,7 @@
 			    </tr>
                 {% for run, summary in summaries %}
                     <tr>
-                        <td><a href="./unmerged/show_run?rse={{rse}}&run={{summary['run']}}">{{summary["run"]}}</td>
+                        <td><a href="./show_run?rse={{rse}}&run={{summary['run']}}">{{summary["run"]}}</td>
                         <td>{{summary["start_time"]|as_dt}}</td>
                         <td class="{{summary['status']}}">{{summary["status"]}}</td>
                         <td>{{summary["files"]|none_as_blank}}</td>
