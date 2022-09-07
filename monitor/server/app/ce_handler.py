@@ -45,28 +45,21 @@ class CEHandler(WPHandler):
         #
         data_source = self.CCDataSource
 
-        cc_stats = data_source.latest_stats_per_rse()
-        cc_summaries = {rse: data_source.run_summary(stats) for rse, stats in cc_stats.items()}
+        stats = data_source.latest_stats_per_rse()
+        summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
+        for rse, summary in summaries.items():
+            summary["rse"] = rse
+        summaries = summaries.values()
 
-        all_rses = sorted(cc_stats.keys())
+        if sort == "ce_run":
+            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]))
+        elif sort == "-ce_run":
+            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]), reverse=True)
+        else:
+            summaries = sorted(summaries, key=lambda s: s["rse"])
 
-        infos = [
-            {
-                "rse":        rse,
-                "summary":   cc_summaries.get(rse)
-            } 
-            for rse in all_rses
-        ]
+        return self.render_to_response("ce_index.html", infos=summaries)
 
-        if sort == "rse":
-            infos = sorted(infos, key=lambda x: x["rse"])
-        elif sort == "cc_run":
-            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time") or -1, x["rse"]))
-        elif sort == "-cc_run":
-            infos = sorted(infos, key=lambda x: ((x["cc_summary"] or {}).get("start_time") or -1, x["rse"]), reverse=True)
-        
-        return self.render_to_response("ce_index.html", infos=infos)
-    
     def problems(self, request, relpath, **args):
         data_source = self.CCDataSource
 
