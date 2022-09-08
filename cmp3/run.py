@@ -123,7 +123,7 @@ class CCRun(object):
         elif os.path.isfile(gzipped_path):
             f = gzip.open(gzipped_path, "rt")
         else:
-            raise RuntimeError("File not found")
+            raise RuntimeError("File not found: %s, %s" % (path, gzipped_path))
         for line in f:
             line = line.strip()
             if line:
