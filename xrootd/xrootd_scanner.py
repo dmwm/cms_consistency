@@ -204,7 +204,7 @@ class ScannerMaster(PyThread):
         self.RecursiveThreshold = recursive_threshold
         self.Client = client
         self.Root = root
-        self.AbsoluteRootPath = client.absolute_path(client.Root)
+        self.AbsoluteRootPath = client.absolute_path(root)
         self.MaxScanners = max_scanners
         self.Results = DEQueue(self.RESULTS_BUFFER_SISZE)
         self.ScannerQueue = TaskQueue(max_scanners, stagger=0.2)
