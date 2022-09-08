@@ -100,7 +100,7 @@ def parents(path):
 
 def remove_from_file(file_path, rse, out, stats, stats_key, dry_run, client, my_stats):
     paths = [l.strip() for l in open(file_path, "r")]
-    failed = Remover(client, paths).run(verbose=True)
+    failed = Remover(client, paths, erbose=True).run(v)
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
