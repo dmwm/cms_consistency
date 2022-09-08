@@ -108,6 +108,10 @@ def empty_action(storage_dir, rse, out, stats, stats_key, dry_run, client, my_st
             key=lambda r: r.Timestamp
     )
 
+    print("recent runs:")
+    for r in recent_runs:
+        print("  ", r.Run)
+
     status = "started"
     aborted_reason = None
     confirmed_empty_count = None
