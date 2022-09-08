@@ -10,7 +10,7 @@ from xrootd_client import XRootDClient
 Version = "1.0"
 
 Usage = """
-python remove_empty_dirs.py [options] <storage_path> <rse>
+python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
     -d                          - dry run - do not declare to Rucio
     -o (-|<out file>)           - write confirmed empty directory list to stdout (-) or to a file
     -s <stats file>             - file to write stats to
@@ -40,11 +40,12 @@ class RemoveDirectoryTask(Task):
 
 class Remover(Primitive):
     
-    def __init__(self, client, paths, max_workers):
+    def __init__(self, client, paths, max_workers=10, verbose=False):
         self.Client = client
         self.Paths = paths
-        self.Queue = TaskQueue(max_workers, stagger=0.1, delegate=self)
+        self.Queue = TaskQueue(max_workers, capacity=max_workers*10, stagger=0.1, delegate=self)
         self.Failed = []
+        self.Verbose = verbose
 
     def shave(self, paths):
         # split the list of paths (assumed to be reversely ordered) into leaves and inner nodes
@@ -64,13 +65,19 @@ class Remover(Primitive):
         while paths:
             leaves, inner = self.shave(paths)
             for leaf in leaves:
+                if self.Verbose:
+                    print("submitting:", leaf)
                 self.Queue.append(RemoveDirectoryTask(self.Client, leaf))
+            if self.Verbose:
+                print("waiting for the queue to be empty...")
             self.Queue.waitUntilEmpty()
             paths = inner
         return self.Failed
 
     @synchronized
     def taskEnded(self, queue, task, result):
+        if self.Verbose:
+            print("taskEnded:", task.Path, result)
         status, error = result
         if error == "timeout" and task.Retries > 0:
             task.Retries -= 1
@@ -80,6 +87,8 @@ class Remover(Primitive):
 
     @synchronized
     def taskFailed(self, queue, task, exc_type, exc_value, tb):
+        if self.Verbose:
+            print("taskFailed:", task.Path, exc_value)
         self.Failed.append((task.Path, str(exc_value)))
 
 
@@ -89,7 +98,14 @@ def parents(path):
         path = path.rsplit('/', 1)[0]
         yield path
 
-def empty_action(storage_dir, rse, out, stats, stats_key, dry_run, client, my_stats):
+def remove_from_file(file_path, rse, out, stats, stats_key, dry_run, client, my_stats):
+    paths = [l.strip() for l in open(file_path, "r")]
+    failed = Remover(client, paths).run(verbose=True)
+    for path, error in failed:
+        print("Failed:", path, error)
+    return my_stats
+
+def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats):
     
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
@@ -283,7 +299,11 @@ timeout = config.ScannerTimeout
 is_redirector = config.ServerIsRedirector
 
 client = XRootDClient(server, server_root, is_redirector, timeout)
-run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats)
+if os.path.isfile(storage_path):
+    remove_from_file(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats)
+    run_stats = my_stats
+else:
+    run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")

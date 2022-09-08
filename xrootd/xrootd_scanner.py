@@ -124,7 +124,8 @@ class Scanner(Task):
 
     def message(self, status, stats):
         if self.Master is not None:
-            self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
+            path = self.Client.absolute_path(self.Location)
+            self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, path), status, stats))
 
     @synchronized
     def killme(self):
