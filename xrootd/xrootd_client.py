@@ -136,7 +136,7 @@ class XRootDClient(Primitive):
         return status, reason
 
     def ls(self, location, recursive, with_meta):
-        print(f"scan({location}, rec={recursive}, with_meta={with_meta}):...")
+        #print(f"scan({location}, rec={recursive}, with_meta={with_meta}):...")
         files = []
         dirs = []
         status = "OK"
