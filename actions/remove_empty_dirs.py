@@ -81,11 +81,14 @@ class Remover(Primitive):
         if self.Verbose:
             print("taskEnded:", task.Path, result)
         status, error = result
-        if error == "timeout" and task.Retries > 0:
-            task.Retries -= 1
-            self.Queue.append(task)
-        else:
-            self.Failed.append((task.Path, error))
+        if status != "OK":
+            if error == "timeout" and task.Retries > 0:
+                task.Retries -= 1
+                if self.Verbose:
+                    print("resubmitting after timeout:", task.Path)
+                self.Queue.append(task)
+            else:
+                self.Failed.append((task.Path, error))
 
     @synchronized
     def taskFailed(self, queue, task, exc_type, exc_value, tb):
