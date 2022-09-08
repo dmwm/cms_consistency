@@ -37,7 +37,7 @@ class CCRun(object):
         roots = self.Stats.get("scanner", {}).get("roots", [])
         total = None
         for root in roots:
-            n = r.get("empty_directories")
+            n = root.get("empty_directories")
             if n is not None:
                 total = (total or 0) + n
         return total
