@@ -1,6 +1,6 @@
 import sys, os, getopt, time
 from datetime import datetime, timedelta
-from pythreader import TaskQueue, Task, Primitive
+from pythreader import TaskQueue, Task, Primitive, synchronized
 
 from run import CCRun
 from stats import Stats
