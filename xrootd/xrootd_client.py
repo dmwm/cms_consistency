@@ -17,6 +17,7 @@ class XRootDClient(Primitive):
         self.Timeout = timeout
         self.Server = server 
         self.ServerRoot = server_root
+        self.Root = root
         root = root or server_root
         self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
 
@@ -136,13 +137,14 @@ class XRootDClient(Primitive):
         return status, reason
 
     def ls(self, location, recursive, with_meta):
-        #print(f"scan({self.Location}, rec={recursive}, with_meta={with_meta}...")
+        print(f"scan({location}, rec={recursive}, with_meta={with_meta}): my root:{self.Root}...")
         files = []
         dirs = []
         status = "OK"
         reason = ""
 
         location = self.absolute_path(location)
+        print("    absolute path:", location)
         server = self.next_server()
         lscommand = "xrdfs %s ls %s %s %s" % (server, "-l" if with_meta else "", "-R" if recursive else "", location)
 

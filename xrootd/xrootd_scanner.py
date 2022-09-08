@@ -674,7 +674,7 @@ if __name__ == "__main__":
             exc = traceback.format_exc()
             print(exc)
             lines = exc.split("\n")
-            scanning = my_stats.setdefault("scanning", {"root":root})
+            scanning = my_stats.setdefault("scanning", {"root":client.Root})
             scanning["exception"] = lines
             scanning["exception_time"] = time.time()
             failed = True
