@@ -45,7 +45,7 @@ class Remover(Primitive):
         Primitive.__init__(self)
         self.Client = client
         self.Paths = paths
-        self.Queue = TaskQueue(max_workers, capacity=max_workers*10, stagger=0.1, delegate=self)
+        self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
         self.Failed = []
         self.Verbose = verbose
 
