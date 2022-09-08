@@ -10,25 +10,6 @@ def canonic_path(path):
         path = path[:-1]
     return path
     
-class RMDir(Task):
-    
-    # a task to delete presumably empty subdirectory discovered by the scanner
-    
-    def __init__(self, server, location):
-        self.Server = server
-        self.Location = location
-    
-    TIMEOUT = 5
-    
-    def run(self):
-        rmcommand = "xrdfs %s rmdir %s" % (self.Server, self.Location)
-        try:    
-            print(f"would delete directory {self.Location} with {rmcommand}")
-            #ShellCommand.execute(rmcommand, timeout=self.TIMEOUT)
-        except: 
-            # ignore
-            pass
-
 class XRootDClient(Primitive):
 
     def __init__(self, server, server_root, is_redirector, timeout):
