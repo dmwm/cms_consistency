@@ -198,14 +198,13 @@ class ScannerMaster(PyThread):
     REPORT_INTERVAL = 10.0
     RESULTS_BUFFER_SISZE = 100
     
-    def __init__(self, server, is_redirector, client, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
+    def __init__(self, client, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
                 include_sizes=True, ignore_subdirs=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Client = client
-        self.Root = client.Root
+        self.Root = root
         self.AbsoluteRootPath = client.absolute_path(client.Root)
-        self.Server = server
         self.MaxScanners = max_scanners
         self.Results = DEQueue(self.RESULTS_BUFFER_SISZE)
         self.ScannerQueue = TaskQueue(max_scanners, stagger=0.2)
@@ -463,7 +462,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
 
     ignore_list = config.ignore_subdirs(root)
 
-    master = ScannerMaster(server, is_redirector, client, recursive_threshold, max_scanners, timeout, quiet, display_progress,
+    master = ScannerMaster(client, root, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
             ignore_subdirs = ignore_list)
 
