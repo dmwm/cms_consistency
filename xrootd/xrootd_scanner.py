@@ -234,7 +234,8 @@ class ScannerMaster(PyThread):
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        scanner_task = Scanner(self, self.Client, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes)
+        absolute_root_path = self.Client.absolute_path(self.Root)
+        scanner_task = Scanner(self, self.Client, absolute_root_path, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes)
         self.ScannerQueue.addTask(scanner_task)
         
         self.ScannerQueue.waitUntilEmpty()
