@@ -42,6 +42,7 @@ class RemoveDirectoryTask(Task):
 class Remover(Primitive):
     
     def __init__(self, client, paths, max_workers=10, verbose=False):
+        Primitive.__init__(self)
         self.Client = client
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers*10, stagger=0.1, delegate=self)
