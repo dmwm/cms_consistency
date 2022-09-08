@@ -34,7 +34,7 @@ class CCRun(object):
         return self.Stats["cmp3"]["dark"]
 
     def empty_directories_collected(self):
-        return not not self.Stats.get("empty_dirs_output_file")
+        return not not self.Stats.get("scanner", {}).get("empty_dirs_output_file")
 
     def empty_directory_count(self):
         roots = self.Stats.get("scanner", {}).get("roots", [])

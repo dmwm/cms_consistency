@@ -118,7 +118,7 @@ def empty_action(storage_dir, rse, out, stats, stats_key, dry_run, client, my_st
 
     if not recent_runs or len(recent_runs) < min_runs:
         status = "aborted"
-        aborted_reason = "not enough runs to produce confirmed dark list: %d, required: %d" % (len(recent_runs), min_runs)
+        aborted_reason = "not enough runs to produce confirmed empty directories list: %d, required: %d" % (len(recent_runs), min_runs)
     else:
         first_run = recent_runs[0]
         latest_run = recent_runs[-1]
