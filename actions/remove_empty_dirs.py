@@ -95,7 +95,7 @@ def empty_action(storage_dir, rse, out, stats, stats_key, dry_run, client, my_st
     if stats is not None:
         stats.update_section(stats_key, my_stats)
 
-    runs = CCRun.runs_for_rse(storage_path, rse)
+    runs = list(CCRun.runs_for_rse(storage_path, rse))
     now = datetime.now()
     for r in runs:
         print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count())
