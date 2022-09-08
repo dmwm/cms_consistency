@@ -35,7 +35,12 @@ class CCRun(object):
 
     def empty_directory_count(self):
         roots = self.Stats.get("scanner", {}).get("roots", [])
-        return sum(r.get("empty_directories", 0) for r in roots)
+        total = None
+        for root in roots:
+            n = r.get("empty_directories")
+            if n is not None:
+                total = (total or 0) + n
+        return total
 
     def scanner_num_files(self):
         scanner_stats = self.Stats["scanner"]

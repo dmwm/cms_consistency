@@ -98,7 +98,7 @@ def empty_action(storage_dir, rse, out, stats, stats_key, dry_run, client, my_st
     runs = CCRun.runs_for_rse(storage_path, rse)
     now = datetime.now()
     recent_runs = sorted(
-            [r for r in runs if r.Timestamp >= now - timedelta(days=window)], 
+            [r for r in runs if r.Timestamp >= now - timedelta(days=window) and r.empty_directory_count() is not None], 
             key=lambda r: r.Timestamp
     )
 
