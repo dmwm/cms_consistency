@@ -12,8 +12,8 @@ def canonic_path(path):
     
 class XRootDClient(Primitive):
 
-    def __init__(self, server, server_root, is_redirector, timeout):
-        Primitive.__init__(self, name=f"XRootDClient({root})")
+    def __init__(self, server, server_root, is_redirector, timeout, name=None):
+        Primitive.__init__(self, name=name)
         self.Timeout = timeout
         self.Server = server 
         self.ServerRoot = server_root
