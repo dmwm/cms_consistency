@@ -281,8 +281,8 @@ class ScannerConfiguration(CEConfiguration):
     def __init__(self, rse, source, **source_agrs):
         CEConfiguration.__init__(self, rse, source, **source_agrs)
 
-        self.Server = self.scanner_param(rse, "server", None)
-        self.ServerRoot = self.scanner_param(rse, "server_root", "/store", required=True)
+        self.Server = self.scanner_param(rse, "server", None, required=True)
+        self.ServerRoot = self.scanner_param(rse, "server_root", "/store")
         self.ScannerTimeout = int(self.scanner_param(rse, "timeout", 300))
         self.RootList = self.root_list(rse)
         self.RemovePrefix = self.scanner_param(rse, "remove_prefix", "/")
@@ -323,6 +323,15 @@ class ActionConfiguration(CEConfiguration):
     def __getitem__(self, name):
         return self.action_param(self.RSE, self.Action, name, required=True)
         
+class EmptyActionConfiguration(ActionConfiguration):
+    
+    def __init__(self, rse, source, **source_agrs):
+        ActionConfiguration.__init__(self, rse, source, "empty", **source_agrs)
+
+        self.Server = self.scanner_param(rse, "server", None, required=True)
+        self.ServerRoot = self.scanner_param(rse, "server_root", "/store")
+        self.ScannerTimeout = int(self.scanner_param(rse, "timeout", 300))
+
 
         
         

@@ -16,7 +16,7 @@ try:
 except:
     Use_tqdm = False
 
-from config import ScannerConfiguration
+from config import EmptyActionConfiguration
 
 def truncated_path(root, path):
         if path == root:
@@ -567,7 +567,7 @@ if __name__ == "__main__":
         sys.exit(2)
 
     rse = args[0]
-    config = ScannerConfiguration(rse, opts["-c"])
+    config = EmptyActionConfiguration(rse, opts["-c"])
 
     quiet = "-q" in opts
     display_progress = not quiet and "-v" in opts
