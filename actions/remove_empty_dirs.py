@@ -270,7 +270,7 @@ timeout = config.ScannerTimeout
 is_redirector = config.ServerIsRedirector
 
 client = XRootDClient(server, server_root, is_redirector, timeout)
-run_stats = empty_action(storage_path, rse, out, stats, stats_key, account, dry_run, client, my_stats)
+run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
