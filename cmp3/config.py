@@ -331,10 +331,10 @@ class EmptyActionConfiguration(ActionConfiguration):
         self.Server = self.scanner_param(rse, "server", None, required=True)
         self.ServerRoot = self.scanner_param(rse, "server_root", "/store")
         self.ScannerTimeout = int(self.scanner_param(rse, "timeout", 300))
+        self.NWorkers = int(self.scanner_param(rse, "nworkers", 8))
+        self.ServerIsRedirector = self.scanner_param(rse, "is_redirector", True)
 
 
-        
-        
 if __name__ == "__main__":
     import sys, getopt
     opts, args = getopt.getopt(sys.argv[1:], "c:r")
