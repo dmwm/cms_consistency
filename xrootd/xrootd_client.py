@@ -12,11 +12,12 @@ def canonic_path(path):
     
 class XRootDClient(Primitive):
 
-    def __init__(self, server, server_root, is_redirector, timeout, name=None):
+    def __init__(self, server, server_root, is_redirector, timeout, name=None, root=None):
         Primitive.__init__(self, name=name)
         self.Timeout = timeout
         self.Server = server 
         self.ServerRoot = server_root
+        root = root or server_root
         self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
 
     def absolute_path(self, path):
