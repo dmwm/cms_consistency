@@ -4,7 +4,7 @@ from pythreader import TaskQueue, Task, Primitive, synchronized
 
 from run import CCRun
 from stats import Stats
-from config import ActionConfiguration
+from config import EmptyActionConfiguration
 from xrootd_client import XRootDClient
 
 Version = "1.0"
@@ -208,7 +208,7 @@ storage_path, rse = args
 
 config = {}
 if "-c" in opts:
-    config = ActionConfiguration(rse, opts["-c"], "empty")
+    config = EmptyActionConfiguration(rse, opts["-c"])
 
 window = int(opts.get("-w", config.get("confirmation_window", 35)))
 min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
