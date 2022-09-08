@@ -88,7 +88,7 @@ class Prescanner(Primitive):
     @synchronized
     def taskEnded(self, queue, task, root_ok):
         if root_ok:
-            self.Good.append(task.Client)
+            self.Good.append((task.Client, task.Root))
             print(f"Root {task.Root} prescanned successfully", file=sys.stderr)
         else:
             self.Failed[task.Root] = task.Error
@@ -234,8 +234,7 @@ class ScannerMaster(PyThread):
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        absolute_root_path = self.Client.absolute_path(self.Root)
-        scanner_task = Scanner(self, self.Client, absolute_root_path, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes)
+        scanner_task = Scanner(self, self.Client, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes)
         self.ScannerQueue.addTask(scanner_task)
         
         self.ScannerQueue.waitUntilEmpty()
@@ -409,6 +408,10 @@ python xrootd_scanner.py [options] <rse>
 
 def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
     
+    # convert physical path, which starts with path_prefix to LFN
+    # for CMS, path may look like /eos/cms/tier0/store/root/path/file
+    # after removing the <path_prefix>, then <remove_prefix> and adding <add_prefix> it will look like /store/root/path/file
+    
     assert path.startswith(path_prefix)
 
     path = "/" + path[len(path_prefix):]
@@ -430,10 +433,10 @@ def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_p
         path = rewrite_path.sub(rewrite_out, path)   
     return path
 
-def scan_root(rse, config, client, my_stats, stats, stats_key,
+def scan_root(rse, config, client, root, my_stats, stats, stats_key,
             recursive_threshold, max_scanners, file_list, dir_list, empty_dirs_file,
             ignore_failed_directories, include_sizes):
-    root = client.Root
+
     failed = root_failed = False
     
     timeout = override_timeout or config.ScannerTimeout
@@ -665,10 +668,10 @@ if __name__ == "__main__":
 
     failed = False
     all_roots_failed = not good_roots
-    for client in good_roots:
+    for client, root in good_roots:
         try:
-            print(f"Scanning root {client.Root} ...", file=sys.stderr)
-            failed = scan_root(rse, config, client, my_stats, stats, stats_key, recursive_threshold, 
+            print(f"Scanning root {root} ...", file=sys.stderr)
+            failed = scan_root(rse, config, client, root, my_stats, stats, stats_key, recursive_threshold, 
                     max_scanners, out_list, dir_list, empty_dirs_file,
                     ignore_directory_scan_errors, include_sizes)
         except:
