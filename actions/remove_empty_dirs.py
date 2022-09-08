@@ -30,6 +30,7 @@ class RemoveDirectoryTask(Task):
     RETRIES = 3
     
     def __init__(self, client, path):
+        Task.__init__(self)
         self.Client = client
         self.Path = path
         self.Retries = self.RETRIES
