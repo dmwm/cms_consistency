@@ -33,6 +33,10 @@ class CCRun(object):
     def dark_file_count(self):
         return self.Stats["cmp3"]["dark"]
 
+    def empty_directory_count(self):
+        roots = self.Stats.get("scanner", {}).get("roots", [])
+        return sum(r.get("empty_directories", 0) for r in roots)
+
     def scanner_num_files(self):
         scanner_stats = self.Stats["scanner"]
         nfiles = scanner_stats.get("total_files") or sum(root_stats.get("files", 0) for root_stats in scanner_stats.get("roots", []))
