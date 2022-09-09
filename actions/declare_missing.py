@@ -86,7 +86,10 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     client = ReplicaClient(account=account)
                     missing_list = [{"scope":scope, "rse":rse, "name":f} for f in latest_run.missing_files()]
                     not_declared = client.declare_bad_file_replicas(missing_list, "detected missing by CC")
-                    my_stats["declared_missing_files"] = len(missing_list) - len(not_declared or [])
+                    not_declared_count = 0 if not not_declared else sum(len(lst) for lst in not_declared.values())
+                    if not_declared_count:
+                        print("Replicas failed to declare:", not_declared_count)
+                    my_stats["declared_missing_files"] = len(missing_list) - not_declared_count
                 except Exception as e:
                     status = "failed"
                     error = f"Rucio declaration error: {e}"
@@ -170,9 +173,3 @@ if "-v" in opts:
 
 if final_stats["status"] != "done":
     sys.exit(1)
-
-
-
-
-
-
