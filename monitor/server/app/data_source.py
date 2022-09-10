@@ -550,13 +550,13 @@ class CCDataSource(DataSource):
             if self.DarkSection in stats:
                 if "confirmed_dark_files" in stats[self.DarkSection]:
                     summary["dark_stats"]["confirmed"] = stats[self.DarkSection].get("confirmed_dark_files")
-                summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
+                summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("declared_dark_files")
                 summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
                 summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")
                 
             if self.MissingSection in stats:
-                summary["missing_stats"]["acted_on"] = stats[self.MissingSection].get("confirmed_miss_files", 
-                                stats[self.MissingSection].get("confirmed_missing_files"))
+                summary["missing_stats"]["acted_on"] = stats[self.MissingSection].get("declared_missing_files")
+                summary["missing_stats"]["confirmed"] = stats[self.MissingSection].get("confirmed_missing")
                 summary["missing_stats"]["action_status"] = stats[self.MissingSection].get("status", "").lower() or None
                 summary["missing_stats"]["aborted_reason"] = stats[self.MissingSection].get("aborted_reason", "")
         return summary

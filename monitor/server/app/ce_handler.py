@@ -122,6 +122,7 @@ class CEHandler(WPHandler):
                     "nmissing":nmissing, 
                     "status":status, 
                     "running":running,
+                    "summary": summary,
 
                     "confirmed_dark":   summary["dark_stats"]["confirmed"], 
                     "acted_dark":       summary["dark_stats"]["acted_on"], 
