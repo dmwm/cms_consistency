@@ -108,6 +108,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
         error = error,
         detected_dark_files = detected_dark_count,
         confirmed_dark_files = confirmed_dark_count,
+        declared_dark_files = confirmed_dark_count,
         aborted_reason = aborted_reason
     )
 
@@ -183,6 +184,7 @@ my_stats = {
     "status": "started",
     "detected_dark_files": None,
     "confirmed_dark_files": None,
+    "declared_dark_files": None,
     "confirmed_dark_output": out_filename,
     "aborted_reason": None,
     "error": None,
