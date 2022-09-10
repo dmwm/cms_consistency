@@ -559,7 +559,7 @@ class CCDataSource(DataSource):
             if self.MissingSection in stats:
                 missing_stats = stats[self.MissingSection]
                 missing_summary = summary["missing_stats"]
-                missing_summary["confirmed"] = missing_stats.get("confirmed_missing", missing_stats.get("confirmed"))
+                missing_summary["confirmed"] = missing_stats.get("confirmed_missing_files", missing_stats.get("confirmed"))
                 missing_summary["acted_on"] = missing_stats.get("declared_missing_files", missing_stats.get("declared"))
                 missing_summary["action_status"] = missing_stats.get("status", "").lower() or None
                 missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
