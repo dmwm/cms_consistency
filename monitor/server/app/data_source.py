@@ -551,16 +551,16 @@ class CCDataSource(DataSource):
                 dark_stats = stats[self.DarkSection]
                 dark_summary = summary["dark_stats"]
                 
-                dark_summary["confirmed"] = dark_stats.get("confirmed") or dark_stats.get("confirmed_dark_files")
-                dark_summary["acted_on"] = dark_stats.get("declared_dark_files") or dark_stats.get("declared")
+                dark_summary["confirmed"] = dark_stats.get("confirmed", dark_stats.get("confirmed_dark_files"))
+                dark_summary["acted_on"] = dark_stats.get("declared_dark_files", dark_stats.get("declared"))
                 dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
                 dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
                 
             if self.MissingSection in stats:
                 missing_stats = stats[self.MissingSection]
                 missing_summary = summary["missing_stats"]
-                missing_summary["confirmed"] = missing_stats.get("confirmed_missing") or missing_stats.get("confirmed")
-                missing_summary["acted_on"] = missing_stats.get("declared_missing_files") or missing_stats.get("declared")
+                missing_summary["confirmed"] = missing_stats.get("confirmed_missing", missing_stats.get("confirmed"))
+                missing_summary["acted_on"] = missing_stats.get("declared_missing_files", missing_stats.get("declared"))
                 missing_summary["action_status"] = missing_stats.get("status", "").lower() or None
                 missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
         return summary
