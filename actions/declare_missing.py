@@ -34,9 +34,9 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
         "start_time": t0,
         "end_time": None,
         "status": "started",
-        "detected_missing_files": None,
-        "confirmed_missing_files": None,
-        "declared_missing_files": None,
+        "detected": None,
+        "confirmed": None,
+        "declared": None,
         "aborted_reason": None,
         "error": None,
         "declaration_errors": {},
@@ -101,10 +101,9 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     for item in not_declared:
                         words = item.split(None, 1)
                         if len(words) == 2:
-                            error = words[1]
-                            declaration_errors[error] = declaration_errors.get(error, 0) + 1
-                    my_stats["action_errors"] = declaration_errors
-                    my_stats["acted_missing_files"] = len(missing_list) - not_declared_count
+                            declaration_errors[error] = declaration_errors.get(words[1], 0) + 1
+                    my_stats["declaration_errors"] = declaration_errors
+                    my_stats["declared"] = len(missing_list) - not_declared_count
 
     t1 = time.time()
     my_stats.update(
