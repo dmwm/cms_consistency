@@ -98,12 +98,11 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                 if not_declared_count:
                     print("Replicas failed to declare:", not_declared_count)
                 declaration_errors = {}
-                for lst in not_declared:
-                    for item in lst:
-                        words = item.split(None, 1)
-                        if len(words) == 2:
-                            error = words[1]
-                            declaration_errors[error] = declaration_errors.get(error, 0) + 1
+                for item in not_declared:
+                    words = item.split(None, 1)
+                    if len(words) == 2:
+                        error = words[1]
+                        declaration_errors[error] = declaration_errors.get(error, 0) + 1
                 my_stats["declaration_errors"] = declaration_errors
                 my_stats["declared_missing_files"] = len(missing_list) - not_declared_count
 
