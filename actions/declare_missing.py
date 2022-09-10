@@ -87,9 +87,9 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                 try:
                     from rucio.client.replicaclient import ReplicaClient
                     client = ReplicaClient(account=account)
-                    not_declared = client.declare_bad_file_replicas(missing_list, "detected missing by CC")
-                    not_declared = not_declared.pop("rse", [])      # there shuld be no other RSE in there
-                    assert not not_declared, "Other RSEs in the not_declared dictionary:"  + str(list(not_declared.keys()))
+                    result = client.declare_bad_file_replicas(missing_list, "detected missing by CC")
+                    not_declared = result.pop(rse, [])      # there shuld be no other RSE in there
+                    assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
                 except Exception as e:
                     status = "failed"
                     error = f"Rucio declaration error: {e}"
