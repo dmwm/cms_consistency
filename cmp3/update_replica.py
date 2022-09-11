@@ -105,6 +105,11 @@ class Replica(Base):
         rse_id = Column(GUID(), primary_key=True)
         scope = Column(String, primary_key=True)
         name = Column(String, primary_key=True)
+        reason = Column(String)
+        account = Column(String)
+        bytes = Column(Integer)
+
+
 
 class BadReplica(Base):
         __tablename__ = "bad_replicas"
@@ -154,9 +159,14 @@ for r in rses:
 initial = session.query(model).filter(model.rse_id==rse.id, model.scope==scope, model.name==name).first()
 print("Initial:", initial.state)
 
-replicas = session.query(model).filter(model.rse_id==rse.id, model.scope==scope, model.name==name)
-values = {'state': new_state}
-replicas.update(values)
+if False:
+    replicas = session.query(model).filter(model.rse_id==rse.id, model.scope==scope, model.name==name)
+    values = {'state': new_state}
+    replicas.update(values)
+else:
+    initial.state = new_state
+    initial.save()
+
 
 updated = session.query(model).filter(model.rse_id==rse.id, model.scope==scope, model.name==name).first()
 print("Updated:", updated.state)
