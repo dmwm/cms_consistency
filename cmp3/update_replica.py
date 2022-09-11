@@ -82,11 +82,13 @@ class GUID(TypeDecorator):
 opts, args = getopt.getopt(sys.argv[1:], "c:i:d:t:")
 opts = dict(opts)
 
+replicas_table = opts.get("-t", "replicas")
+
 if "-c" not in opts and "-d" not in opts:
     print (Usage)
     sys.exit(2)
 
-new_state, rse, scope, name = args
+new_state, rse_name, scope, name = args
 
 if "-c" in opts:
     dbconfig = DBConfig.from_yaml(opts["-c"])
@@ -149,12 +151,14 @@ rses = session.query(RSE)
 for r in rses:
     rse_names[r.id] = r.rse
 
-initial = session.query(model).filter(model.rse_id==rse.id, model.scope=scope, model.name=name).first()
-print("Initial:", initial)
+initial = session.query(model).filter(model.rse_id==rse.id, model.scope==scope, model.name==name).first()
+print("Initial:", initial.state)
 
-replicas = session.query(model).filter(model.rse_id==rse.id, model.scope=scope, model.name=name)
-values = {'state': replica['state']}
+replicas = session.query(model).filter(model.rse_id==rse.id, model.scope==scope, model.name==name)
+values = {'state': new_state}
 replicas.update(values)
 
-updated = session.query(model).filter(model.rse_id==rse.id, model.scope=scope, model.name=name).first()
-print("Updated:", updated)
+updated = session.query(model).filter(model.rse_id==rse.id, model.scope==scope, model.name==name).first()
+print("Updated:", updated.state)
+
+session.commit()
