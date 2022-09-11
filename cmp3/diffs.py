@@ -8,9 +8,9 @@ def diff(prev, last):
     old_set = set()
     for f in last:
         if f in prev_set:
-            new_set.add(f)
-        else:
             old_set.add(f)
+        else:
+            new_set.add(f)
     return old_set, new_set
 
 Usage = """
