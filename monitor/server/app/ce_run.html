@@ -116,11 +116,13 @@
                         <td>{{missing_stats["detected"]|none_as_blank}}</td>
                         <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
                         <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
-                        <td>{% set errors = stats["missing_action"].get("declaration_errors") %}
-                            {% if errors %}
-                                {% for error, count in errors.items() %}
-                                    {{count}}: {{error}}<br/>
-                                {% endfor %}
+                        <td>{% if stats["missing_action"] %}
+                                {% set errors = stats["missing_action"].get("declaration_errors") %}
+                                {% if errors %}
+                                    {% for error, count in errors.items() %}
+                                        {{count}}: {{error}}<br/>
+                                    {% endfor %}
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td class="{{missing_stats['action_status'] or ''}}">{{summary["missing_stats"]["action_status"]|none_as_blank}}
