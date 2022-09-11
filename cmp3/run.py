@@ -65,6 +65,17 @@ class CCRun(object):
         return datetime(yy, mm, dd, h, m)
 
     @staticmethod
+    def rses(dir_path):
+        seen = set()
+        for path in glob.glob(f"{dir_path}/*_stats.json"):
+            filename = path.rsplit("/", 1)[-1]
+            rse, _, _, _ = CCRun.parse_filename(filename)
+            if rse:
+                if not rse in seen:
+                    seen.add(rse)
+                    yield rse
+
+    @staticmethod
     def run_ids_for_rse(dir_path, rse):
         files = glob.glob(f"{dir_path}/{rse}_*_stats.json")
         runs = []
@@ -85,7 +96,7 @@ class CCRun(object):
             return None
         else:
             return CCRun(dir_path, rse, run_ids[-1])
-        
+            
     @staticmethod
     def runs_for_rse(dir_path, rse, complete_only=True):
         runs = (CCRun(dir_path, rse, run_id) for run_id in CCRun.run_ids_for_rse(dir_path, rse))
@@ -123,9 +134,35 @@ class CCRun(object):
 
     def dark_files(self):
         return self.file_list(self.dark_list_path())
-        
+
     def confirmed_dark_files(self):
         return self.file_list(self.confirmed_dark_list_path())
-        
-        
-        
+
+    def update_stats(self, _updates=None, **kw):
+        if _updates:
+            self.Stats.update(_updates)
+        self.Stats.update(**kw)
+        with open(self.stats_path(), "w") as j:
+            json.dump(self.Stats, j)
+
+if __name__ == "__main__":
+    import sys
+    
+    Usage = """
+    python run.py rses <storage path>
+    python run.py runs <storage path> <rse>
+    """
+
+    args = sys.argv[1:]
+    if not args:
+        print(Usage)
+        sys.exit(2)
+
+    cmd, params = args[0], args[1:]
+    if cmd == "rses":
+        for rse in sorted(CCRun.rses(params[0])):
+            print(rse)
+    elif cmd == "runs":
+        storage_path, rse = params
+        for run in CCRun.run_ids_for_rse(storage_path, rse):
+            print(run)

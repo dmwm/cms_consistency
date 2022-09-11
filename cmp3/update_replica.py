@@ -4,7 +4,7 @@ import sys, uuid
 from config import DBConfig, DBDumpConfiguration
 from part import PartitionedList
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, update
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import sessionmaker
@@ -23,19 +23,11 @@ t0 = time.time()
 #from sqlalchemy import schema
 
 Usage = """
-python list_replicas.py [options]
+python update_replica.py [options] <new state> <rse> <scope> <name>
     -c <YAML config file>       
     -d <CFG config file>       
-    -r <RSE>
-    -n <name>[,...]
     -t (replicas|bad|quarantined)  -- table to use, default: replicas
     -i <states>             -- include only these states
-    -x <states>             -- exclude replica states
-    -s                      -- include scope
-    -S                      -- include state
-    -R                      -- include RSE name
-    -P                      -- include path
-    -v                      -- verbose
 """
 
 
@@ -87,22 +79,14 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "c:i:x:d:vsSr:n:t:RP")
+opts, args = getopt.getopt(sys.argv[1:], "c:i:d:t:")
 opts = dict(opts)
 
 if "-c" not in opts and "-d" not in opts:
     print (Usage)
     sys.exit(2)
 
-include_states = opts.get("-i", "*")
-exclude_states = opts.get("-x", "")
-include_scope = "-s" in opts
-include_path = "-P" in opts
-include_state = "-S" in opts
-include_rse = "-R" in opts
-rse_name = opts.get("-r")
-names = opts.get("-n")
-replicas_table = opts.get("-t", "replicas")
+new_state, rse, scope, name = args
 
 if "-c" in opts:
     dbconfig = DBConfig.from_yaml(opts["-c"])
@@ -152,12 +136,10 @@ engine = create_engine(dbconfig.DBURL,  echo="-v" in opts)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-rse = None
-if rse_name is not None:
-    rse = session.query(RSE).filter(RSE.rse == rse_name).first()
-    if rse is None:
-            print ("RSE %s not found" % (rse_name,))
-            sys.exit(1)
+rse = session.query(RSE).filter(RSE.rse == rse_name).first()
+if rse is None:
+        print ("RSE %s not found" % (rse_name,))
+        sys.exit(1)
 
 #
 # get RSE names mapping
@@ -167,30 +149,12 @@ rses = session.query(RSE)
 for r in rses:
     rse_names[r.id] = r.rse
 
-replicas = session.query(model) 
-if rse is not None:
-    replicas = replicas.filter(model.rse_id==rse.id)
+initial = session.query(model).filter(model.rse_id==rse.id, model.scope=scope, model.name=name).first()
+print("Initial:", initial)
 
-if include_states != '*':
-    replicas = replicas.filter(model.state.in_(list(include_states)))
+replicas = session.query(model).filter(model.rse_id==rse.id, model.scope=scope, model.name=name)
+values = {'state': replica['state']}
+replicas.update(values)
 
-if exclude_states:
-    replicas = replicas.filter(model.state.not_in(list(exclude_states)))
-    
-if names is not None:
-    names = names.split(',')
-    replicas = replicas.filter(model.name.in_(names))
-
-for r in replicas.yield_per(10000):
-    name = r.name
-    scope = r.scope
-    tup = (name,)
-    if include_rse:
-        tup = (rse_names[r.rse_id],) + tup
-    if include_scope:
-        tup = (scope,) + tup
-    if include_state:
-        tup = (r.state,) + tup
-    if include_path:
-        tup = tup + (r.path,)
-    print(*tup)
+updated = session.query(model).filter(model.rse_id==rse.id, model.scope=scope, model.name=name).first()
+print("Updated:", updated)
