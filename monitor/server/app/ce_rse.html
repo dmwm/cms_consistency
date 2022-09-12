@@ -34,7 +34,7 @@
                             {%- if summary["detection_status"] == "started" and "running" in summary -%}
                                 {{summary["running"] or ""}} started
                             {%- else -%}
-                                {{summary["status"] or ""}}
+                                {{summary["detection_status"] or ""}}
                             {%- endif -%}
                         </td>
                         
