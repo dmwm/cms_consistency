@@ -117,6 +117,7 @@ class CEHandler(WPHandler):
             cc_infos.append((
                 run, 
                 {
+                    "summary":  summary,
                     "start_time":       start_time, 
                     "ndark":ndark, 
                     "nmissing":nmissing, 

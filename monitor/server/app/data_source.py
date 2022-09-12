@@ -476,7 +476,7 @@ class CCDataSource(DataSource):
             return None, None
 
     DETECTION_COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
-    ACTION_COMPONENTS = [DarkSection, MissingSection]
+    ACTION_COMPONENTS = [MissingSection, DarkSection]
     COMPONENTS = DETECTION_COMPONENTS + ACTION_COMPONENTS
     
     def stage_status(self, stats, components):
@@ -509,7 +509,10 @@ class CCDataSource(DataSource):
                 if comp_started and not (comp_status in ("done", "failed", "aborted")):
                     running_comp = comp
 
-                if comp_started and status is None:
+                if comp_status == "done" and not status:
+                    status = "done"
+
+                if comp_status == "started":
                     status = "started"
 
                 if comp_status == "failed":
@@ -574,15 +577,24 @@ class CCDataSource(DataSource):
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
             if self.DarkSection in stats:
-                if "confirmed_dark_files" in stats[self.DarkSection]:
-                    summary["dark_stats"]["confirmed"] = stats[self.DarkSection].get("confirmed_dark_files")
-                summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
-                summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
-                summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")
+                dark_summary = summary["dark_stats"]
+                dark_stats = stats[self.DarkSection]
+                status = dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
+                if status in ("done", "aborted"):
+                    dark_summary["confirmed"] = dark_stats.get("confirmed_dark_files")
+                    if status == "done":
+                        dark_summary["acted_on"] = dark_stats.get("declared_dark_files")
+                    else:
+                        dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
                 
             if self.MissingSection in stats:
-                summary["missing_stats"]["acted_on"] = stats[self.MissingSection].get("confirmed_miss_files", 
-                                stats[self.MissingSection].get("confirmed_missing_files"))
-                summary["missing_stats"]["action_status"] = stats[self.MissingSection].get("status", "").lower() or None
-                summary["missing_stats"]["aborted_reason"] = stats[self.MissingSection].get("aborted_reason", "")
+                missing_summary = summary["missing_stats"]
+                missing_stats = stats[self.MissingSection]
+                status = missing_summary["action_status"] = missing_stats.get("status", "").lower() or None
+                if status in ("done", "aborted"):
+                    missing_summary["confirmed"] = missing_stats.get("confirmed_missing_files")
+                    if status == "done":
+                        missing_summary["acted_on"] = missing_stats.get("declared_missing_files")
+                    else:
+                        missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
         return summary
