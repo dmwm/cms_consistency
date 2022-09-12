@@ -110,16 +110,20 @@ class XRootDClient(Primitive):
 
     Line_Patterns = [
         # UNIX FS ls -l style
+        # drwxrwxr-x root root 0 2021-06-23 23:21:46 /store/unmerged/HINPbPbSpring21MiniAOD
         r"""
                 (?P<mask>[drwx-]{10})\s+
-                \w+\s+
-                \w+\s+
+                \S+\s+
+                \S+\s+
                 (?P<size>\d+)\s+
                 \d{4}-\d{2}-\d{2}\s+
                 \d{2}:\d{2}:\d{2}\s+
                 (?P<path>[^ ]+)
         """,
+
         # xrdfs ls -l style
+        # dr-x 2021-07-13 04:00:26        4096 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004
+        # -r-- 2021-07-02 09:35:03   719124843 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004//1C576248-6EEF-B74F-A336-D1D5B8E41722.root
         r"""
                 (?P<mask>[drwx-]{4})\s+
                 \d{4}-\d{2}-\d{2}\s+
@@ -134,11 +138,6 @@ class XRootDClient(Primitive):
     def parse_scan_line(self, line, with_meta):
         """
         returns (is_file, size, path)
-
-        dr-x 2021-07-13 04:00:26        4096 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004
-        -r-- 2021-07-02 09:35:03   719124843 /store/unmerged//Run2016B//DoubleEG//MINIAOD//21Feb2020_ver2_UL2016_HIPM-v2//280004//1C576248-6EEF-B74F-A336-D1D5B8E41722.root
-        
-        drwxrwxr-x root root 0 2021-06-23 23:21:46 /store/unmerged/HINPbPbSpring21MiniAOD
         """
         if with_meta:
             line = line.strip()
