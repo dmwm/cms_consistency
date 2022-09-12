@@ -476,7 +476,7 @@ class CCDataSource(DataSource):
             return None, None
 
     DETECTION_COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
-    ACTION_COMPONENTS = [DarkSection, MissingSection]
+    ACTION_COMPONENTS = [MissingSection, DarkSection]
     COMPONENTS = DETECTION_COMPONENTS + ACTION_COMPONENTS
     
     def stage_status(self, stats, components):
@@ -509,7 +509,10 @@ class CCDataSource(DataSource):
                 if comp_started and not (comp_status in ("done", "failed", "aborted")):
                     running_comp = comp
 
-                if comp_started and status is None:
+                if comp_status == "done" and not status:
+                    status = "done"
+
+                if comp_status == "started":
                     status = "started"
 
                 if comp_status == "failed":
