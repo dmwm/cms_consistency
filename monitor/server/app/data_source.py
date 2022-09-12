@@ -475,7 +475,51 @@ class CCDataSource(DataSource):
         else:
             return None, None
 
-    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3", DarkSection, MissingSection]
+    DETECTION_COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
+    ACTION_COMPONENTS = [DarkSection, MissingSection]
+    COMPONENTS = DETECTION_COMPONENTS + ACTION_COMPONENTS
+    
+    def stage_status(self, stats, components):
+        status = None
+        tstart, tend = None, None
+        running_comp = None
+        status_by_comp = {}
+        failed_comp = None
+        for comp in components:
+            status_by_comp[comp] = None
+            if comp in stats:
+                comp_stats = stats[comp]
+                status_by_comp[comp] = comp_status = comp_stats.get("status")
+
+                t0 = comp_stats.get("start_time")
+                if tstart is None:
+                    tstart = t0
+                elif t0 is not None:
+                    tstart = min(tstart, t0)
+
+                t1 = comp_stats.get("end_time")
+                if tend is None:
+                    tend = t1
+                elif t1 is None:
+                    tend = None
+                else:
+                    tend = max(tend, t1)
+
+                comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
+                if comp_started and not (comp_status in ("done", "failed", "aborted")):
+                    running_comp = comp
+
+                if comp_started and status is None:
+                    status = "started"
+
+                if comp_status == "failed":
+                    status = "failed"
+                    failed_comp = comp
+
+                if comp_status == "aborted" and status != "failed":
+                    status = "aborted"
+
+        return tstart, tend, status, running_comp, failed_comp, status_by_comp
 
     def run_summary(self, stats):
         status = None
@@ -483,46 +527,28 @@ class CCDataSource(DataSource):
         failed_comp = None
         running_comp = None
         all_done = True
-        for comp in self.COMPONENTS:
-            if comp in stats:
-                comp_stats = stats[comp]
-                comp_status = comp_stats.get("status")
-                tend = comp_stats.get("end_time")
-                comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
-                comp_done = comp_status == "done" or comp_status is None and comp_stats.get("end_time") is not None
-                comp_running = comp_started and not (comp_status in ("done", "failed"))
-                if not comp_done:
-                    all_done = False
-                if "start_time" in comp_stats and tstart is None:
-                    tstart = comp_stats["start_time"]
-                if comp_started and status is None:
-                    status = "started"
-                if comp_running:
-                    running_comp = comp
-                if comp_status == "failed":
-                    status = "failed"
-                    failed_comp = comp
-                    break
-            else:
-                all_done = False
         
-        last_comp = stats.get(self.COMPONENTS[-1])
-        if last_comp:
-            if last_comp.get("status") == "done" and failed_comp is None:
-                all_done = True
-        
-        if all_done:
-            status = "done"
-        else:
-            tend = None
-            
+        tstart, tend, detection_status, detection_running, detection_failed, status_by_comp = self.stage_status(stats, self.DETECTION_COMPONENTS)
+        _, tend2, action_status, action_running, action_failed, action_status_by_comp = self.stage_status(stats, self.ACTION_COMPONENTS)
+
+        if tend2 is not None:
+            tend = tend2
+
+        status = (action_status or (detection_status if detection_status == "failed" else "started")) or "not started"
+        failed_comp = detection_failed or action_failed
+        runing_comp = detection_running or action_running
+        status_by_comp.update(action_status_by_comp)
+
         summary = {
             "status": status,
+            "detection_status": detection_status,
+            "action_status": action_status,
             "run":  stats.get("run"),
             "start_time": tstart,
             "end_time": tend,
             "failed": failed_comp,
-            "running": running_comp,            
+            "running": running_comp,
+            "comp_status": status_by_comp,
             "missing_stats" : {
                 "detected":         None,
                 "confirmed":        None,
