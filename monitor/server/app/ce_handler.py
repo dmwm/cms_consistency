@@ -110,9 +110,9 @@ class CEHandler(WPHandler):
             prev_run, missing_old, dark_old = data_source.file_lists_diffs_counts(rse, run)
             summary = data_source.run_summary(stats)
             start_time = summary["start_time"] or 0
-            status = summary["status"]
-            if status == "failed":
-                status = summary["failed"] + " failed"
+            detection_status = summary["detection_status"]
+            if detection_status == "failed":
+                detection_status = summary["failed"] + " failed"
             running = summary.get("running")
             cc_infos.append((
                 run, 
@@ -120,9 +120,8 @@ class CEHandler(WPHandler):
                     "start_time":       start_time, 
                     "ndark":ndark, 
                     "nmissing":nmissing, 
-                    "status":status, 
+                    "detection_status": detection_status, 
                     "running":running,
-                    "summary": summary,
 
                     "confirmed_dark":   summary["dark_stats"]["confirmed"], 
                     "acted_dark":       summary["dark_stats"]["acted_on"], 

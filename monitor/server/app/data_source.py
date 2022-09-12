@@ -475,7 +475,51 @@ class CCDataSource(DataSource):
         else:
             return None, None
 
-    COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3", DarkSection, MissingSection]
+    DETECTION_COMPONENTS = ["dbdump_before", "scanner", "dbdump_after", "cmp3"]
+    ACTION_COMPONENTS = [DarkSection, MissingSection]
+    COMPONENTS = DETECTION_COMPONENTS + ACTION_COMPONENTS
+    
+    def stage_status(self, stats, components):
+        status = None
+        tstart, tend = None, None
+        running_comp = None
+        status_by_comp = {}
+        failed_comp = None
+        for comp in components:
+            status_by_comp[comp] = None
+            if comp in stats:
+                comp_stats = stats[comp]
+                status_by_comp[comp] = comp_status = comp_stats.get("status")
+
+                t0 = comp_stats.get("start_time")
+                if tstart is None:
+                    tstart = t0
+                elif t0 is not None:
+                    tstart = min(tstart, t0)
+
+                t1 = comp_stats.get("end_time")
+                if tend is None:
+                    tend = t1
+                elif t1 is None:
+                    tend = None
+                else:
+                    tend = max(tend, t1)
+
+                comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
+                if comp_started and not (comp_status in ("done", "failed", "aborted")):
+                    running_comp = comp
+
+                if comp_started and status is None:
+                    status = "started"
+
+                if comp_status == "failed":
+                    status = "failed"
+                    failed_comp = comp
+
+                if comp_status == "aborted" and status != "failed":
+                    status = "aborted"
+
+        return tstart, tend, status, running_comp, failed_comp, status_by_comp
 
     def run_summary(self, stats):
         status = None
@@ -483,46 +527,28 @@ class CCDataSource(DataSource):
         failed_comp = None
         running_comp = None
         all_done = True
-        for comp in self.COMPONENTS:
-            if comp in stats:
-                comp_stats = stats[comp]
-                comp_status = comp_stats.get("status")
-                tend = comp_stats.get("end_time")
-                comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
-                comp_done = comp_status == "done" or comp_status is None and comp_stats.get("end_time") is not None
-                comp_running = comp_started and not (comp_status in ("done", "failed"))
-                if not comp_done:
-                    all_done = False
-                if "start_time" in comp_stats and tstart is None:
-                    tstart = comp_stats["start_time"]
-                if comp_started and status is None:
-                    status = "started"
-                if comp_running:
-                    running_comp = comp
-                if comp_status == "failed":
-                    status = "failed"
-                    failed_comp = comp
-                    break
-            else:
-                all_done = False
         
-        last_comp = stats.get(self.COMPONENTS[-1])
-        if last_comp:
-            if last_comp.get("status") == "done" and failed_comp is None:
-                all_done = True
-        
-        if all_done:
-            status = "done"
-        else:
-            tend = None
-            
+        tstart, tend, detection_status, detection_running, detection_failed, status_by_comp = self.stage_status(stats, self.DETECTION_COMPONENTS)
+        _, tend2, action_status, action_running, action_failed, action_status_by_comp = self.stage_status(stats, self.ACTION_COMPONENTS)
+
+        if tend2 is not None:
+            tend = tend2
+
+        status = (action_status or (detection_status if detection_status == "failed" else "started")) or "not started"
+        failed_comp = detection_failed or action_failed
+        runing_comp = detection_running or action_running
+        status_by_comp.update(action_status_by_comp)
+
         summary = {
             "status": status,
+            "detection_status": detection_status,
+            "action_status": action_status,
             "run":  stats.get("run"),
             "start_time": tstart,
             "end_time": tend,
             "failed": failed_comp,
-            "running": running_comp,            
+            "running": running_comp,
+            "comp_status": status_by_comp,
             "missing_stats" : {
                 "detected":         None,
                 "confirmed":        None,
@@ -541,26 +567,22 @@ class CCDataSource(DataSource):
             summary["error"] = stats["error"]
         
         if "cmp3" in stats and stats["cmp3"]["status"] == "done":
-            summary["missing_stats"]["detected"] = stats["cmp3"]["missing"]
+            summary["missing_stats"]["detected"] = summary["missing_stats"]["confirmed"] = stats["cmp3"]["missing"]
             summary["dark_stats"]["detected"] = stats["cmp3"]["dark"]
             
             if "cmp2dark" in stats:
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
             if self.DarkSection in stats:
-                dark_stats = stats[self.DarkSection]
-                dark_summary = summary["dark_stats"]
-                
-                dark_summary["confirmed"] = dark_stats.get("confirmed", dark_stats.get("confirmed_dark_files"))
-                dark_summary["acted_on"] = dark_stats.get("declared_dark_files", dark_stats.get("declared"))
-                dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
-                dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
+                if "confirmed_dark_files" in stats[self.DarkSection]:
+                    summary["dark_stats"]["confirmed"] = stats[self.DarkSection].get("confirmed_dark_files")
+                summary["dark_stats"]["acted_on"] = stats[self.DarkSection].get("confirmed_dark_files")
+                summary["dark_stats"]["action_status"] = stats[self.DarkSection].get("status", "").lower() or None
+                summary["dark_stats"]["aborted_reason"] = stats[self.DarkSection].get("aborted_reason", "")
                 
             if self.MissingSection in stats:
-                missing_stats = stats[self.MissingSection]
-                missing_summary = summary["missing_stats"]
-                missing_summary["confirmed"] = missing_stats.get("confirmed_missing_files", missing_stats.get("confirmed"))
-                missing_summary["acted_on"] = missing_stats.get("declared_missing_files", missing_stats.get("declared"))
-                missing_summary["action_status"] = missing_stats.get("status", "").lower() or None
-                missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
+                summary["missing_stats"]["acted_on"] = stats[self.MissingSection].get("confirmed_miss_files", 
+                                stats[self.MissingSection].get("confirmed_missing_files"))
+                summary["missing_stats"]["action_status"] = stats[self.MissingSection].get("status", "").lower() or None
+                summary["missing_stats"]["aborted_reason"] = stats[self.MissingSection].get("aborted_reason", "")
         return summary
