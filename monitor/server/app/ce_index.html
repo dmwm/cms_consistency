@@ -158,7 +158,7 @@
         </script>
 
         <td><a href="./show_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_date}}</a></td>
-        <td class="{{summary['status']}}">{{summary["status"]|none_as_blank}}</td>
+        <td class="{{summary['detection_status']}}">{{summary["detection_status"]|none_as_blank}}</td>
 
         {% set dark_stats = summary["dark_stats"] %}
         <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
