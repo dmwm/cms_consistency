@@ -30,11 +30,11 @@
 			        <tr>
 			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
 			            <td>{{info["start_time"]|as_dt}}</td>
-			            <td class="{{info['detection_status'] or ''}}">
-                            {%- if info["detection_status"] == "started" and "running" in info -%}
-                                {{info["running"] or ""}} started
+			            <td class="{{summary['detection_status'] or ''}}">
+                            {%- if summary["detection_status"] == "started" and "running" in summary -%}
+                                {{summary["running"] or ""}} started
                             {%- else -%}
-                                {{info["status"] or ""}}
+                                {{summary["status"] or ""}}
                             {%- endif -%}
                         </td>
                         
