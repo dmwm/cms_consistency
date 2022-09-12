@@ -57,6 +57,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
         latest_run = recent_runs[-1]
         num_scanned = latest_run.scanner_num_files()
         detected_dark_count = latest_run.dark_file_count()
+        my_stats["detected_dark_files"] = detected_dark_count
         print("Runs in the confirmation history:", len(recent_runs))
         print("First run:", first_run.Run, file=sys.stderr)
         print("Last run:", latest_run.Run, file=sys.stderr)
@@ -79,6 +80,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
             confirmed_dark_count = len(confirmed)
             ratio = confirmed_dark_count/num_scanned
             print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
+            my_stats["confirmed_dark_files"] = confirmed_dark_count
         
             status = "done"
             if confirmed:
@@ -96,6 +98,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
                         client = ReplicaClient(account=account)
                         replicas = [{"path":path} for path in confirmed]
                         client.quarantine_replicas(replicas, rse=rse)
+                        my_stats["declared_dark_files"] = len(replicas)
                     except Exception as e:
                         error = f"rucio error: {e}"
                         status = "failed"
@@ -106,9 +109,6 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
         end_time = t1,
         status = status,
         error = error,
-        detected_dark_files = detected_dark_count,
-        confirmed_dark_files = confirmed_dark_count,
-        declared_dark_files = confirmed_dark_count,
         aborted_reason = aborted_reason
     )
 
