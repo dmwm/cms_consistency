@@ -85,7 +85,7 @@ class CEHandler(WPHandler):
             elif summary.get("detection_status") == "done":
                 for part in ("missing_stats", "dark_stats"):
                     if summary[part].get("action_status") == "failed" \
-                                or summary[part].get("action_status") == "aborted" and
+                                or summary[part].get("action_status") == "aborted" and \
                                         "too many" in summary[part].get("aborted_reason", "").lower() \
                                 or summary[part].get("action_status") == "started" and summary["start_time"] < 3*24*3600:
                             order = 2
