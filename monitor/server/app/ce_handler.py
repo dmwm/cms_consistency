@@ -43,7 +43,7 @@ class CEHandler(WPHandler):
         return self.CCDataSource.status(), "text/plain"
         return "OK" if self.CCDataSource.is_mounted() else ("CE data directory unreachable", 500)
 
-    def index(self, request, relpath, sort="rse", **args):
+    def ___index(self, request, relpath, sort="rse", **args):
         #
         # list available RSEs
         #
@@ -64,7 +64,7 @@ class CEHandler(WPHandler):
 
         return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
 
-    def attention(self, request, relpath, sort="rse", **args):
+    def index(self, request, relpath, sort="rse", **args):
         data_source = self.CCDataSource
 
         stats = data_source.latest_stats_per_rse()
@@ -102,7 +102,7 @@ class CEHandler(WPHandler):
 
             if summary["order"] is None and summary["start_time"] < now - 14*24*3600:          # older than 2 weeks
                 summary["order"] = 5
-                summary["attention"] = "too_old"
+                summary["attention"] = "overdue"
 
             if summary["order"] is not None:
                 problems.append(summary)
