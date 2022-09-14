@@ -485,6 +485,7 @@ class CCDataSource(DataSource):
         running_comp = None
         status_by_comp = {}
         failed_comp = None
+        all_done = True
         for comp in components:
             status_by_comp[comp] = None
             if comp in stats:
@@ -509,10 +510,7 @@ class CCDataSource(DataSource):
                 if comp_started and not (comp_status in ("done", "failed", "aborted")):
                     running_comp = comp
 
-                if comp_status == "done" and not status:
-                    status = "done"
-
-                if comp_status == "started":
+                if comp_status == "started" and not status:
                     status = "started"
 
                 if comp_status == "failed":
@@ -521,6 +519,14 @@ class CCDataSource(DataSource):
 
                 if comp_status == "aborted" and status != "failed":
                     status = "aborted"
+
+                all_done = all_done and comp_status == "done"
+            else:
+                all_done = False
+        if all_done:
+            status = "done"
+        elif status not in ("failed", "aborted"):
+            status = "started"
 
         return tstart, tend, status, running_comp, failed_comp, status_by_comp
 
