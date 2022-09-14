@@ -26,6 +26,10 @@ python declare_dark.py [options] <storage_path> <rse>
     -n <number>                 - min number of runs to use to produce the confirmed dark list, default = 3
 """
 
+def chunked(lst, chunk_size=1000):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i+chunk_size]
+
 def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_stats):
     
     my_stats["start_time"] = t0 = time.time()
@@ -97,7 +101,8 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
                         from rucio.client.replicaclient import ReplicaClient
                         client = ReplicaClient(account=account)
                         replicas = [{"path":path} for path in confirmed]
-                        client.quarantine_replicas(replicas, rse=rse)
+                        for chunk in chunked(replicas):
+                            client.quarantine_replicas(chunk, rse=rse)
                         my_stats["declared_dark_files"] = len(replicas)
                     except Exception as e:
                         error = f"rucio error: {e}"
