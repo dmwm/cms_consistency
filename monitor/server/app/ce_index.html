@@ -2,6 +2,11 @@
 
 {% block html_head %}
     <script type="text/javascript" src="./static/js/request.js"></script>
+    <style type="text/css">
+        .divisor td, .divisor th {
+            border: 0;
+        }
+    </style>
 {% endblock %}
 
 
@@ -141,49 +146,57 @@
 
 
 {% for summary in summaries %}
-    {% set rse = summary["rse"] %}
-    
-    <script type="text/javascript">
-        rse_list.push("{{rse}}");
-    </script>
-    
-    <tr>
-        <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
-        <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
-            <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
-        </td>
 
+    {% if summary == "attention" %}
+        <tr><th colspan=16>Attnetion<th></tr>
+    {% elif summary == "the_rest "}
+        <tr class="divisor"><td colspan=16><td></tr>    
+    {% else %}
+
+        {% set rse = summary["rse"] %}
+    
         <script type="text/javascript">
-            init_status_chart("{{rse}}_cc_status");
+            rse_list.push("{{rse}}");
         </script>
+    
+        <tr>
+            <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
+            <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
+                <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
+            </td>
 
-        <td><a href="./show_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_date}}</a></td>
-        <td class="{{summary['detection_status']}}">{{summary["detection_status"]|none_as_blank}}</td>
+            <script type="text/javascript">
+                init_status_chart("{{rse}}_cc_status");
+            </script>
 
-        {% set dark_stats = summary["dark_stats"] %}
-        <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
-        <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
-        <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
-        <td class="{{summary['dark_stats']['action_status']|none_as_blank}}">
-            {{dark_stats['action_status']|none_as_blank}}
-            {#
-            {%- if dark_stats['action_status'] == "aborted" and 
-                    dark_stats['aborted_reason'] -%}
-                    : {{ dark_stats['aborted_reason'] }}
-            {%- endif %}
-            #}
-        </td>
+            <td><a href="./show_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_date}}</a></td>
+            <td class="{{summary['detection_status']}}">{{summary["detection_status"]|none_as_blank}}</td>
 
-        {% set missing_stats = summary["missing_stats"] %}
-        <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
-        <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
-        <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
-        <td class="{{missing_stats['action_status']|none_as_blank}}">
-            {{missing_stats['action_status']|none_as_blank}}
-        </td>
-    </tr>
+            {% set dark_stats = summary["dark_stats"] %}
+            <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
+            <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
+            <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
+            <td class="{{summary['dark_stats']['action_status']|none_as_blank}}">
+                {{dark_stats['action_status']|none_as_blank}}
+                {#
+                {%- if dark_stats['action_status'] == "aborted" and 
+                        dark_stats['aborted_reason'] -%}
+                        : {{ dark_stats['aborted_reason'] }}
+                {%- endif %}
+                #}
+            </td>
+
+            {% set missing_stats = summary["missing_stats"] %}
+            <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
+            <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
+            <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
+            <td class="{{missing_stats['action_status']|none_as_blank}}">
+                {{missing_stats['action_status']|none_as_blank}}
+            </td>
+        </tr>
+    {% endif %} {# divisor or attention #}
 {% endfor %}
-            
+
 </table>
 
 <script type="text/javascript">
