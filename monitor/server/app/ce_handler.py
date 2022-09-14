@@ -64,6 +64,9 @@ class CEHandler(WPHandler):
 
         return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
 
+    def attention(self, request, relpath, **args):
+        self.redirect("./index")
+
     def index(self, request, relpath, sort="rse", **args):
         data_source = self.CCDataSource
 
