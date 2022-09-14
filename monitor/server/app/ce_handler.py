@@ -71,19 +71,30 @@ class CEHandler(WPHandler):
         summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
         for rse, summary in summaries.items():
             summary["rse"] = rse
-
+        now = time.time()
         problems = []
         for summary in summaries.values():
+
+            summary["too_old"] = False
             order = None
+
             if summary.get("failed"):
-                order = 0
-            elif summary["missing_stats"].get("action_status") != "done" or summary["dark_stats"].get("action_status") != "done":
                 order = 1
-            elif summary["status"] == "started":
-                order = 2
+            else:
+                for part in ("missing_stats", "dark_stats"):
+                    if summary[part].get("action_status") != "done" and \
+                        (summary[part].get("action_status") != "aborted" or "not enough" not in summary[part].get("aborted_reason", "").lower()):
+                            order = 2
+                            break
+
+            if summary["start_time"] < now - 14*24*3600:          # older than 2 weeks
+                order = order or 3
+                summary["too_old"] = True
+
             if order is not None:
                 summary["order"] = order
                 problems.append(summary)
+
         if problems:
             problems = sorted(problems, key=lambda s: s["order"])
 
