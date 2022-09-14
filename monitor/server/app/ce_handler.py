@@ -76,29 +76,35 @@ class CEHandler(WPHandler):
         the_rest = []
         for summary in summaries.values():
 
-            summary["too_old"] = False
-            order = None
+            summary["order"] = None
+            summary["attention"] = ""
 
-            if summary.get("failed") or \
-                    summary.get("detection_status") == "failed" or \
-                    summary.get("detection_status") == "started" and summary["start_time"] < 3*24*3600:
-                order = 1
+            if summary.get("failed") or summary.get("detection_status") == "failed":
+                summary["attention"] = "failed"
+                summary["order"] = 1
+            elif summary.get("detection_status") == "started" and summary["start_time"] < 3*24*3600:
+                summary["order"] = 2
+                summary["attention"] = "started"
             elif summary.get("detection_status") == "done":
                 for part in ("missing_stats", "dark_stats"):
-                    if summary[part].get("action_status") == "failed" \
-                                or summary[part].get("action_status") == "aborted" and \
+                    if summary[part].get("action_status") == "failed":
+                        summary["order"] = 3
+                        summary["attention"] = "failed"
+                        break
+                if summary["order"] is None:
+                    for part in ("missing_stats", "dark_stats"):
+                        if summary[part].get("action_status") == "aborted" and \
                                         "too many" in summary[part].get("aborted_reason", "").lower() \
                                 or summary[part].get("action_status") == "started" and summary["start_time"] < 3*24*3600:
-                            order = 2
+                            summary["order"] = 4
+                            summary["attention"] = "aborted"
                             break
 
-            if summary["start_time"] < now - 14*24*3600:          # older than 2 weeks
-                order = order or 3
-                summary["too_old"] = True
+            if summary["order"] is None and summary["start_time"] < now - 14*24*3600:          # older than 2 weeks
+                summary["order"] = 5
+                summary["attention"] = "too_old"
 
-            if order is not None:
-                summary["order"] = order
-                summary["attention"] = "attention"
+            if summary["order"] is not None:
                 problems.append(summary)
             else:
                 the_rest.append(summary)
@@ -106,7 +112,7 @@ class CEHandler(WPHandler):
         summaries = []
         if problems:
             summaries.append("attention")
-            summaries += sorted(problems, key=lambda s: s["order"])
+            summaries += sorted(problems, key=lambda s: (s["order"], s.get("start_time") or -1, s["rse"]))
 
         if the_rest:
             if sort == "ce_run":
