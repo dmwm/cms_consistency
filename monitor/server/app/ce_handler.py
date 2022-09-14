@@ -64,7 +64,7 @@ class CEHandler(WPHandler):
 
         return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
 
-    def attention(self, request, relpath, **args):
+    def attention(self, request, relpath, sort="rse", **args):
         data_source = self.CCDataSource
 
         stats = data_source.latest_stats_per_rse()
