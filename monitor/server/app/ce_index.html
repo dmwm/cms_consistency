@@ -148,9 +148,9 @@
 {% for summary in summaries %}
 
     {% if summary == "attention" %}
-        <tr><th colspan=16>Attnetion<th></tr>
+        <tr class="divisor"><th colspan=16>Attnetion<th></tr>
     {% elif summary == "the_rest" %}
-        <tr class="divisor"><td colspan=16><td></tr>    
+        <tr class="divisor"><td colspan=16>&nbsp;<td></tr>    
     {% else %}
 
         {% set rse = summary["rse"] %}
