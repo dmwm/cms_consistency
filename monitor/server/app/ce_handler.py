@@ -387,7 +387,7 @@ class CEHandler(WPHandler):
             data[rse] = dict(cc_total=cc_total, cc_success=cc_success,
                 cc_status_history=[
                     {
-                        "cc":       x.get("status"),
+                        "cc":       x.get("detection_status"),
                         "missing":  x.get("missing_stats",{}).get("action_status"),
                         "dark":     x.get("dark_stats",{}).get("action_status")
                     }
