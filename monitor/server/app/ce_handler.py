@@ -78,12 +78,12 @@ class CEHandler(WPHandler):
             summary["too_old"] = False
             order = None
 
-            if summary.get("failed"):
+            if summary.get("failed") or summary.get("detection_status") == "failed":
                 order = 1
-            else:
+            elif summary.get("detection_status") == "done":
                 for part in ("missing_stats", "dark_stats"):
-                    if summary[part].get("action_status") != "done" and \
-                        (summary[part].get("action_status") != "aborted" or "not enough" not in summary[part].get("aborted_reason", "").lower()):
+                    if summary[part].get("action_status") not in ("done", "started") and \
+                        (summary[part].get("action_status") != "aborted" or "too many" not in summary[part].get("aborted_reason", "").lower()):
                             order = 2
                             break
 

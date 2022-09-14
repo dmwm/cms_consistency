@@ -539,7 +539,7 @@ class CCDataSource(DataSource):
 
         status = (action_status or (detection_status if detection_status == "failed" else "started")) or "not started"
         failed_comp = detection_failed or action_failed
-        runing_comp = detection_running or action_running
+        running_comp = detection_running or action_running
         status_by_comp.update(action_status_by_comp)
 
         summary = {
