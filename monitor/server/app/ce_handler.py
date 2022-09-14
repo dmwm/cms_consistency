@@ -98,6 +98,7 @@ class CEHandler(WPHandler):
 
             if order is not None:
                 summary["order"] = order
+                summary["attention"] = "attention"
                 problems.append(summary)
             else:
                 the_rest.append(summary)
@@ -105,8 +106,7 @@ class CEHandler(WPHandler):
         summaries = []
         if problems:
             summaries.append("attention")
-            summaries += problems
-            problems = sorted(problems, key=lambda s: s["order"])
+            summaries += sorted(problems, key=lambda s: s["order"])
 
         if the_rest:
             if sort == "ce_run":

@@ -164,7 +164,7 @@
         </script>
     
         <tr>
-            <td class="{{'attention' if summary['attention']}} else ''}}"><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
+            <td class="{{'attention' if summary['attention'] == 'attention' else ''}}"><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
             <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
                 <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
             </td>
