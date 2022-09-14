@@ -97,7 +97,8 @@ class CEHandler(WPHandler):
                 if summary["order"] is None:
                     for part in ("missing_stats", "dark_stats"):
                         if summary[part].get("action_status") == "aborted" and \
-                                        "too many" in summary[part].get("aborted_reason", "").lower() \
+                                        ("too many" in summary[part].get("aborted_reason", "").lower() 
+                                            or "latest run too old" in summary[part].get("aborted_reason", "").lower() ) \
                                 or summary[part].get("action_status") == "started" and summary["start_time"] < 3*24*3600:
                             summary["order"] = 4
                             summary["attention"] = "aborted"
