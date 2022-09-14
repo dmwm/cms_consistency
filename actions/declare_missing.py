@@ -23,6 +23,10 @@ python declare_missing.py [options] <storage_path> <scope> <rse>
     -m <days>                   - max age for the most recent run, integer, default = 1 day
 """
 
+def chunked(lst, chunk_size=1000):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i+chunk_size]
+
 def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key, account, dry_run):
     
     t0 = time.time()
@@ -87,9 +91,12 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                 try:
                     from rucio.client.replicaclient import ReplicaClient
                     client = ReplicaClient(account=account)
-                    result = client.declare_bad_file_replicas(missing_list, "detected missing by CC")
-                    not_declared = result.pop(rse, [])      # there shuld be no other RSE in there
-                    assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
+                    not_declared = []
+                    # chunk the list to avoid "request too large" errors
+                    for chunk in chunked(missing_list):
+                        result = client.declare_bad_file_replicas(missing_list, "detected missing by CC")
+                        not_declared += result.pop(rse, [])      # there shuld be no other RSE in there
+                        assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
                 except Exception as e:
                     status = "failed"
                     error = f"Rucio declaration error: {e}"
