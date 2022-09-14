@@ -73,6 +73,7 @@ class CEHandler(WPHandler):
             summary["rse"] = rse
         now = time.time()
         problems = []
+        the_rest = []
         for summary in summaries.values():
 
             summary["too_old"] = False
@@ -98,11 +99,27 @@ class CEHandler(WPHandler):
             if order is not None:
                 summary["order"] = order
                 problems.append(summary)
+            else:
+                the_rest.append(summary)
 
+        summaries = []
         if problems:
+            summaries.append("attention")
+            summaries += problems
             problems = sorted(problems, key=lambda s: s["order"])
 
-        return self.render_to_response("ce_index.html", summaries=problems, sort_options=False)
+        if the_rest:
+            if sort == "ce_run":
+                the_rest = sorted(the_rest, key=lambda s: (s.get("start_time") or -1, s["rse"]))
+            elif sort == "-ce_run":
+                the_rest = sorted(the_rest, key=lambda s: (s.get("start_time") or -1, s["rse"]), reverse=True)
+            else:
+                the_rest = sorted(the_rest, key=lambda s: s["rse"])
+            if problems:
+                summaries.append("the_rest")
+            summaries += the_rest
+
+        return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
     
     def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"
