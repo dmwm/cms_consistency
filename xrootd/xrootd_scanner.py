@@ -324,7 +324,8 @@ class Scanner(Task):
 
     def message(self, status, stats):
         if self.Master is not None:
-            self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
+            #self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
+            self.Master.message("%s %s\t%s" % (status, stats, self.Location))
 
     @synchronized
     def killme(self):
@@ -349,7 +350,6 @@ class Scanner(Task):
             recursive = False
             self.FlatAttempts -= 1
         self.WasRecursive = recursive
-        stats = "r" if recursive else " "
         #self.message("start", stats)
 
         status, reason, dirs, files = self.Client.ls(self.Location, recursive, self.IncludeSizes)
