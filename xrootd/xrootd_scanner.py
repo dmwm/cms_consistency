@@ -81,6 +81,14 @@ class XRootDClient(Primitive):
         #print(f"Underlying servers for {server}:{server_root} root:{root}:", self.Servers)
         self.IServer = 0
 
+    def relative_path(self, path):
+        # path relative to the server root
+        if path.startswith(self.ServerRoot):
+            path = canonic_path(path[len(elf.ServerRoot):])
+            if path and path.startswith('/'):
+                path = path[1:]
+        return path
+
     def absolute_path(self, path):
         return canonic_path(path if path.startswith("/") else self.ServerRoot + "/" + path)
         
@@ -325,7 +333,7 @@ class Scanner(Task):
     def message(self, status, stats):
         if self.Master is not None:
             #self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
-            self.Master.message("%s %s\t%s" % (status, stats, self.Location))
+            self.Master.message("%s %s\t%s" % (status, stats, self.Client.relative_path(self.Location)))
 
     @synchronized
     def killme(self):
