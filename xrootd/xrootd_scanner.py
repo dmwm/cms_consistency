@@ -84,7 +84,7 @@ class XRootDClient(Primitive):
     def relative_path(self, path):
         # path relative to the server root
         if path.startswith(self.ServerRoot):
-            path = canonic_path(path[len(elf.ServerRoot):])
+            path = canonic_path(path[len(self.ServerRoot):])
             if path and path.startswith('/'):
                 path = path[1:]
         return path
