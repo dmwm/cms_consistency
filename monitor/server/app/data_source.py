@@ -586,7 +586,7 @@ class CCDataSource(DataSource):
                 dark_summary = summary["dark_stats"]
                 dark_stats = stats[self.DarkSection]
                 dark_summary["confirmed"] = dark_stats.get("confirmed_dark_files")
-                        dark_summary["acted_on"] = dark_stats.get("declared_dark_files")
+                dark_summary["acted_on"] = dark_stats.get("declared_dark_files")
                 status = dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
                 if status == "aborted":
                     dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
