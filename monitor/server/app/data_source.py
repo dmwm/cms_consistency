@@ -585,22 +585,18 @@ class CCDataSource(DataSource):
             if self.DarkSection in stats:
                 dark_summary = summary["dark_stats"]
                 dark_stats = stats[self.DarkSection]
-                status = dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
-                if status in ("done", "aborted"):
-                    dark_summary["confirmed"] = dark_stats.get("confirmed_dark_files")
-                    if status == "done":
+                dark_summary["confirmed"] = dark_stats.get("confirmed_dark_files")
                         dark_summary["acted_on"] = dark_stats.get("declared_dark_files")
-                    else:
-                        dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
+                status = dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
+                if status == "aborted":
+                    dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
                 
             if self.MissingSection in stats:
                 missing_summary = summary["missing_stats"]
                 missing_stats = stats[self.MissingSection]
                 status = missing_summary["action_status"] = missing_stats.get("status", "").lower() or None
-                if status in ("done", "aborted"):
-                    missing_summary["confirmed"] = missing_stats.get("confirmed_missing_files")
-                    if status == "done":
-                        missing_summary["acted_on"] = missing_stats.get("declared_missing_files")
-                    else:
-                        missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
+                missing_summary["confirmed"] = missing_stats.get("confirmed_missing_files")
+                missing_summary["acted_on"] = missing_stats.get("declared_missing_files")
+                if status  == "aborted":
+                    missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
         return summary
