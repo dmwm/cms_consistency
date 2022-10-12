@@ -124,7 +124,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
     recent_runs = sorted(
             [r for r in runs 
                 if True
-                    and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
+                    #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
                     and (r.Timestamp >= now - timedelta(days=window))
                     and r.empty_directories_collected()
                     and r.empty_directory_count() is not None
