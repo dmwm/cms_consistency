@@ -11,7 +11,7 @@ Version = "1.0"
 
 Usage = """
 python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
-    -d                          - dry run - do not declare to Rucio
+    -d                          - dry run
     -o (-|<out file>)           - write confirmed empty directory list to stdout (-) or to a file
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "empty_action"
@@ -19,6 +19,7 @@ python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
     -v                          - verbose output
 
     The following will override values read from the configuration:
+    -N <number>                 - stop after removing so many directories
     -w <days>                   - max age for oldest run to use for confirmation, default = 35 days
     -m <days>                   - max age for the most recent run, default = 1 day
     -M <days>                   - min age for oldest run, default = 25
