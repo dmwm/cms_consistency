@@ -113,7 +113,7 @@ def remove_from_file(file_path, rse, out, stats, stats_key, dry_run, client, my_
         print("Failed:", path, error)
     return my_stats
 
-def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats):
+def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose):
     
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
@@ -197,7 +197,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
                     if out is not sys.stdout:
                         out.close()                 
                 try:    
-                    failed = Remover(client, confirmed, dry_run).run()
+                    failed = Remover(client, confirmed, dry_run, verbose=verbose).run()
                     failed_count = len(failed)
                 except Exception as e:
                     error = f"remover error: {e}"
@@ -254,6 +254,7 @@ fraction = float(opts.get("-f", config.get("max_fraction", 0.01)))
 min_runs = int(opts.get("-n", config.get("min_runs", 3)))
 account = opts.get("-a")
 dry_run = "-d" in opts
+verbose = "-v" in opts
 
 if dry_run:
     print("====== dry run mode ======")
@@ -311,12 +312,12 @@ if os.path.isfile(storage_path):
     remove_from_file(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats)
     run_stats = my_stats
 else:
-    run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats)
+    run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
 
-if "-v" in opts:
+if verbose:
     print("\nFinal stats:")
     for k, v in sorted(run_stats.items()):
         print("%s = %s" % (k, v))
