@@ -287,6 +287,7 @@ if "-v" in opts:
     print("  min age for last run:        ", min_age_first)
     print("  max age for first run:       ", max_age_last)
     print("  min number of runs:          ", min_runs)
+    print("  limit:                       ", "no limit" if limit is None else limit)
     print()
 
 my_stats = {
@@ -303,6 +304,7 @@ my_stats = {
     "aborted_reason": None,
     "error": None,
     "runs_compared": None,
+    "limit": limit,
     "configuration": {
         "confirmation_window": window,
         "min_age_first_run": min_age_first,
