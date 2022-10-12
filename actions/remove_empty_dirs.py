@@ -42,13 +42,14 @@ class RemoveDirectoryTask(Task):
 
 class Remover(Primitive):
     
-    def __init__(self, client, paths, max_workers=10, verbose=False):
+    def __init__(self, client, paths, dry_run, max_workers=10, verbose=False):
         Primitive.__init__(self)
         self.Client = client
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
         self.Failed = []
         self.Verbose = verbose
+        self.DryRun = dry_run
 
     def shave(self, paths):
         # split the list of paths (assumed to be reversely ordered) into leaves and inner nodes
@@ -69,8 +70,9 @@ class Remover(Primitive):
             leaves, inner = self.shave(paths)
             for leaf in leaves:
                 if self.Verbose:
-                    print("submitting:", leaf)
-                self.Queue.append(RemoveDirectoryTask(self.Client, leaf))
+                    print(f"submitting (dry_run={self.DryRun}):", leaf)
+                if not self.DryRun:
+                    self.Queue.append(RemoveDirectoryTask(self.Client, leaf))
             if self.Verbose:
                 print("waiting for the queue to be empty...")
             self.Queue.waitUntilEmpty()
@@ -194,13 +196,12 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
                         print(f, file=out)
                     if out is not sys.stdout:
                         out.close()                 
-                if not dry_run:
-                    try:    
-                        failed = Remover(client, confirmed).run()
-                        failed_count = len(failed)
-                    except Exception as e:
-                        error = f"remover error: {e}"
-                        status = "failed"
+                try:    
+                    failed = Remover(client, confirmed, dry_run).run()
+                    failed_count = len(failed)
+                except Exception as e:
+                    error = f"remover error: {e}"
+                    status = "failed"
 
     t1 = time.time()
     my_stats.update(
