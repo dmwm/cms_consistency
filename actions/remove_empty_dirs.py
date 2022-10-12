@@ -92,9 +92,9 @@ class Remover(Primitive):
 
     @synchronized
     def taskEnded(self, queue, task, result):
-        if self.Verbose:
-            print("taskEnded:", task.Path, result)
         status, error = result
+        if self.Verbose:
+            print("taskEnded:", task.Path, status, error or "")
         if status != "OK":
             if error == "timeout" and task.Retries > 0:
                 task.Retries -= 1
