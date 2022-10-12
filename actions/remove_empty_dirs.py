@@ -19,7 +19,7 @@ python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
     -v                          - verbose output
 
     The following will override values read from the configuration:
-    -N <number>                 - stop after removing so many directories
+    -L <number>                 - stop after removing so many directories
     -w <days>                   - max age for oldest run to use for confirmation, default = 35 days
     -m <days>                   - max age for the most recent run, default = 1 day
     -M <days>                   - min age for oldest run, default = 25
@@ -42,7 +42,7 @@ class RemoveDirectoryTask(Task):
 
 class Remover(Primitive):
     
-    def __init__(self, client, paths, dry_run, max_workers=10, verbose=False):
+    def __init__(self, client, paths, dry_run, limit=None, max_workers=10, verbose=False):
         Primitive.__init__(self)
         self.Client = client
         self.Paths = paths
@@ -50,6 +50,7 @@ class Remover(Primitive):
         self.Failed = []
         self.Verbose = verbose
         self.DryRun = dry_run
+        self.Limit = limit          # max number of dirs to delete
 
     def shave(self, paths):
         # split the list of paths (assumed to be reversely ordered) into leaves and inner nodes
@@ -65,8 +66,9 @@ class Remover(Primitive):
         return leaves, inner
 
     def run(self):
+        nsubmitted = 0
         paths = sorted(self.Paths, reverse=True)
-        while paths:
+        while paths and (self.Limit is None or nsubmitted < self.Limit):
             leaves, inner = self.shave(paths)
             for leaf in leaves:
                 depth = len([p for p in leaf.split('/') if p])      # do not remove root directories like "/store/mc"
@@ -77,6 +79,10 @@ class Remover(Primitive):
                     print(f"submitting (dry_run={self.DryRun}):", leaf)
                 if not self.DryRun:
                     self.Queue.append(RemoveDirectoryTask(self.Client, leaf))
+                nsubmitted += 1
+                if self.Limit is not None and nsubmitted >= self.Limit:
+                    print(f"Limit of {self.Limit} reached")
+                    break
             if self.Verbose:
                 print("waiting for the queue to be empty...")
             self.Queue.waitUntilEmpty()
@@ -110,14 +116,14 @@ def parents(path):
         path = path.rsplit('/', 1)[0]
         yield path
 
-def remove_from_file(file_path, rse, out, stats, stats_key, dry_run, client, my_stats):
+def remove_from_file(file_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit):
     paths = [l.strip() for l in open(file_path, "r")]
-    failed = Remover(client, paths, verbose=True).run()
+    failed = Remover(client, paths, verbose=verbose, limit=limit).run()
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
 
-def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose):
+def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit):
     
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
@@ -201,7 +207,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
                     if out is not sys.stdout:
                         out.close()                 
                 try:    
-                    failed = Remover(client, confirmed, dry_run, verbose=verbose).run()
+                    failed = Remover(client, confirmed, dry_run, verbose=verbose, limit=limit).run()
                     failed_count = len(failed)
                 except Exception as e:
                     error = f"remover error: {e}"
@@ -228,7 +234,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:va:d")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:va:dL:")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -259,6 +265,8 @@ min_runs = int(opts.get("-n", config.get("min_runs", 3)))
 account = opts.get("-a")
 dry_run = "-d" in opts
 verbose = "-v" in opts
+limit = opts.get("-L")
+if limit:   limit = int(limit)
 
 if dry_run:
     print("====== dry run mode ======")
@@ -313,10 +321,10 @@ is_redirector = config.ServerIsRedirector
 
 client = XRootDClient(server, server_root, is_redirector, timeout)
 if os.path.isfile(storage_path):
-    remove_from_file(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats)
+    remove_from_file(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit)
     run_stats = my_stats
 else:
-    run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose)
+    run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
