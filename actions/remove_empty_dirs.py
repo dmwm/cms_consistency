@@ -48,6 +48,8 @@ class Remover(Primitive):
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
         self.Failed = []
+        self.RemovedCount = 0
+        self.SubmittedCount = 0
         self.Verbose = verbose
         self.DryRun = dry_run
         self.Limit = limit          # max number of dirs to delete
@@ -66,9 +68,8 @@ class Remover(Primitive):
         return leaves, inner
 
     def run(self):
-        nsubmitted = 0
         paths = sorted(self.Paths, reverse=True)
-        while paths and (self.Limit is None or nsubmitted < self.Limit):
+        while paths and (self.Limit is None or self.SubmittedCount < self.Limit):
             leaves, inner = self.shave(paths)
             for leaf in leaves:
                 depth = len([p for p in leaf.split('/') if p])      # do not remove root directories like "/store/mc"
@@ -79,8 +80,8 @@ class Remover(Primitive):
                     print(f"submitting (dry_run={self.DryRun}):", leaf)
                 if not self.DryRun:
                     self.Queue.append(RemoveDirectoryTask(self.Client, leaf))
-                nsubmitted += 1
-                if self.Limit is not None and nsubmitted >= self.Limit:
+                self.SubmittedCount += 1
+                if self.Limit is not None and self.SubmittedCount >= self.Limit:
                     print(f"Limit of {self.Limit} reached")
                     break
             if self.Verbose:
@@ -102,6 +103,8 @@ class Remover(Primitive):
                 self.Queue.append(task)
             else:
                 self.Failed.append((task.Path, error))
+        else:
+            self.RemovedCount += 1
 
     @synchronized
     def taskFailed(self, queue, task, exc_type, exc_value, tb):
@@ -154,6 +157,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
     confirmed_empty_count = None
     detected_empty_count = None
     failed_count = 0
+    removed_count = 0
     error = None
     
     if recent_runs:
@@ -207,8 +211,10 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
                     if out is not sys.stdout:
                         out.close()                 
                 try:    
-                    failed = Remover(client, confirmed, dry_run, verbose=verbose, limit=limit).run()
+                    remover = Remover(client, confirmed, dry_run, verbose=verbose, limit=limit)
+                    failed = remover.run()
                     failed_count = len(failed)
+                    removed_count = remover.RemovedCount
                 except Exception as e:
                     error = f"remover error: {e}"
                     status = "failed"
@@ -222,6 +228,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
         detected_empty_directories = detected_empty_count,
         confirmed_empty_directories = confirmed_empty_count,
         failed_count = failed_count,
+        removed_count = removed_count,
         aborted_reason = aborted_reason
     )
 
@@ -299,6 +306,7 @@ my_stats = {
     "status": "started",
     "detected_empty_directories": None,
     "confirmed_empty_directories": None,
+    "removed_count": 0,
     "failed_count": 0,
     "confirmed_list": out_filename,
     "aborted_reason": None,
