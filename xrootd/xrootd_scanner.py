@@ -104,7 +104,7 @@ class Scanner(Task):
     MAX_ATTEMPTS_REC = 2
     MAX_ATTEMPTS_FLAT = 3
 
-    def __init__(self, master, client, location, recursive, include_sizes = True):
+    def __init__(self, master, client, location, recursive, include_sizes = True, report_empty_top = True):
         Task.__init__(self)
         self.Client = client
         self.Master = master
@@ -118,6 +118,7 @@ class Scanner(Task):
         self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
         self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
         self.IncludeSizes = include_sizes
+        self.ReportEmptyTop = report_empty_top
 
     def __str__(self):
         return "Scanner(%s)" % (self.Location,)
@@ -174,9 +175,9 @@ class Scanner(Task):
                         empty_dirs.remove(path)
                     except KeyError:
                         break
-        if not files:
-            if recursive or not dirs:
-                empty_dirs.add(self.Client.absolute_path(self.Location))
+
+        if self.ReportEmptyTop and (recursive or not dirs) and not files:
+            empty_dirs.add(self.Client.absolute_path(self.Location))
 
         if status != "OK":
             stats += " " + reason
@@ -234,7 +235,7 @@ class ScannerMaster(PyThread):
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        scanner_task = Scanner(self, self.Client, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes)
+        scanner_task = Scanner(self, self.Client, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes, report_empty_top=False)
         self.ScannerQueue.addTask(scanner_task)
         
         self.ScannerQueue.waitUntilEmpty()

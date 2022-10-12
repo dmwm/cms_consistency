@@ -69,6 +69,9 @@ class Remover(Primitive):
         while paths:
             leaves, inner = self.shave(paths)
             for leaf in leaves:
+                depth = len([p for p in leaf.split('/') if p])      # do not remove root directories like "/store/mc"
+                if depth <= 2:
+                    continue
                 if self.Verbose:
                     print(f"submitting (dry_run={self.DryRun}):", leaf)
                 if not self.DryRun:
