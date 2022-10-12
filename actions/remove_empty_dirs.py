@@ -128,7 +128,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
                     and (r.Timestamp >= now - timedelta(days=window))
                     and r.empty_directories_collected()
                     and r.empty_directory_count() is not None
-                    and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
+                    #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
             ], 
             key=lambda r: r.Timestamp
     )
@@ -158,6 +158,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
         print("Runs in the confirmation history:", len(recent_runs))
         print("First run:", first_run.Run, file=sys.stderr)
         print("Last run:", latest_run.Run, file=sys.stderr)
+        print("Empty directories in last run:", latest_run.empty_directory_count(), file=sys.stderr)
 
         if latest_run.Timestamp < now - timedelta(days=max_age_last):
             status = "aborted"
