@@ -124,14 +124,9 @@ class Scanner(Task):
 
     def message(self, status, stats):
         if self.Master is not None:
-<<<<<<< HEAD
             path = self.Client.absolute_path(self.Location)
             #self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, path), status, stats))
             self.Master.message("%s %s %s" % (status, stats, truncated_path(self.Master.Root, path)))
-=======
-            #self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, self.Location), status, stats))
-            self.Master.message("%s %s\t%s" % (status, stats, self.Client.relative_path(self.Location)))
->>>>>>> origin/use_force_bad_flag
 
     @synchronized
     def killme(self):
