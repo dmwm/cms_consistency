@@ -328,8 +328,7 @@ server = config.Server
 server_root = config.ServerRoot
 timeout = config.ScannerTimeout
 is_redirector = config.ServerIsRedirector
-
-client = XRootDClient(server, server_root, is_redirector, timeout)
+client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
 if os.path.isfile(storage_path):
     remove_from_file(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit)
     run_stats = my_stats
