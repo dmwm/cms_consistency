@@ -10,11 +10,11 @@ def canonic_path(path):
         path = path[:-1]
     return path
     
-
 class XRootDClient(Primitive):
 
     def __init__(self, server, is_redirector, server_root, root, timeout, name=None):
         Primitive.__init__(self, name=name)
+        root = root or server_root
         self.Timeout = timeout
         self.Server = server 
         self.ServerRoot = server_root
