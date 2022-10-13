@@ -538,7 +538,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     if (not ignore_failed_directories) and master.GaveUp:
         failed = True
 
-    total_size = None if failed else master.TotalSize/GB
+    total_size = None if failed or master.TotalSize is None else master.TotalSize/GB
 
     root_stats.update({
         "root_failed": False,
