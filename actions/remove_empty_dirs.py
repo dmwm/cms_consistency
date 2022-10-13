@@ -47,7 +47,7 @@ class Remover(Primitive):
         self.Client = client
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
-        self.Failed = []
+        self.Failed = []            # [(path, error), ...]
         self.RemovedCount = 0
         self.SubmittedCount = 0
         self.Verbose = verbose
@@ -93,6 +93,7 @@ class Remover(Primitive):
     @synchronized
     def taskEnded(self, queue, task, result):
         status, error = result
+        error = (error or "").strip()
         if self.Verbose:
             print("taskEnded:", task.Path, status, error or "")
         if status != "OK":
@@ -101,6 +102,8 @@ class Remover(Primitive):
                 if self.Verbose:
                     print("resubmitting after timeout:", task.Path)
                 self.Queue.append(task)
+            elif "no such file or directory" in error:
+                pass        # already removed
             else:
                 self.Failed.append((task.Path, error))
         else:
