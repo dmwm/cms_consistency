@@ -5,7 +5,7 @@ from run import CCRun
 from stats import Stats
 from config import ActionConfiguration
 
-Version = "1.2"
+Version = "1.3"
 
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
@@ -94,7 +94,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     not_declared = []
                     # chunk the list to avoid "request too large" errors
                     for chunk in chunked(missing_list):
-                        result = client.declare_bad_file_replicas(chunk, "detected missing by CC")
+                        result = client.declare_bad_file_replicas(chunk, "detected missing by CE", force=True)
                         not_declared += result.pop(rse, [])      # there shuld be no other RSE in there
                         assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
                 except Exception as e:
@@ -110,7 +110,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                         if len(words) == 2:
                             declaration_errors[error] = declaration_errors.get(words[1], 0) + 1
                     my_stats["declaration_errors"] = declaration_errors
-                    my_stats["declared"] = len(missing_list) - not_declared_count
+                    my_stats["declared_missing_files"] = len(missing_list) - not_declared_count
 
     t1 = time.time()
     my_stats.update(
