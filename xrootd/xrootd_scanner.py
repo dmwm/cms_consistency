@@ -4,6 +4,7 @@ import subprocess, time, random, gzip
 from part import PartitionedList
 from py3 import to_str
 from stats import Stats
+from xrootd_client import XRootDClient
 
 Version = "2.1"
 
@@ -69,7 +70,7 @@ class RMDir(Task):
             # ignore
             pass
 
-class XRootDClient(Primitive):
+class ____XRootDClient(Primitive):
 
     def __init__(self, server, server_root, is_redirector, root, timeout):
         Primitive.__init__(self, name=f"XRootDClient({root})")
@@ -268,7 +269,7 @@ class Prescanner(Primitive):
             self.Error = None
 
         def run(self):
-            self.Client = XRootDClient(self.Server, self.ServerRoot, self.IsRedirector, self.Root, self.Timeout)
+            self.Client = XRootDClient(self.Server, self.IsRedirector, self.ServerRoot, self.Root, self.Timeout)
             status, self.Error, _, _ = self.Client.ls(self.Root, False, False)
             self.Failed = status != "OK"
             return not self.Failed
