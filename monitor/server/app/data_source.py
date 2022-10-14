@@ -560,6 +560,7 @@ class CCDataSource(DataSource):
             "running": running_comp,
             "comp_status": status_by_comp,
             "missing_stats" : {
+                "error_counts":     None,
                 "detected":         None,
                 "confirmed":        None,
                 "acted_on":         None,
@@ -567,6 +568,7 @@ class CCDataSource(DataSource):
                 "elapsed":          None
             },
             "dark_stats": {
+                "error_counts":     None,
                 "detected":         None,
                 "confirmed":        None,
                 "acted_on":         None,
@@ -574,6 +576,7 @@ class CCDataSource(DataSource):
                 "elapsed":          None
             },
             "empty_dirs_stats": {
+                "error_counts":     None,
                 "detected":         None,
                 "confirmed":        None,
                 "acted_on":         None,
@@ -611,6 +614,7 @@ class CCDataSource(DataSource):
                 if status  == "aborted":
                     missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
                 missing_summary["elapsed"] = missing_stats.get("elapsed")
+                missing_summary["error_counts"] = missing_stats.get("declaration_errors")
 
             if self.EmptyDirSection in stats:
                 ed_summary = summary["empty_dirs_stats"]
@@ -620,5 +624,6 @@ class CCDataSource(DataSource):
                 ed_summary["acted_on"] = ed_stats.get("removed_count")
                 ed_summary["detected"] = ed_stats.get("detected_empty_directories")
                 ed_summary["elapsed"] = ed_stats.get("elapsed")
+                ed_summary["error_counts"] = ed_stats.get("error_counts")
 
         return summary

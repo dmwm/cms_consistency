@@ -138,8 +138,8 @@
                         <td>{{dark_stats["detected"]|none_as_blank}}</td>
                         <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
                         <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
-                        <td>{% if stats["dark_action"] %}
-                                {% set errors = stats["dark_action"].get("declaration_errors") %}
+                        <td>{% if dark_stats["error_counts"] %}
+                                {% set errors = dark_stats["error_counts"] %}
                                 {% if errors %}
                                     {% for error, count in errors.items() %}
                                         {{count}}: {{error}}<br/>
@@ -160,7 +160,15 @@
                         <td>{{ed_stats["detected"]|none_as_blank}}</td>
                         <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
                         <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
-                        <td></td>
+                        <td>{% if ed_stats["error_counts"] %}
+                                {% set errors = ed_stats["error_counts"] %}
+                                {% if errors %}
+                                    {% for error, count in errors.items() %}
+                                        {{count}}: {{error}}<br/>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endif %}
+                        </td>
                         <td class="{{ed_stats['action_status']|none_as_blank}}">{{ed_stats["action_status"]|none_as_blank}}
                         </td>
                     </tr>
