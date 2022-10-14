@@ -48,6 +48,7 @@ class Remover(Primitive):
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
         self.Failed = []            # [(path, error), ...]
+        self.ErrorCounts = {}      # {reduced_error_message: count}
         self.RemovedCount = 0
         self.SubmittedCount = 0
         self.Verbose = verbose
@@ -105,7 +106,13 @@ class Remover(Primitive):
             elif "no such file or directory" in error:
                 pass        # already removed
             else:
+                reduced_error = error
+                if "permission denied" in reduced_error.lower():
+                    reduced_error = "permission denied"
+                while task.Path in reduced_error:
+                    reduced_error = reduced_error.replace(task.Path, "[path]")
                 self.Failed.append((task.Path, error))
+                self.ErrorCounts[reduced_error] = self.FailureCount.get(reduced_error, 0)
         else:
             self.RemovedCount += 1
 
@@ -162,6 +169,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
     failed_count = 0
     removed_count = 0
     error = None
+    error_counts = {}
     
     if recent_runs:
         my_stats["runs_compared"] = [r.Run for r in recent_runs]
@@ -216,11 +224,12 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
                 try:    
                     remover = Remover(client, confirmed, dry_run, verbose=verbose, limit=limit)
                     failed = remover.run()
-                    failed_count = len(failed)
-                    removed_count = remover.RemovedCount
                 except Exception as e:
                     error = f"remover error: {e}"
                     status = "failed"
+                failed_count = len(failed)
+                removed_count = remover.RemovedCount
+                error_counts = remover.ErrorCounts
 
     t1 = time.time()
     my_stats.update(
@@ -232,6 +241,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
         confirmed_empty_directories = confirmed_empty_count,
         failed_count = failed_count,
         removed_count = removed_count,
+        error_counts = {},
         aborted_reason = aborted_reason
     )
 
@@ -314,6 +324,7 @@ my_stats = {
     "confirmed_list": out_filename,
     "aborted_reason": None,
     "error": None,
+    "error_counts": {},
     "runs_compared": None,
     "limit": limit,
     "configuration": {
