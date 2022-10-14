@@ -103,12 +103,12 @@ class Remover(Primitive):
                 if self.Verbose:
                     print("resubmitting after timeout:", task.Path)
                 self.Queue.append(task)
-            elif "no such file or directory" in error:
-                pass        # already removed
             else:
                 reduced_error = error
                 if "permission denied" in reduced_error.lower():
                     reduced_error = "permission denied"
+                elif "no such file or directory" in error.lower():
+                    reduced_error = "already removed"
                 while task.Path in reduced_error:
                     reduced_error = reduced_error.replace(task.Path, "[path]")
                 self.Failed.append((task.Path, error))
