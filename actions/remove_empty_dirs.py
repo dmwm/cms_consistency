@@ -112,7 +112,7 @@ class Remover(Primitive):
                 while task.Path in reduced_error:
                     reduced_error = reduced_error.replace(task.Path, "[path]")
                 self.Failed.append((task.Path, error))
-                self.ErrorCounts[reduced_error] = self.FailureCount.get(reduced_error, 0)
+                self.ErrorCounts[reduced_error] = self.ErrorCounts.get(reduced_error, 0)
         else:
             self.RemovedCount += 1
 
