@@ -241,7 +241,7 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
         confirmed_empty_directories = confirmed_empty_count,
         failed_count = failed_count,
         removed_count = removed_count,
-        error_counts = {},
+        error_counts = error_counts,
         aborted_reason = aborted_reason
     )
 
