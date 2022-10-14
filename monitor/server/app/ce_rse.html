@@ -18,15 +18,18 @@
 			<table class="data">
 			    <tr>
 			        <th rowspan=2>Run</th><th rowspan=2>Start time</th><th rowspan=2>Detection Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>
+                    <th colspan=4>Empty directories</th>
 			    </tr>
 			    <tr>
 			        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
 			        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
+			        <th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
 			    </tr>
 			    {% for t, info in cc_runs %}
                     {% set summary = info["summary"] %}
                     {% set dark_stats = summary["dark_stats"] %}
                     {% set missing_stats = summary["missing_stats"] %}
+                    {% set ed_stats = summary["empty_dirs_stats"] %}
 			        <tr>
 			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
 			            <td>{{info["start_time"]|as_dt}}</td>
@@ -61,6 +64,17 @@
                             {{missing_stats['action_status']|none_as_blank}}
                             {%- if missing_stats['aborted_reason'] %}: {{missing_stats["aborted_reason"]}}
                             {%- endif -%}
+                        </td>
+
+                        <!-- empty directories -->
+			            <td>{% if not ed_stats["detected"] is none %}
+                                {{ed_stats["detected"]}}
+                            {% endif %}
+                        </td>
+			            <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
+			            <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
+                        <td class="{{ed_stats['status']|none_as_blank}}">
+                            {{ed_stats['action_status']|none_as_blank}}
                         </td>
 			        </tr>
 			    {% endfor %}

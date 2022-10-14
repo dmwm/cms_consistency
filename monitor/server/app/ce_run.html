@@ -105,6 +105,7 @@
             {% if cmp3 is not none and summary is not none and cmp3["status"] == "done" %}
                 {% set missing_stats = summary["missing_stats"] %}
                 {% set dark_stats = summary["dark_stats"] %}
+                {% set ed_stats = summary["empty_dirs_stats"] %}
             
                 <h3>Action summary</h3>
                 <table class="data">
@@ -151,6 +152,16 @@
                                 dark_stats['aborted_reason'] -%}
                                 : {{ dark_stats['aborted_reason'] }}
                         {%- endif %}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="field_name">Empty directories</td>
+                        <td>{{ed_stats["detected"]|none_as_blank}}</td>
+                        <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
+                        <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
+                        <td></td>
+                        <td class="{{ed_stats['action_status']|none_as_blank}}">{{ed_stats["action_status"]|none_as_blank}}
                         </td>
                     </tr>
                 </table>

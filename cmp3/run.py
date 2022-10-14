@@ -161,6 +161,9 @@ class CCRun(object):
     def empty_directories(self):
         yield from self.list_lines("ED")
 
+    def confirmed_empty_directories(self):
+        yield from self.list_lines("ED_action")
+
 if __name__ == "__main__":
     import sys
     
