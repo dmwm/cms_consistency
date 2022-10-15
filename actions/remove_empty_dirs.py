@@ -83,6 +83,7 @@ class Remover(Primitive):
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
         self.Failed = []            # [(path, error), ...]
+        self.ErrorCounts = {}
         self.RemovedCount = 0
         self.SubmittedCount = 0
         self.Verbose = verbose
@@ -142,6 +143,7 @@ class Remover(Primitive):
                 while task.Path in reduced_error:
                     reduced_error = reduced_error.replace(task.Path, "[path]")
                 self.Failed.append((task.Path, error))
+                self.ErrorCounts[reduced_error] = self.ErrorCounts.get(reduced_error, 0) + 1
         else:
             self.RemovedCount += 1
 
@@ -197,6 +199,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
     detected_empty_count = None
     failed_count = 0
     removed_count = 0
+    error_counts = {}
     error = None
     
     if recent_runs:
@@ -254,6 +257,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
                     failed = remover.run()
                     failed_count = len(failed)
                     removed_count = remover.RemovedCount
+                    error_counts = remover.ErrorCounts
                 except Exception as e:
                     error = f"remover error: {e}"
                     status = "failed"
@@ -268,7 +272,8 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
         confirmed_empty_directories = confirmed_empty_count,
         failed_count = failed_count,
         removed_count = removed_count,
-        aborted_reason = aborted_reason
+        aborted_reason = aborted_reason,
+        error_counts = error_counts
     )
 
     if stats is not None:
