@@ -620,6 +620,8 @@ class CCDataSource(DataSource):
                 ed_summary = summary["empty_dirs_stats"]
                 ed_stats = stats[self.EmptyDirSection]
                 ed_summary["action_status"] = ed_stats.get("status", "").lower() or None
+                if ed_summary["action_status"] == "done" and ed_stats.get("failed_count"):
+                    ed_summary["action_status"] = "errors"
                 ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
                 ed_summary["acted_on"] = ed_stats.get("removed_count")
                 ed_summary["detected"] = ed_stats.get("detected_empty_directories")
