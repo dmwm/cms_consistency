@@ -411,32 +411,31 @@ python xrootd_scanner.py [options] <rse>
     -s <stats_file>             - write final statistics to JSON file
 """
 
-def rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
-    
-    # convert physical path, which starts with path_prefix to LFN
+def path_to_lfn(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
+    # convert absoulte physical path, which starts with path_prefix to LFN
     # for CMS, path may look like /eos/cms/tier0/store/root/path/file
     # after removing the <path_prefix>, then <remove_prefix> and adding <add_prefix> it will look like /store/root/path/file
     
     assert path.startswith(path_prefix)
 
-    path = "/" + path[len(path_prefix):]
+    lfn = "/" + path[len(path_prefix):]
 
-    if remove_prefix and path.startswith(remove_prefix):
-        path = path[len(remove_prefix):]
+    if remove_prefix and lfn.startswith(remove_prefix):
+        lfn = lfn[len(remove_prefix):]
 
     if add_prefix:
-        path = add_prefix + path
+        lfn = add_prefix + lfn
 
     if path_filter:
-        if not path_filter.search(path):
+        if not path_filter.search(lfn):
             return None
 
     if rewrite_path is not None:
-        if not rewrite_path.search(path):
-            sys.stderr.write(f"Path rewrite pattern for root {root} did not find a match in path {path}\n")
+        if not rewrite_path.search(lfn):
+            sys.stderr.write(f"Path rewrite pattern for root {root} did not find a match in path {lfn}\n")
             sys.exit(1)
-        path = rewrite_path.sub(rewrite_out, path)   
-    return path
+        lfn = rewrite_path.sub(rewrite_out, lfn)   
+    return lfn
 
 def scan_root(rse, config, client, root, my_stats, stats, stats_key,
             recursive_threshold, max_scanners, file_list, dir_list, empty_dirs_file,
@@ -499,14 +498,15 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
         path_prefix += "/"
 
     for t, path in master.paths():
-        path = rewrite(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
+        # here, path is absolute path, which includes site root
+        lfn = path_to_lfn(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
         if path:
             if t == 'f':
-                file_list.add(path)             
+                file_list.add(lfn)             
             elif t == 'd' and dir_list is not None:
-                dir_list.add(path)
+                dir_list.add(lfn)
             elif t == 'e' and empty_dirs_file is not None:
-                empty_dirs_file.write(path)
+                empty_dirs_file.write(path)     # absolute paths
                 empty_dirs_file.write("\n")
 
     if display_progress:
