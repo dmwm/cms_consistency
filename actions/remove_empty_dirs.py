@@ -4,7 +4,7 @@ from pythreader import TaskQueue, Task, Primitive, synchronized
 
 from run import CCRun
 from stats import Stats
-from config import EmptyActionConfiguration
+from config import EmptyActionConfiguration, ScannerConfiguration
 from xrootd import XRootDClient
 
 Version = "1.0"
