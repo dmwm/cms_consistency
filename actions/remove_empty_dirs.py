@@ -36,6 +36,7 @@ class LFNConverter(object):
     def canonic(self, path):
         while path and "//" in path:
             path = path.replace("//", "/")
+        return path
 
     def path_to_lfn(self, path):
         assert path.startswith(self.SiteRoot)
