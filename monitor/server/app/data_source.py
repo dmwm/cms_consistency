@@ -310,6 +310,7 @@ class CCDataSource(DataSource):
     
     DarkSection = "dark_action"
     MissingSection = "missing_action"
+    EmptyDirSection = "empty_action"
 
     def __init__(self, path, cache, new=False):
         DataSource.__init__(self, path, cache)
@@ -559,16 +560,28 @@ class CCDataSource(DataSource):
             "running": running_comp,
             "comp_status": status_by_comp,
             "missing_stats" : {
+                "error_counts":     None,
                 "detected":         None,
                 "confirmed":        None,
                 "acted_on":         None,
-                "action_status":    None
+                "action_status":    None,
+                "elapsed":          None
             },
             "dark_stats": {
+                "error_counts":     None,
                 "detected":         None,
                 "confirmed":        None,
                 "acted_on":         None,
-                "action_status":    None
+                "action_status":    None,
+                "elapsed":          None
+            },
+            "empty_dirs_stats": {
+                "error_counts":     None,
+                "detected":         None,
+                "confirmed":        None,
+                "acted_on":         None,
+                "action_status":    None,
+                "elapsed":          None
             }
         }
         
@@ -590,6 +603,7 @@ class CCDataSource(DataSource):
                 status = dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
                 if status == "aborted":
                     dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
+                dark_summary["elapsed"] = dark_stats.get("elapsed")
                 
             if self.MissingSection in stats:
                 missing_summary = summary["missing_stats"]
@@ -599,4 +613,17 @@ class CCDataSource(DataSource):
                 missing_summary["acted_on"] = missing_stats.get("declared_missing_files")
                 if status  == "aborted":
                     missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
+                missing_summary["elapsed"] = missing_stats.get("elapsed")
+                missing_summary["error_counts"] = missing_stats.get("declaration_errors")
+
+            if self.EmptyDirSection in stats:
+                ed_summary = summary["empty_dirs_stats"]
+                ed_stats = stats[self.EmptyDirSection]
+                ed_summary["action_status"] = ed_stats.get("status", "").lower() or None
+                ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
+                ed_summary["acted_on"] = ed_stats.get("removed_count")
+                ed_summary["detected"] = ed_stats.get("detected_empty_directories")
+                ed_summary["elapsed"] = ed_stats.get("elapsed")
+                ed_summary["error_counts"] = ed_stats.get("error_counts")
+
         return summary
