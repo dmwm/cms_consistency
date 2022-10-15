@@ -67,8 +67,10 @@ class CEHandler(WPHandler):
     def attention(self, request, relpath, **args):
         self.redirect("./index")
 
-    def index(self, request, relpath, sort="rse", **args):
+    def index(self, request, relpath, view="attention", sort=None, **args):
         data_source = self.CCDataSource
+
+        view = view or sort     # for backward compatibility
 
         stats = data_source.latest_stats_per_rse()
         summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
@@ -108,28 +110,28 @@ class CEHandler(WPHandler):
                 summary["order"] = 5
                 summary["attention"] = "overdue"
 
-            if summary["order"] is not None:
+            if view == "attention" and summary["order"] is not None:
                 problems.append(summary)
             else:
                 the_rest.append(summary)
 
         summaries = []
+
         if problems:
-            summaries.append("attention")
             summaries += sorted(problems, key=lambda s: (s["order"], s.get("start_time") or -1, s["rse"]))
 
         if the_rest:
-            if sort == "ce_run":
+            if view == "ce_run":
                 the_rest = sorted(the_rest, key=lambda s: (s.get("start_time") or -1, s["rse"]))
-            elif sort == "-ce_run":
+            elif view == "-ce_run":
                 the_rest = sorted(the_rest, key=lambda s: (s.get("start_time") or -1, s["rse"]), reverse=True)
-            else:
+            else:   # view == "rse"
                 the_rest = sorted(the_rest, key=lambda s: s["rse"])
             if problems:
                 summaries.append("the_rest")
             summaries += the_rest
 
-        return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
+        return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True, view=view)
     
     def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"
