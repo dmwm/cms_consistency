@@ -279,9 +279,9 @@ class CEHandler(WPHandler):
                 ("scanner", "Site scanner"),
                 ("dbdump_after", "DB dump after scan"),
                 ("cmp3", "Comparison"),
-                ("cmp2dark", "Dark confirmation"),
-                (self.DarkSection, "Dark action"),
-                (self.MissingSection, "Missing action")
+                (self.DarkSection, "Dark files declaration"),
+                (self.MissingSection, "Missing files declaration")
+                ("empty_action", "Empty directory removal")
             ]
             if stats.get(part)
         ]
