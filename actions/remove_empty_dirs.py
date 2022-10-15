@@ -139,10 +139,6 @@ class Remover(Primitive):
                 self.Queue.append(task)
             else:
                 reduced_error = error
-                if "permission denied" in reduced_error.lower():
-                    reduced_error = "permission denied"
-                elif "no such file or directory" in error.lower():
-                    reduced_error = "already removed"
                 while task.Path in reduced_error:
                     reduced_error = reduced_error.replace(task.Path, "[path]")
                 self.Failed.append((task.Path, error))
