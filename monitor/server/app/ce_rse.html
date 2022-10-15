@@ -60,7 +60,7 @@
                         </td>
 			            <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
 			            <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
-                        <td class="{{info['missing_status']|none_as_blank}}">
+                        <td class="{{missing_stats['action_status']|none_as_blank}}">
                             {{missing_stats['action_status']|none_as_blank}}
                             {%- if missing_stats['aborted_reason'] %}: {{missing_stats["aborted_reason"]}}
                             {%- endif -%}
@@ -73,7 +73,7 @@
                         </td>
 			            <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
 			            <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
-                        <td class="{{ed_stats['status']|none_as_blank}}">
+                        <td class="{{ed_stats['action_status']|none_as_blank}}">
                             {{ed_stats['action_status']|none_as_blank}}
                         </td>
 			        </tr>
