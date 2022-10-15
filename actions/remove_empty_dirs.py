@@ -26,6 +26,40 @@ python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
     -n <number>                 - min number of runs to use to produce the confirmed empty directory list, default = 3
 """
 
+class LFNConverter(object):
+    
+    def __init__(self, site_root, remove_prefix, add_prefix):
+        self.SiteRoot = site_root
+        self.RemovePrefix = remove_prefix
+        self.AddPrefix = add_prefix
+
+    def canonic(self, path):
+        while path and "//" in path:
+            path = path.replace("//", "/")
+
+    def path_to_lfn(self, path):
+        assert path.startswith(self.SiteRoot)
+        path = self.canonic("/" + path[len(self.SiteRoot):])
+        if self.RemovePrefix and path.startswith(self.RemovePrefix):
+            path = self.canonic("/" + path[len(self.RemovePrefix):])
+        if self.AddPrefix:
+            path = self.canonic(self.AddPrefix + "/" + path)
+        return path
+
+    def lfn_to_path(self, lfn):
+        if self.AddPrefix:
+            assert lfn.startswith(self.AddPrefix)
+            lfn = lfn[len(self.AddPrefix):]
+        path = lfn
+        if self.RemovePrefix:
+            path = self.RemovePrefix + path
+        return self.canonic(self.SiteRoot + "/" + path)
+        
+    def lfn_or_path_to_path(self, lfn_or_path):
+        if lfn_or_path.startswith(self.SiteRoot):
+            return lfn_or_path         # already a path
+        return self.lfn_to_path(lfn_or_path)
+
 class RemoveDirectoryTask(Task):
     
     RETRIES = 3
@@ -48,7 +82,6 @@ class Remover(Primitive):
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
         self.Failed = []            # [(path, error), ...]
-        self.ErrorCounts = {}      # {reduced_error_message: count}
         self.RemovedCount = 0
         self.SubmittedCount = 0
         self.Verbose = verbose
@@ -106,13 +139,7 @@ class Remover(Primitive):
             elif "no such file or directory" in error:
                 pass        # already removed
             else:
-                reduced_error = error
-                if "permission denied" in reduced_error.lower():
-                    reduced_error = "permission denied"
-                while task.Path in reduced_error:
-                    reduced_error = reduced_error.replace(task.Path, "[path]")
                 self.Failed.append((task.Path, error))
-                self.ErrorCounts[reduced_error] = self.ErrorCounts.get(reduced_error, 0) + 1
         else:
             self.RemovedCount += 1
 
@@ -129,14 +156,14 @@ def parents(path):
         path = path.rsplit('/', 1)[0]
         yield path
 
-def remove_from_file(file_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit):
+def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
     paths = [l.strip() for l in open(file_path, "r")]
     failed = Remover(client, paths, verbose=verbose, limit=limit).run()
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
 
-def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit):
+def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
     
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
@@ -169,7 +196,6 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
     failed_count = 0
     removed_count = 0
     error = None
-    error_counts = {}
     
     if recent_runs:
         my_stats["runs_compared"] = [r.Run for r in recent_runs]
@@ -198,11 +224,11 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
         else:
             # compute confirmed list and make sure the list would contain only removable directories
             
-            confirmed = set(recent_runs[0].empty_directories())
+            confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
             for run in recent_runs[1:]:
                 if not confirmed:
                     break
-                run_set = set(run.empty_directories())
+                run_set = set(lfn_converter.lfn_or_path_to_path(path) for path in run.empty_directories())
                 new_confirmed = confirmed & run_set
                 unconfirmed = confirmed - run_set
                 for path in unconfirmed:
@@ -224,12 +250,11 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
                 try:    
                     remover = Remover(client, confirmed, dry_run, verbose=verbose, limit=limit)
                     failed = remover.run()
+                    failed_count = len(failed)
+                    removed_count = remover.RemovedCount
                 except Exception as e:
                     error = f"remover error: {e}"
                     status = "failed"
-                failed_count = len(failed)
-                removed_count = remover.RemovedCount
-                error_counts = remover.ErrorCounts
 
     t1 = time.time()
     my_stats.update(
@@ -241,7 +266,6 @@ def empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_s
         confirmed_empty_directories = confirmed_empty_count,
         failed_count = failed_count,
         removed_count = removed_count,
-        error_counts = error_counts,
         aborted_reason = aborted_reason
     )
 
@@ -273,9 +297,8 @@ if out_path:
 
 storage_path, rse = args
 
-config = {}
-if "-c" in opts:
-    config = EmptyActionConfiguration(rse, opts["-c"])
+config = EmptyActionConfiguration(rse, opts["-c"])
+scanner_config = ScannerConfiguration(rse, opts["-c"])
 
 window = int(opts.get("-w", config.get("confirmation_window", 35)))
 min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
@@ -324,7 +347,6 @@ my_stats = {
     "confirmed_list": out_filename,
     "aborted_reason": None,
     "error": None,
-    "error_counts": {},
     "runs_compared": None,
     "limit": limit,
     "configuration": {
@@ -340,14 +362,20 @@ if stats is not None:
 
 server = config.Server
 server_root = config.ServerRoot
+
+add_prefix = scanner_config.AddPrefix
+remove_prefix = scanner_config.RemovePrefix
+
+lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
+
 timeout = config.ScannerTimeout
 is_redirector = config.ServerIsRedirector
 client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
 if os.path.isfile(storage_path):
-    remove_from_file(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit)
+    remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
     run_stats = my_stats
 else:
-    run_stats = empty_action(storage_path, rse, out, stats, stats_key, dry_run, client, my_stats, verbose, limit)
+    run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
