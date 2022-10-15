@@ -86,15 +86,15 @@ class CEHandler(WPHandler):
 
             if summary.get("failed") or summary.get("detection_status") == "failed":
                 summary["attention"] = "failed"
-                summary["order"] = 1
+                summary["order"] = 10
             elif summary.get("detection_status") == "started" and summary["start_time"] < 3*24*3600:
-                summary["order"] = 2
+                summary["order"] = 20
                 summary["attention"] = "started"
             elif summary.get("detection_status") == "done":
-                for part in ("missing_stats", "dark_stats"):
-                    if summary[part].get("action_status") == "failed":
-                        summary["order"] = 3
-                        summary["attention"] = "failed"
+                for part in ("missing_stats", "dark_stats", "empty_dirs_stats"):
+                    if summary[part].get("action_status") in ("failed", "errors"):
+                        summary["order"] = 30
+                        summary["attention"] = summary[part].get("action_status")
                         break
                 if summary["order"] is None:
                     for part in ("missing_stats", "dark_stats"):
@@ -102,7 +102,7 @@ class CEHandler(WPHandler):
                                         ("too many" in summary[part].get("aborted_reason", "").lower() 
                                             or "latest run too old" in summary[part].get("aborted_reason", "").lower() ) \
                                 or summary[part].get("action_status") == "started" and summary["start_time"] < 3*24*3600:
-                            summary["order"] = 4
+                            summary["order"] = 40
                             summary["attention"] = "aborted"
                             break
 
