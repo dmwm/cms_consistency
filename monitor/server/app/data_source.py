@@ -596,7 +596,7 @@ class CCDataSource(DataSource):
             }
         }
         
-        if "scanner" in stats:
+        if "scanner" in stats and stats["scanner"].get("status") == "done":
             roots = stats["scanner"].get("roots")
             if roots is not None:
                 summary["empty_dirs_stats"]["detected"] = sum(r.get("empty_directories", 0) for r in roots)
