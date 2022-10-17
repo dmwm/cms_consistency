@@ -10,21 +10,11 @@
 
 <table class="placement">
     <tr>
-        <td colspan=3 style="padding-top: 30px"><h1>Consistency Enforcement</h1>
+        <td style="padding-top: 30px"><h1>Consistency Enforcement</h1>
         </td>
     </tr>
-    <tr>
-		<td style="padding:1px 10px">
-			<div id="dark_chart"></div>
-		</td>
-		<td style="padding:1px 10px">
-			<div id="missing_chart"></div>
-		</td>
-		<td style="padding:1px 10px">
-			<div id="empty_chart"></div>
-		</td>
 	<tr>
-		<td colspan=2>
+		<td>
 			<table class="data">
 			    <tr>
 			        <th rowspan=2>Run</th><th rowspan=2>Start time</th><th rowspan=2>Detection Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>
@@ -92,6 +82,21 @@
 			</table>
 		</td>
 	</tr>
+        <tr>
+    		<td style="padding:1px 10px">
+    			<div id="dark_chart"></div>
+    		</td>
+        <tr>
+        </tr>
+    		<td style="padding:1px 10px">
+    			<div id="missing_chart"></div>
+    		</td>
+        <tr>
+        </tr>
+    		<td style="padding:1px 10px">
+    			<div id="empty_chart"></div>
+    		</td>
+        </tr>
 
 </table>
 
@@ -139,9 +144,9 @@
 		var empty_options = {
                   title: 'Statistics by run',
                   legend: { position: "top" },
-                  width: 500,
-                  height: 300,
-				  colors: ["#AFA", "8F8", "4F4"],
+                  width: 600,
+                  height: 200,
+				  colors: ["#4F4", "3A3", "282"],
                   hAxis: {
                       format: "M/d/yy",
                       title: "Date"
