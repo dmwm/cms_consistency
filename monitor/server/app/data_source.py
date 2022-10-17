@@ -640,9 +640,9 @@ class CCDataSource(DataSource):
                     ed_summary["action_status"] = "errors"
                 if ed_summary["action_status"] == "done":
                     ed_summary["detected"] = ed_stats.get("detected_empty_directories")
-                ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
-                ed_summary["acted_on"] = ed_stats.get("removed_count")
-                ed_summary["elapsed"] = ed_stats.get("elapsed")
-                ed_summary["error_counts"] = ed_stats.get("error_counts")
+                    ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
+                    ed_summary["acted_on"] = ed_stats.get("removed_count")
+                    ed_summary["elapsed"] = ed_stats.get("elapsed")
+                    ed_summary["error_counts"] = ed_stats.get("error_counts")
 
         return summary
