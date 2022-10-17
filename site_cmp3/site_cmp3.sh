@@ -190,7 +190,7 @@ $python actions/declare_dark.py    -a root -o ${d_action_list} -c ${config_file}
 
 ed_action_list=${out}/${RSE}_${now}_ED_action.list
 ed_action_errors=${out}/${RSE}_${now}_ED_action.errors
-$python actions/remove_empty_dirs.py -o $ed_action_list -s $stats -c ${config_file} -L 1000 $out $RSE 2> $ed_action_errors
+$python actions/remove_empty_dirs.py -o $ed_action_list -s $stats -c ${config_file} -L 10000 $out $RSE 2> $ed_action_errors
 
 end_time=`date -u +%s`
 

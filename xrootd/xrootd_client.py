@@ -45,8 +45,8 @@ class XRootDClient(Primitive):
         # UNIX FS ls -l style
         r"""
                 (?P<mask>[drwx-]{10})\s+
-                \w+\s+
-                \w+\s+
+                \S+\s+
+                \S+\s+
                 (?P<size>\d+)\s+
                 \d{4}-\d{2}-\d{2}\s+
                 \d{2}:\d{2}:\d{2}\s+
