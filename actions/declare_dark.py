@@ -82,7 +82,10 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
                 confirmed &= set(run.dark_files())
 
             confirmed_dark_count = len(confirmed)
-            ratio = confirmed_dark_count/num_scanned
+            if num_scanned > 0:
+                ratio = confirmed_dark_count/num_scanned
+            else:
+                ratio = 0.0
             print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
             my_stats["confirmed_dark_files"] = confirmed_dark_count
         
