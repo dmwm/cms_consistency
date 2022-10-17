@@ -124,12 +124,27 @@
 			{% endfor %}
 		];
 	
-		var options = {
+		var dark_options = {
                   title: 'Statistics by run',
                   legend: { position: "top" },
                   width: 500,
                   height: 300,
 				  colors: ["#888", "444", "222", "FAA", "F88"],
+                  hAxis: {
+                      format: "M/d/yy",
+                      title: "Date"
+                  },
+                  vAxis: {
+                      logScale: true,
+                      title: "Number of files"
+                  }
+		        };
+		var missing_options = {
+                  title: 'Statistics by run',
+                  legend: { position: "top" },
+                  width: 500,
+                  height: 300,
+				  colors: ["FAA", "F88"],
                   hAxis: {
                       format: "M/d/yy",
                       title: "Date"
@@ -155,9 +170,9 @@
         missingTable.addRows(missing_data);
         
 		var dark_chart = new google.visualization.LineChart(document.getElementById('dark_chart'));
-		dark_chart.draw(darkTable, options);
+		dark_chart.draw(darkTable, dark_options);
 		var missing_chart = new google.visualization.LineChart(document.getElementById('missing_chart'));
-		missing_chart.draw(missingTable, options);
+		missing_chart.draw(missingTable, missing_options);
 	}
 
     function drawCharts()
