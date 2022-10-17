@@ -13,6 +13,16 @@
         <td colspan=3 style="padding-top: 30px"><h1>Consistency Enforcement</h1>
         </td>
     </tr>
+    <tr>
+		<td style="padding:1px 50px">
+			<div id="dark_chart"></div>
+		</td>
+		<td style="padding:1px 50px">
+			<div id="missing_chart"></div>
+		</td>
+		<td style="padding:1px 50px">
+			<div id="empty_chart"></div>
+		</td>
 	<tr>
 		<td colspan=2>
 			<table class="data">
@@ -81,9 +91,6 @@
     
 			</table>
 		</td>
-		<td style="padding:1px 50px">
-			<div id="cc_chart"></div>
-		</td>
 	</tr>
 
 </table>
@@ -94,7 +101,7 @@
 	function drawCCChart()
 	{
 		// runs is in reversed order
-		var data = [
+		var dark_data = [
 			{% for t, info in cc_runs|reverse %}
             {{',' if not loop.first }}
                 [	    
@@ -102,6 +109,15 @@
                     {{info["ndark"] if info["ndark"] is not none else "null"}},
                     {{info["confirmed_dark"] if info["confirmed_dark"] is not none else "null"}},
                     {{info["acted_dark"] if info["acted_dark"] is not none else "null"}},
+                ]
+			{% endfor %}
+		];
+	
+		var missing_data = [
+			{% for t, info in cc_runs|reverse %}
+            {{',' if not loop.first }}
+                [	    
+                    new Date({{info["start_time_milliseconds"]}}), 
                     {{info["nmissing"] if info["nmissing"] is not none else "null"}},
                     {{info["acted_missing"] if info["acted_missing"] is not none else "null"}}
                 ]
@@ -111,7 +127,7 @@
 		var options = {
                   title: 'Statistics by run',
                   legend: { position: "top" },
-                  width: 400,
+                  width: 500,
                   height: 300,
 				  colors: ["#888", "444", "222", "FAA", "F88"],
                   hAxis: {
@@ -124,17 +140,23 @@
                   }
 		        };
                 
-        var dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('date', 'Date');
-        dataTable.addColumn('number', 'Detected dark');
-        dataTable.addColumn('number', 'Confirmed dark');
-        dataTable.addColumn('number', 'Acted dark');
-        dataTable.addColumn('number', 'Detected missing');
-        dataTable.addColumn('number', 'Acted missing');
-        dataTable.addRows(data);
+        var darkTable = new google.visualization.DataTable();
+        darkTable.addColumn('date', 'Date');
+        darkTable.addColumn('number', 'Detected dark');
+        darkTable.addColumn('number', 'Confirmed dark');
+        darkTable.addColumn('number', 'Acted dark');
+        darkTable.addRows(dark_data);
+
+
+        var missingTable = new google.visualization.DataTable();
+        missingTable.addColumn('number', 'Detected missing');
+        missingTable.addColumn('number', 'Acted missing');
+        missingTable.addRows(missing_data);
         
-		var chart = new google.visualization.LineChart(document.getElementById('cc_chart'));
-		chart.draw(dataTable, options);
+		var dark_chart = new google.visualization.LineChart(document.getElementById('dark_chart'));
+		dark_chart.draw(darkTable, options);
+		var missing_chart = new google.visualization.LineChart(document.getElementById('missing_chart'));
+		missing_chart.draw(missingTable, options);
 	}
 
     function drawCharts()
