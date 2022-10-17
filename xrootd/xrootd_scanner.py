@@ -506,7 +506,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
             elif t == 'd' and dir_list is not None:
                 dir_list.add(lfn)
             elif t == 'e' and empty_dirs_file is not None:
-                empty_dirs_file.write(path)     # absolute paths
+                empty_dirs_file.write(lfn)
                 empty_dirs_file.write("\n")
 
     if display_progress:

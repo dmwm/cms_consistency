@@ -468,6 +468,17 @@ class CCDataSource(DataSource):
     def get_missing(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "M", limit)
         
+    def empty_dirs_count(self, rse, run):
+        stats = self.get_stats(rse, run)[0]
+        count = None
+        if self.EmptyDirSection in stats:
+            count = stats[self.DarkSection].get("detected_empty_directories")
+        if count is None and "scanner" in stats:
+            roots = stats["scanner"].get("roots")
+            if roots is not None:
+                count = sum(r.get("empty_directories", 0) for r in roots)
+        return count
+
     def ___last_stats(self, rse):
         last_run = self.list_runs(rse, 1)
         if last_run:
@@ -548,7 +559,7 @@ class CCDataSource(DataSource):
         failed_comp = detection_failed or action_failed
         running_comp = detection_running or action_running
         status_by_comp.update(action_status_by_comp)
-
+        
         summary = {
             "status": status,
             "detection_status": detection_status,
@@ -585,6 +596,11 @@ class CCDataSource(DataSource):
             }
         }
         
+        if "scanner" in stats:
+            roots = stats["scanner"].get("roots")
+            if roots is not None:
+                summary["empty_dirs_stats"]["detected"] = sum(r.get("empty_directories", 0) for r in roots)
+
         if "error" in stats:
             summary["error"] = stats["error"]
         
@@ -622,9 +638,9 @@ class CCDataSource(DataSource):
                 ed_summary["action_status"] = ed_stats.get("status", "").lower() or None
                 if ed_summary["action_status"] == "done" and ed_stats.get("failed_count"):
                     ed_summary["action_status"] = "errors"
+                ed_summary["detected"] = ed_stats.get("detected_empty_directories")
                 ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
                 ed_summary["acted_on"] = ed_stats.get("removed_count")
-                ed_summary["detected"] = ed_stats.get("detected_empty_directories")
                 ed_summary["elapsed"] = ed_stats.get("elapsed")
                 ed_summary["error_counts"] = ed_stats.get("error_counts")
 
