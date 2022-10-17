@@ -97,10 +97,14 @@
 		var data = [
 			{% for t, info in cc_runs|reverse %}
             {{',' if not loop.first }}
-            [	    new Date({{info["start_time_milliseconds"]}}), 
-					{{info["ndark"] if info["ndark"] is not none else "null"}},
-					{{info["nmissing"] if info["nmissing"] is not none else "null"}}
-				]
+                [	    
+                    new Date({{info["start_time_milliseconds"]}}), 
+                    {{info["ndark"] if info["ndark"] is not none else "null"}},
+                    {{info["confirmed_dark"] if info["confirmed_dark"] is not none else "null"}},
+                    {{info["acted_dark"] if info["acted_dark"] is not none else "null"}},
+                    {{info["nmissing"] if info["nmissing"] is not none else "null"}},
+                    {{info["acted_missing"] if info["acted_missing"] is not none else "null"}}
+                ]
 			{% endfor %}
 		];
 	
@@ -123,7 +127,10 @@
         var dataTable = new google.visualization.DataTable();
         dataTable.addColumn('date', 'Date');
         dataTable.addColumn('number', 'Detected dark');
+        dataTable.addColumn('number', 'Confirmed dark');
+        dataTable.addColumn('number', 'Acted dark');
         dataTable.addColumn('number', 'Detected missing');
+        dataTable.addColumn('number', 'Acted missing');
         dataTable.addRows(data);
         
 		var chart = new google.visualization.LineChart(document.getElementById('cc_chart'));
