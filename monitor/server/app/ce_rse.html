@@ -123,7 +123,35 @@
                 ]
 			{% endfor %}
 		];
+        
+		var empty_data = [
+			{% for t, info in cc_runs|reverse %}
+            {{',' if not loop.first }}
+                [	    
+                    new Date({{info["start_time_milliseconds"]}}), 
+                    {{info["detected_empty"] if info["detected_empty"] is not none else "null"}},
+                    {{info["confirmed_empty"] if info["confirmed_empty"] is not none else "null"}},
+                    {{info["acted_empty"] if info["acted_empty"] is not none else "null"}}
+                ]
+			{% endfor %}
+		];
 	
+		var empty_options = {
+                  title: 'Statistics by run',
+                  legend: { position: "top" },
+                  width: 500,
+                  height: 300,
+				  colors: ["#AFA", "8F8", "4F4"],
+                  hAxis: {
+                      format: "M/d/yy",
+                      title: "Date"
+                  },
+                  vAxis: {
+                      logScale: true,
+                      title: "Number of files"
+                  }
+		        };
+
 		var dark_options = {
                   title: 'Statistics by run',
                   legend: { position: "top" },
@@ -139,6 +167,7 @@
                       title: "Number of files"
                   }
 		        };
+
 		var missing_options = {
                   title: 'Statistics by run',
                   legend: { position: "top" },
@@ -161,7 +190,13 @@
         darkTable.addColumn('number', 'Confirmed dark');
         darkTable.addColumn('number', 'Acted dark');
         darkTable.addRows(dark_data);
-
+        
+        var emptyTable = new google.visualization.DataTable();
+        emptyTable.addColumn('date', 'Date');
+        emptyTable.addColumn('number', 'Detected empty');
+        emptyTable.addColumn('number', 'Confirmed empty');
+        emptyTable.addColumn('number', 'Acted empty');
+        emptyTable.addRows(empty_data);
 
         var missingTable = new google.visualization.DataTable();
         missingTable.addColumn('date', 'Date');
@@ -173,6 +208,8 @@
 		dark_chart.draw(darkTable, dark_options);
 		var missing_chart = new google.visualization.LineChart(document.getElementById('missing_chart'));
 		missing_chart.draw(missingTable, missing_options);
+		var empty_chart = new google.visualization.LineChart(document.getElementById('empty_chart'));
+		empty_chart.draw(emptyTable, empty_options);
 	}
 
     function drawCharts()

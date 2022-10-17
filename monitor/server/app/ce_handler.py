@@ -176,6 +176,11 @@ class CEHandler(WPHandler):
                     "acted_missing":summary["missing_stats"]["acted_on"], 
                     "missing_status":summary["missing_stats"]["action_status"],
                     "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
+
+                    "detected_empty":summary.get("empty_dirs_stats", {}).get("detected"),
+                    "confirmed_empty":summary.get("empty_dirs_stats", {}).get("confirmed"),
+                    "acted_empty":summary.get("empty_dirs_stats", {}).get("acted_on"),
+
                     "start_time_milliseconds":int(start_time*1000),
                     "prev_run":         prev_run,
                     "old_missing":      missing_old,
