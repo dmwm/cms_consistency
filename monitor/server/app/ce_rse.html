@@ -156,15 +156,14 @@
                         vAxis: {
                             logScale: true,
                             title: "Number of files"
-                        },
-                        pointSize: 5
+                        }
                 }
 
         var empty_options = Object.assign({}, common_options, {
             title: 'Empty directory counts',
             colors: ["#4DA", "1C1", "281"],
             series: {
-                2: {    pointShape: "circle", lineWidth: 0 }
+                2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
             }
 		});
 
@@ -172,7 +171,7 @@
             title: 'Dark file counts',
             colors: ["#888", "444", "222"],
             series: {
-                2: {    pointShape: "circle", lineWidth: 0 }
+                2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
             }
         });
 
@@ -180,7 +179,7 @@
             title: 'Missing file counts',
             colors: ["FAA", "D44"],
             series: {
-                1: {    pointShape: "circle", lineWidth: 0 }
+                1: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
             }
         });
                 
