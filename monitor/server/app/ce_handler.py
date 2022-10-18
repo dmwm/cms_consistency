@@ -107,7 +107,7 @@ class CEHandler(WPHandler):
                             break
 
             if summary["order"] is None and summary["start_time"] < now - 14*24*3600:          # older than 2 weeks
-                summary["order"] = 5
+                summary["order"] = 50
                 summary["attention"] = "overdue"
 
             if view == "attention" and summary["order"] is not None:
@@ -118,7 +118,7 @@ class CEHandler(WPHandler):
         summaries = []
 
         if problems:
-            summaries += sorted(problems, key=lambda s: (s["order"], s.get("start_time") or -1, s["rse"]))
+            summaries += sorted(problems, key=lambda s: (s["order"], -s.get("start_time") or 1, s["rse"]))
 
         if the_rest:
             if view == "ce_run":
