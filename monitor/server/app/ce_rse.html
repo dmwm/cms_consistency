@@ -159,20 +159,29 @@
                         }
                 }
 
-                var empty_options = Object.assign({}, common_options, {
-                          title: 'Empty directory counts',
-        		  colors: ["#4DA", "1C1", "281"]
+        var empty_options = Object.assign({}, common_options, {
+            title: 'Empty directory counts',
+            colors: ["#4DA", "1C1", "281"],
+            series: {
+                2: {    pointShape: "circle" }
+            }
 		});
 
 		var dark_options = Object.assign({}, common_options, {
-                          title: 'Dark file counts',
-        		colors: ["#888", "444", "222", "FAA", "F88"]
-		        });
+            title: 'Dark file counts',
+            colors: ["#888", "444", "222"],
+            series: {
+                2: {    pointShape: "circle" }
+            }
+        });
 
 		var missing_options = Object.assign({}, common_options, {
-                          title: 'Missing file counts',
-        		colors: ["FAA", "D44"]
-		        });
+            title: 'Missing file counts',
+            colors: ["FAA", "D44"],
+            series: {
+                1: {    pointShape: "circle" }
+            }
+        });
                 
         var darkTable = new google.visualization.DataTable();
         darkTable.addColumn('date', 'Date');
