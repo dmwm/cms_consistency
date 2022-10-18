@@ -244,7 +244,14 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
             confirmed_empty_count = len(confirmed)
             print("Confirmed empty directories:", confirmed_empty_count, file=sys.stderr)
-        
+
+            my_stats.update(
+                detected_empty_directories = detected_empty_count,
+                confirmed_empty_directories = confirmed_empty_count
+            )
+            if stats is not None:
+                stats.update_section(stats_key, my_stats)
+
             status = "done"
             if confirmed:
                 if out is not None:

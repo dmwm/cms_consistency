@@ -175,19 +175,26 @@ $python cmp3/diffs.py -u -s ${stats} $out $RSE $now
 # 5. Declare missing and dark replicas
 #    -d turns it into "dry run" mode
 #
-
+echo
+echo Missing files ...
+echo
 missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
-dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
 m_action_list=${out}/${RSE}_${now}_M_action.list
-d_action_list=${out}/${RSE}_${now}_D_action.list
-
 $python actions/declare_missing.py -a root -o ${m_action_list} -c ${config_file} -s $stats $out $scope $RSE 2>> ${missing_action_errors}
+
+echo
+echo Dark files ...
+echo
+d_action_list=${out}/${RSE}_${now}_D_action.list
+dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
 $python actions/declare_dark.py    -a root -o ${d_action_list} -c ${config_file} -s $stats $out        $RSE 2>> ${dark_action_errors}
 
 #
 # 6. Remove empty directories
 #
-
+echo
+echo Empty directories ...
+echo
 ed_action_list=${out}/${RSE}_${now}_ED_action.list
 ed_action_errors=${out}/${RSE}_${now}_ED_action.errors
 $python actions/remove_empty_dirs.py -o $ed_action_list -s $stats -c ${config_file} -L 10000 $out $RSE 2> $ed_action_errors
