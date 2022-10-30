@@ -1,4 +1,4 @@
-import glob, re, sys, os, json
+import glob, re, sys, os, json, os.path, gzip
 from datetime import datetime, timedelta
 
 class CCRun(object):
@@ -21,6 +21,7 @@ class CCRun(object):
         return self.absolute_path(self.Stats["cmp3"]["dark_list_file"])
 
     def confirmed_dark_list_path(self):
+        path = f"{dir_path}/{rse}_{run}_stats.json"
         return self.absolute_path(self.Stats["dark_action"]["confirmed_dark_output"])
 
     def missing_list_path(self):
@@ -31,7 +32,20 @@ class CCRun(object):
         
     def dark_file_count(self):
         return self.Stats["cmp3"]["dark"]
-        
+
+    def empty_directories_collected(self):
+        return not not self.Stats.get("scanner", {}).get("empty_dirs_output_file")
+
+    def empty_directory_count(self):
+        roots = self.Stats.get("scanner", {}).get("roots", [])
+        total = None
+        for root in roots:
+            if not root.get("failed_directories") and not root.get("root_failed"):
+                n = root.get("empty_directories")
+                if n is not None:
+                    total = (total or 0) + n
+        return total
+
     def scanner_num_files(self):
         scanner_stats = self.Stats["scanner"]
         nfiles = scanner_stats.get("total_files") or sum(root_stats.get("files", 0) for root_stats in scanner_stats.get("roots", []))
@@ -121,29 +135,34 @@ class CCRun(object):
         else:
             return CCRun(self.Path, self.RSE, run_ids[my_index-1])
     
-    def file_list(self, path):
-        with open(path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    yield line
+    def list_lines(self, typ):
+        path = f"{self.Path}/{self.RSE}_{self.Run}_{typ}.list"
+        gzipped_path = path + ".gz"
+        if os.path.isfile(path):
+            f = open(path, "r")
+        elif os.path.isfile(gzipped_path):
+            f = gzip.open(gzipped_path, "rt")
+        else:
+            raise RuntimeError("File not found: %s, %s" % (path, gzipped_path))
+        for line in f:
+            line = line.strip()
+            if line:
+                yield line
 
     def missing_files(self):
-        #print("missing file list:", self.missing_list_path())
-        return self.file_list(self.missing_list_path())
+        yield from self.list_lines("M")
 
     def dark_files(self):
-        return self.file_list(self.dark_list_path())
-
+        yield from self.list_lines("D")
+        
     def confirmed_dark_files(self):
-        return self.file_list(self.confirmed_dark_list_path())
+        yield from self.list_lines("D_action")
+        
+    def empty_directories(self):
+        yield from self.list_lines("ED")
 
-    def update_stats(self, _updates=None, **kw):
-        if _updates:
-            self.Stats.update(_updates)
-        self.Stats.update(**kw)
-        with open(self.stats_path(), "w") as j:
-            json.dump(self.Stats, j)
+    def confirmed_empty_directories(self):
+        yield from self.list_lines("ED_action")
 
 if __name__ == "__main__":
     import sys

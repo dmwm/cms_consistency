@@ -5,7 +5,7 @@ from run import CCRun
 from stats import Stats
 from config import ActionConfiguration
 
-Version = "1.2"
+Version = "1.3"
 
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
@@ -22,6 +22,10 @@ python declare_missing.py [options] <storage_path> <scope> <rse>
                                   floating point, default = 0.05
     -m <days>                   - max age for the most recent run, integer, default = 1 day
 """
+
+def chunked(lst, chunk_size=1000):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i+chunk_size]
 
 def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key, account, dry_run):
     
@@ -67,7 +71,10 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
 
         missing_count = my_stats["detected_missing_files"] = my_stats["confirmed_missing_files"] = latest_run.missing_file_count()
 
-        ratio = missing_count/num_scanned
+        if num_scanned == 0:
+            ratio = 0.0
+        else:
+            ratio = missing_count/num_scanned
         print("Missing replicas:", missing_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
 
         status = "done"
@@ -87,9 +94,12 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                 try:
                     from rucio.client.replicaclient import ReplicaClient
                     client = ReplicaClient(account=account)
-                    result = client.declare_bad_file_replicas(missing_list, "detected missing by CC")
-                    not_declared = result.pop(rse, [])      # there shuld be no other RSE in there
-                    assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
+                    not_declared = []
+                    # chunk the list to avoid "request too large" errors
+                    for chunk in chunked(missing_list):
+                        result = client.declare_bad_file_replicas(chunk, "detected missing by CE", force=True)
+                        not_declared += result.pop(rse, [])      # there shuld be no other RSE in there
+                        assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
                 except Exception as e:
                     status = "failed"
                     error = f"Rucio declaration error: {e}"
@@ -103,7 +113,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                         if len(words) == 2:
                             declaration_errors[error] = declaration_errors.get(words[1], 0) + 1
                     my_stats["declaration_errors"] = declaration_errors
-                    my_stats["declared"] = len(missing_list) - not_declared_count
+                    my_stats["declared_missing_files"] = len(missing_list) - not_declared_count
 
     t1 = time.time()
     my_stats.update(

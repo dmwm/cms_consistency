@@ -43,7 +43,7 @@ class CEHandler(WPHandler):
         return self.CCDataSource.status(), "text/plain"
         return "OK" if self.CCDataSource.is_mounted() else ("CE data directory unreachable", 500)
 
-    def index(self, request, relpath, sort="rse", **args):
+    def ___index(self, request, relpath, sort="rse", **args):
         #
         # list available RSEs
         #
@@ -65,7 +65,12 @@ class CEHandler(WPHandler):
         return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
 
     def attention(self, request, relpath, **args):
+        self.redirect("./index")
+
+    def index(self, request, relpath, view="attention", sort=None, **args):
         data_source = self.CCDataSource
+
+        view = view or sort     # for backward compatibility
 
         stats = data_source.latest_stats_per_rse()
         summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
@@ -73,32 +78,60 @@ class CEHandler(WPHandler):
             summary["rse"] = rse
         now = time.time()
         problems = []
+        the_rest = []
         for summary in summaries.values():
 
-            summary["too_old"] = False
-            order = None
+            summary["order"] = None
+            summary["attention"] = ""
 
-            if summary.get("failed"):
-                order = 1
-            else:
-                for part in ("missing_stats", "dark_stats"):
-                    if summary[part].get("action_status") != "done" and \
-                        (summary[part].get("action_status") != "aborted" or "not enough" not in summary[part].get("aborted_reason", "").lower()):
-                            order = 2
+            if summary.get("failed") or summary.get("detection_status") == "failed":
+                summary["attention"] = "failed"
+                summary["order"] = 10
+            elif summary.get("detection_status") == "started" and summary["start_time"] < 3*24*3600:
+                summary["order"] = 20
+                summary["attention"] = "started"
+            elif summary.get("detection_status") == "done":
+                for part in ("missing_stats", "dark_stats", "empty_dirs_stats"):
+                    if summary[part].get("action_status") in ("failed", "errors"):
+                        summary["order"] = 30
+                        summary["attention"] = summary[part].get("action_status")
+                        break
+                if summary["order"] is None:
+                    for part in ("missing_stats", "dark_stats"):
+                        if summary[part].get("action_status") == "aborted" and \
+                                        ("too many" in summary[part].get("aborted_reason", "").lower() 
+                                            or "latest run too old" in summary[part].get("aborted_reason", "").lower() ) \
+                                or summary[part].get("action_status") == "started" and summary["start_time"] < 3*24*3600:
+                            summary["order"] = 40
+                            summary["attention"] = "aborted"
                             break
 
-            if summary["start_time"] < now - 14*24*3600:          # older than 2 weeks
-                order = order or 3
-                summary["too_old"] = True
+            if summary["order"] is None and summary["start_time"] < now - 14*24*3600:          # older than 2 weeks
+                summary["order"] = 50
+                summary["attention"] = "overdue"
 
-            if order is not None:
-                summary["order"] = order
+            if view == "attention" and summary["order"] is not None:
                 problems.append(summary)
+            else:
+                the_rest.append(summary)
+
+        summaries = []
 
         if problems:
-            problems = sorted(problems, key=lambda s: s["order"])
+            summaries += sorted(problems, key=lambda s: (s["order"], -s.get("start_time") or 1, s["rse"]))
 
-        return self.render_to_response("ce_index.html", summaries=problems, sort_options=False)
+        if the_rest:
+            if view == "ce_run":
+                the_rest = sorted(the_rest, key=lambda s: (s.get("start_time") or -1, s["rse"]))
+            elif view == "-ce_run":
+                the_rest = sorted(the_rest, key=lambda s: (s.get("start_time") or -1, s["rse"]), reverse=True)
+            else:   # view == "rse"
+                the_rest = sorted(the_rest, key=lambda s: s["rse"])
+            if problems:
+                summaries.append("the_rest")
+            summaries += the_rest
+
+        return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True, view=view)
     
     def cache_hit_ratio(self, request, relpath, **args):
         return str(self.App.StatsCache.HitRatio), "text/plain"
@@ -143,6 +176,11 @@ class CEHandler(WPHandler):
                     "acted_missing":summary["missing_stats"]["acted_on"], 
                     "missing_status":summary["missing_stats"]["action_status"],
                     "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
+
+                    "detected_empty":summary.get("empty_dirs_stats", {}).get("detected"),
+                    "confirmed_empty":summary.get("empty_dirs_stats", {}).get("confirmed"),
+                    "acted_empty":summary.get("empty_dirs_stats", {}).get("acted_on"),
+
                     "start_time_milliseconds":int(start_time*1000),
                     "prev_run":         prev_run,
                     "old_missing":      missing_old,
@@ -246,9 +284,9 @@ class CEHandler(WPHandler):
                 ("scanner", "Site scanner"),
                 ("dbdump_after", "DB dump after scan"),
                 ("cmp3", "Comparison"),
-                ("cmp2dark", "Dark confirmation"),
-                (self.DarkSection, "Dark action"),
-                (self.MissingSection, "Missing action")
+                (self.DarkSection, "Dark files declaration"),
+                (self.MissingSection, "Missing files declaration"),
+                ("empty_action", "Empty directory removal")
             ]
             if stats.get(part)
         ]
@@ -383,7 +421,7 @@ class CEHandler(WPHandler):
             data[rse] = dict(cc_total=cc_total, cc_success=cc_success,
                 cc_status_history=[
                     {
-                        "cc":       x.get("status"),
+                        "cc":       x.get("detection_status"),
                         "missing":  x.get("missing_stats",{}).get("action_status"),
                         "dark":     x.get("dark_stats",{}).get("action_status")
                     }

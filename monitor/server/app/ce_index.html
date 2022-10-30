@@ -2,21 +2,29 @@
 
 {% block html_head %}
     <script type="text/javascript" src="./static/js/request.js"></script>
+    <style type="text/css">
+        .divisor td, .divisor th {
+            border: 0;
+        }
+    </style>
 {% endblock %}
 
 
+{#
 {% block link_menu %}&nbsp;|&nbsp;<a href="./attention">CE attention</a>
 {% endblock %}
-
+#}
 
 
 {% block content %}
 
 {% if sort_options %}
     <p class="link_menu">
-        <span style="color:gray">sort by:</span>
-        [<a href="?sort=rse">RSE</a>]
-        [CE run: <a href="?sort=-ce_run">latest</a> | <a href="?sort=ce_run">oldest</a>]
+        <span style="color:gray">view:</span>
+        <a href="?view=attention">attention</a> |
+        <a href="?view=rse">by RSE</a> |
+        <a href="?view=-ce_run">latest</a> |
+        <a href="?view=ce_run">oldest</a> 
     </p>
 {% endif %}
 
@@ -126,6 +134,7 @@
     <th rowspan=2>Detecton status</th>
     <th colspan=4>Dark files</th>
     <th colspan=4>Missing files</th>
+    <th colspan=4>Empty directories</th>
 </tr>
 <tr>
     <th>Detected (old)</th>
@@ -137,53 +146,72 @@
     <th>Confirmed</th>
     <th>Acted on</th>
     <th>Action status</th>
+
+    <th>Detected</th>
+    <th>Confirmed</th>
+    <th>Acted on</th>
+    <th>Action status</th>
 </tr>
 
-
 {% for summary in summaries %}
-    {% set rse = summary["rse"] %}
-    
-    <script type="text/javascript">
-        rse_list.push("{{rse}}");
-    </script>
-    
-    <tr>
-        <td><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
-        <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
-            <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
-        </td>
 
+    {% if summary == "the_rest" %}
+        <tr class="divisor"><td colspan=16>&nbsp;<td></tr>
+
+    {% else %}
+
+        {% set rse = summary["rse"] %}
+    
         <script type="text/javascript">
-            init_status_chart("{{rse}}_cc_status");
+            rse_list.push("{{rse}}");
         </script>
+    
+        <tr>
+            <td class="{{summary['attention'] or ''}}"><a href="./show_rse?rse={{rse}}">{{rse}}</a></td>
+            <td id="{{rse}}_cc_status_td" style="vertical-align: middle; text-align: center">
+                <img id="{{rse}}_cc_status_loading" src="./static/images/loading.gif" height=4/>
+            </td>
 
-        <td><a href="./show_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_date}}</a></td>
-        <td class="{{summary['detection_status']}}">{{summary["detection_status"]|none_as_blank}}</td>
+            <script type="text/javascript">
+                init_status_chart("{{rse}}_cc_status");
+            </script>
 
-        {% set dark_stats = summary["dark_stats"] %}
-        <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
-        <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
-        <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
-        <td class="{{summary['dark_stats']['action_status']|none_as_blank}}">
-            {{dark_stats['action_status']|none_as_blank}}
-            {#
-            {%- if dark_stats['action_status'] == "aborted" and 
-                    dark_stats['aborted_reason'] -%}
-                    : {{ dark_stats['aborted_reason'] }}
-            {%- endif %}
-            #}
-        </td>
+            <td><a href="./show_run?rse={{rse}}&run={{summary['run']}}">{{summary['start_time']|as_date}}</a></td>
+            <td class="{{summary['detection_status']}}">{{summary["detection_status"]|none_as_blank}}</td>
 
-        {% set missing_stats = summary["missing_stats"] %}
-        <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
-        <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
-        <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
-        <td class="{{missing_stats['action_status']|none_as_blank}}">
-            {{missing_stats['action_status']|none_as_blank}}
-        </td>
-    </tr>
+            {% set dark_stats = summary["dark_stats"] %}
+            <td id="ndark_{{rse}}_td">{% if not dark_stats["detected"] is none %}{{dark_stats["detected"]}}(...){% endif %}</td>
+            <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
+            <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
+            <td class="{{summary['dark_stats']['action_status']|none_as_blank}}">
+                {{dark_stats['action_status']|none_as_blank}}
+                {#
+                {%- if dark_stats['action_status'] == "aborted" and 
+                        dark_stats['aborted_reason'] -%}
+                        : {{ dark_stats['aborted_reason'] }}
+                {%- endif %}
+                #}
+            </td>
+
+            {% set missing_stats = summary["missing_stats"] %}
+            <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
+            <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
+            <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
+            <td class="{{missing_stats['action_status']|none_as_blank}}">
+                {{missing_stats['action_status']|none_as_blank}}
+            </td>
+
+            {% set ed_stats = summary["empty_dirs_stats"] %}
+            <td>{{ed_stats["detected"]|none_as_blank}}</td>
+            <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
+            <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
+            <td class="{{ed_stats['action_status']|none_as_blank}}">
+                {{ed_stats['action_status']|none_as_blank}}
+            </td>
+        </tr>
+    {% endif %} {# divisor or attention #}
 {% endfor %}
-            
+
 </table>
 
 <script type="text/javascript">
