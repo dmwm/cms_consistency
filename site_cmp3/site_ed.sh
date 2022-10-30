@@ -1,21 +1,21 @@
 #!/bin/sh
 
-version="3.2"
+version="3.2_ed"
 
 echo site_cmp3 version: $version
 
 if [ "$1" == "" ]; then
-	echo 'Usage: site_ce.sh <config file> (<rucio.cfg>|-) <RSE name> <scratch dir> <out dir> [<cert file> [<key file>]]'
+	echo 'Usage: site_ed.sh <config file> <RSE name> <scratch dir> <out dir> [<cert file> [<key file>]]'
 	exit 2
 fi
 
 
 config_file=$1
-RSE=$3
-scratch=$4
-out=$5
-cert=$6
-key=$7
+RSE=$2
+scratch=$3
+out=$4
+cert=$5
+key=$6
 
 echo "config_file:               $config_file"
 echo "RSE:                       $RSE"
