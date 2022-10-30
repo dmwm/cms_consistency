@@ -17,7 +17,9 @@
 		<td>
 			<table class="data">
 			    <tr>
-			        <th rowspan=2>Run</th><th rowspan=2>Start time</th><th rowspan=2>Detection Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>
+			        <th rowspan=2>Run</th><th rowspan=2>Start time</th>
+                    <th>Scan time</th>
+                    <th rowspan=2>Detection Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>
                     <th colspan=4>Empty directories</th>
 			    </tr>
 			    <tr>
@@ -33,6 +35,7 @@
 			        <tr>
 			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
 			            <td>{{info["start_time"]|as_dt}}</td>
+                        <td>{{info["summary"]["scan_time"]|hms}}</td>
 			            <td class="{{summary['detection_status'] or ''}}">
                             {%- if summary["detection_status"] == "started" and "running" in summary -%}
                                 {{summary["running"] or ""}} started

@@ -566,6 +566,7 @@ class CCDataSource(DataSource):
             "action_status": action_status,
             "run":  stats.get("run"),
             "start_time": tstart,
+            "scan_time":    None,
             "end_time": tend,
             "failed": failed_comp,
             "running": running_comp,
@@ -597,6 +598,7 @@ class CCDataSource(DataSource):
         }
         
         if "scanner" in stats and stats["scanner"].get("status") == "done":
+            summary["scan_time"] = stats["scanner"].get("elapsed")
             roots = stats["scanner"].get("roots")
             if roots is not None:
                 summary["empty_dirs_stats"]["detected"] = sum(r.get("empty_directories", 0) for r in roots)
