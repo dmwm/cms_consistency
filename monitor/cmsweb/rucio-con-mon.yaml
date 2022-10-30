@@ -18,8 +18,7 @@ spec:
       containers:
       - 
         image: ivmfnal/rucio_consistency_monitor:latest
-        #image: ivmfnal/rucio_consistency_monitor:1.10.2
-        #image: ivmfnal/rucio_consistency_monitor:1.11.1
+        #image: ivmfnal/rucio_consistency_monitor:2.3.2
         name:  monitor
         livenessProbe:
           httpGet:
