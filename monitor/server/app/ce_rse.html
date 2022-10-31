@@ -106,8 +106,8 @@
 
 <script type="text/javascript">
 			
-	function drawCCChart()
-	{
+    function drawCCChart()
+    {
 		// runs is in reversed order
 		var dark_data = [
 			{% for t, info in cc_runs|reverse %}
@@ -155,10 +155,6 @@
                         hAxis: {
                             format: "M/d/yy",
                             title: "Date"
-                        },
-                        vAxis: {
-                            logScale: true,
-                            title: "Number of files"
                         }
                 }
 
@@ -166,7 +162,7 @@
             title: 'Empty directory counts',
             colors: ["#4DA", "1C1", "281"],
             series: {
-                2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
+                2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 },
             }
             vAxis: {
                 logScale: true,
@@ -178,7 +174,7 @@
             title: 'Dark file counts',
             colors: ["#888", "444", "222"],
             series: {
-                2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
+                2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 },
             }
             vAxis: {
                 logScale: true,
@@ -190,7 +186,7 @@
             title: 'Missing file counts',
             colors: ["FAA", "D44"],
             series: {
-                1: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
+                1: {    pointShape: "circle", lineWidth: 0, pointSize: 5 },
             vAxis: {
                     logScale: true,
                     title: "Number of files"
@@ -218,13 +214,13 @@
         missingTable.addColumn('number', 'Acted missing');
         missingTable.addRows(missing_data);
         
-		var dark_chart = new google.visualization.LineChart(document.getElementById('dark_chart'));
-		dark_chart.draw(darkTable, dark_options);
-		var missing_chart = new google.visualization.LineChart(document.getElementById('missing_chart'));
-		missing_chart.draw(missingTable, missing_options);
-		var empty_chart = new google.visualization.LineChart(document.getElementById('empty_chart'));
-		empty_chart.draw(emptyTable, empty_options);
-	}
+        var dark_chart = new google.visualization.LineChart(document.getElementById('dark_chart'));
+        dark_chart.draw(darkTable, dark_options);
+        var missing_chart = new google.visualization.LineChart(document.getElementById('missing_chart'));
+        missing_chart.draw(missingTable, missing_options);
+        var empty_chart = new google.visualization.LineChart(document.getElementById('empty_chart'));
+        empty_chart.draw(emptyTable, empty_options);
+    }
 
     function drawCharts()
     {
