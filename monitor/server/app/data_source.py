@@ -634,18 +634,18 @@ class CCDataSource(DataSource):
                 missing_summary["elapsed"] = missing_stats.get("elapsed")
                 missing_summary["error_counts"] = missing_stats.get("declaration_errors")
 
-            if self.EmptyDirSection in stats:
-                ed_summary = summary["empty_dirs_stats"]
-                ed_stats = stats[self.EmptyDirSection]
-                ed_summary["action_status"] = ed_stats.get("status", "").lower() or None
-                ed_summary["error_counts"] = ed_stats.get("error_counts")
-                if ed_summary["action_status"] == "done":
-                    ed_summary["detected"] = ed_stats.get("detected_empty_directories")
-                    confirmed = ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
-                    ed_summary["elapsed"] = ed_stats.get("elapsed")
-                    acted_on = ed_summary["acted_on"] = min(ed_stats.get("confirmed_empty_directories", 0), ed_stats.get("limit", 0))
-                    failed = ed_stats.get("failed_count", 0)
-                    if confirmed and failed > (acted_on or 0)/2:
-                        ed_summary["action_status"] = "errors"
+        if self.EmptyDirSection in stats:
+            ed_summary = summary["empty_dirs_stats"]
+            ed_stats = stats[self.EmptyDirSection]
+            ed_summary["action_status"] = ed_stats.get("status", "").lower() or None
+            ed_summary["error_counts"] = ed_stats.get("error_counts")
+            if ed_summary["action_status"] == "done":
+                ed_summary["detected"] = ed_stats.get("detected_empty_directories")
+                confirmed = ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
+                ed_summary["elapsed"] = ed_stats.get("elapsed")
+                acted_on = ed_summary["acted_on"] = min(ed_stats.get("confirmed_empty_directories", 0), ed_stats.get("limit", 0))
+                failed = ed_stats.get("failed_count", 0)
+                if confirmed and failed > (acted_on or 0)/2:
+                    ed_summary["action_status"] = "errors"
 
         return summary
