@@ -13,30 +13,30 @@
         <td style="padding-top: 30px"><h1>Consistency Enforcement</h1>
         </td>
     </tr>
-	<tr>
-		<td>
-			<table class="data">
-			    <tr>
-			        <th rowspan=2>Run</th><th rowspan=2>Start time</th>
-                    <th>Scan time</th>
+        <tr>
+                <td>
+                <table class="data">
+                    <tr>
+                        <th rowspan=2>Run</th><th rowspan=2>Start time</th>
+                    <th rowspan=2>Scan time</th>
                     <th rowspan=2>Detection Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>
                     <th colspan=4>Empty directories</th>
-			    </tr>
-			    <tr>
-			        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
-			        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
-			        <th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
-			    </tr>
-			    {% for t, info in cc_runs %}
+                    </tr>
+                    <tr>
+                        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
+                        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
+                        <th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
+                    </tr>
+                    {% for t, info in cc_runs %}
                     {% set summary = info["summary"] %}
                     {% set dark_stats = summary["dark_stats"] %}
                     {% set missing_stats = summary["missing_stats"] %}
                     {% set ed_stats = summary["empty_dirs_stats"] %}
-			        <tr>
-			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
-			            <td>{{info["start_time"]|as_dt}}</td>
-                        <td>{{info["summary"]["scan_time"]|hms}}</td>
-			            <td class="{{summary['detection_status'] or ''}}">
+                        <tr>
+                            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
+                            <td>{{info["start_time"]|as_dt}}</td>
+                            <td>{{info["summary"]["scan_time"]|hms}}</td>
+                            <td class="{{summary['detection_status'] or ''}}">
                             {%- if summary["detection_status"] == "started" and "running" in summary -%}
                                 {{summary["running"] or ""}} started
                             {%- else -%}
@@ -132,17 +132,17 @@
 			{% endfor %}
 		];
         
-		var empty_data = [
-			{% for t, info in cc_runs|reverse %}
-            {{',' if not loop.first }}
-                [	    
-                    new Date({{info["start_time_milliseconds"]}}), 
-                    {{info["detected_empty"] if info["detected_empty"] is not none else "null"}},
-                    {{info["confirmed_empty"] if info["confirmed_empty"] is not none else "null"}},
-                    {{info["acted_empty"] if info["acted_empty"] is not none else "null"}}
-                ]
-			{% endfor %}
-		];
+                var empty_data = [
+                {% for t, info in cc_runs|reverse %}
+                    {{',' if not loop.first }}
+                        [	    
+                            new Date({{info["start_time_milliseconds"]}}), 
+                            {{info["detected_empty"] if info["detected_empty"] is not none else "null"}},
+                            {{info["confirmed_empty"] if info["confirmed_empty"] is not none else "null"}},
+                            {{info["acted_empty"] if info["acted_empty"] is not none else "null"}}
+                        ]
+                {% endfor %}
+                ];
                 
                 var common_options = {
                         chartArea: {
@@ -168,21 +168,33 @@
             series: {
                 2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
             }
-		});
+            vAxis: {
+                logScale: true,
+                title: "Number of directories"
+            }
+	});
 
-		var dark_options = Object.assign({}, common_options, {
+	var dark_options = Object.assign({}, common_options, {
             title: 'Dark file counts',
             colors: ["#888", "444", "222"],
             series: {
                 2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
             }
+            vAxis: {
+                logScale: true,
+                title: "Number of files"
+            }
         });
 
-		var missing_options = Object.assign({}, common_options, {
+	var missing_options = Object.assign({}, common_options, {
             title: 'Missing file counts',
             colors: ["FAA", "D44"],
             series: {
                 1: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
+            vAxis: {
+                    logScale: true,
+                    title: "Number of files"
+                }
             }
         });
                 
