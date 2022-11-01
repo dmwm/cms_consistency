@@ -48,7 +48,7 @@ fi
 now=`date -u +%Y_%m_%d_%H_%M`
 timestamp=`date -u +%s`
 
-stats=${out}/${RSE}_${now}_edstats.json
+stats=${out}/${RSE}_${now}_stats.json
 scanner_errors=${out}/${RSE}_${now}_scanner.errors
 
 # X509 proxy

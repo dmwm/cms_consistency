@@ -643,9 +643,13 @@ class CCDataSource(DataSource):
                 ed_summary["detected"] = ed_stats.get("detected_empty_directories")
                 confirmed = ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
                 ed_summary["elapsed"] = ed_stats.get("elapsed")
-                acted_on = ed_summary["acted_on"] = min(ed_stats.get("confirmed_empty_directories", 0), ed_stats.get("limit", 0))
+                attempted = confirmed
+                limit = ed_stats.get("limit")
+                if limit is not None:
+                    attempted = min(attempted, limit)
+                ed_summary["acted_on"] = ed_stats.get("removed_count", 0)
                 failed = ed_stats.get("failed_count", 0)
-                if confirmed and failed > (acted_on or 0)/2:
+                if confirmed and failed > (attempted or 0)//2:
                     ed_summary["action_status"] = "errors"
 
         return summary
