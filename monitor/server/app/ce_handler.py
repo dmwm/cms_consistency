@@ -84,7 +84,7 @@ class CEHandler(WPHandler):
         
         for rse, summary in summaries.items():
             if summary.get("detection_status") == "started" and not summary.get("start_time"):
-                print("rse:", rse, " run:", run, file=log)
+                print("rse:", rse, " run:", summary["run"], file=log)
         
         for summary in summaries.values():
 
