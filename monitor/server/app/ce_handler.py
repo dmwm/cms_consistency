@@ -79,6 +79,13 @@ class CEHandler(WPHandler):
         now = time.time()
         problems = []
         the_rest = []
+        
+        log = open("/tmp/index.log", "w")
+        
+        for rse, summary in summaries.items():
+            if summary.get("detection_status") == "started" and not summary.get("start_time"):
+                print("rse:", rse, " run:", run, file=log)
+        
         for summary in summaries.values():
 
             summary["order"] = None
