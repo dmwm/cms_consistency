@@ -23,9 +23,9 @@
                     <th colspan=4>Empty directories</th>
                     </tr>
                     <tr>
-                        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
-                        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
-                        <th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
+                        <th>Detected (old)</th><th>Confirmed</th><th>Quarantined</th><th>Action status</th>
+                        <th>Detected (old)</th><th>Confirmed</th><th>Declared</th><th>Action status</th>
+                        <th>Detected</th><th>Confirmed</th><th>Removed</th><th>Action status</th>
                     </tr>
                     {% for t, info in cc_runs %}
                     {% set summary = info["summary"] %}
