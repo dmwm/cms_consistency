@@ -333,7 +333,7 @@ class EmptyActionConfiguration(ActionConfiguration):
         self.ScannerTimeout = int(self.scanner_param(rse, "timeout", 300))
         self.NWorkers = int(self.scanner_param(rse, "nworkers", 8))
         self.ServerIsRedirector = self.scanner_param(rse, "is_redirector", True)
-
+        self.Disabled = self.action_param(rse, "empty", "disabled", False) 
 
 if __name__ == "__main__":
     import sys, getopt

@@ -49,8 +49,6 @@ class CCRun(object):
     def scanner_num_files(self):
         scanner_stats = self.Stats["scanner"]
         nfiles = scanner_stats.get("total_files") or sum(root_stats.get("files", 0) for root_stats in scanner_stats.get("roots", []))
-        if nfiles <= 0:
-            raise ValueError("Number of files found my the scanner not found or is 0")
         return nfiles
 
     FileNameRE = re.compile(r"""
