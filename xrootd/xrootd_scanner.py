@@ -272,12 +272,14 @@ class ScannerMaster(PyThread):
     def dir_ignored(self, path):
         # path is expected to be canonic here
         lfn = self.PathConverter.path_to_lfn(path)
-        return any((lfn == subdir or lfn.startswith(subdir+"/")) for subdir in self.IgnoreList)
+        relpath = relative_path(self.Root, lfn)
+        return any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
     def file_ignored(self, path):
         # path is expected to be canonic here
         lfn = self.PathConverter.path_to_lfn(path)
-        return any(lfn.startswith(subdir+"/") for subdir in self.IgnoreList) or lfn in self.IgnoreList
+        relpath = relative_path(self.Root, lfn)
+        return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreList) or relpath in self.IgnoreList
 
     @synchronized
     def addFiles(self, files):
