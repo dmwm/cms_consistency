@@ -50,6 +50,31 @@ def relative_path(root, path):
     if path.startswith(root + "/"):
         path = path[len(root)+1:]
     return path
+    
+class PathConverter(object):
+    
+    def __init__(self, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
+        self.PathPrefix = path_prefix
+        self.RemovePrefix = remove_prefix
+        self.AddPrefix = add_prefix
+    
+    def path_to_lfn(self, path):
+        # convert absoulte physical path, which starts with path_prefix to LFN
+        # for CMS, path may look like /eos/cms/tier0/store/root/path/file
+        # after removing the <path_prefix>, then <remove_prefix> and adding <add_prefix> it will look like /store/root/path/file
+    
+        path = canonic_path(path)
+        assert path.startswith(self.PathPrefix)
+
+        lfn = "/" + path[len(pself.PathPrefix):]
+
+        if self.RemovePrefix and lfn.startswith(self.RemovePrefix):
+            lfn = lfn[len(self.RemovePrefix):]
+
+        if self.AddPrefix:
+            lfn = self.AddPrefix + lfn
+
+        return lfn
 
 class Prescanner(Primitive):
 
@@ -200,10 +225,11 @@ class ScannerMaster(PyThread):
     REPORT_INTERVAL = 10.0
     RESULTS_BUFFER_SISZE = 100
     
-    def __init__(self, client, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
+    def __init__(self, client, path_converter, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
                 include_sizes=True, ignore_list=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
+        self.PathConverter = path_converter
         self.Client = client
         self.Root = root
         self.AbsoluteRootPath = client.absolute_path(root)
@@ -245,13 +271,13 @@ class ScannerMaster(PyThread):
         
     def dir_ignored(self, path):
         # path is expected to be canonic here
-        relpath = relative_path(self.Root, path)
-        return any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
+        lfn = self.PathConverter.path_to_lfn(path)
+        return any((lfn == subdir or lfn.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
     def file_ignored(self, path):
         # path is expected to be canonic here
-        relpath = relative_path(self.Root, path)
-        return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreList) or relpath in self.IgnoreList
+        lfn = self.PathConverter.path_to_lfn(path)
+        return any(lfn.startswith(subdir+"/") for subdir in self.IgnoreList) or lfn in self.IgnoreList
 
     @synchronized
     def addFiles(self, files):
