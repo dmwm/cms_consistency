@@ -53,10 +53,11 @@ def relative_path(root, path):
     
 class PathConverter(object):
     
-    def __init__(self, path_prefix, remove_prefix, add_prefix):
-        self.PathPrefix = path_prefix
+    def __init__(self, site_prefix, remove_prefix, add_prefix, root):
+        self.SitePrefix = path_prefix
         self.RemovePrefix = remove_prefix
         self.AddPrefix = add_prefix
+        self.Root = root
     
     def path_to_lfn(self, path):
         # convert absoulte physical path, which starts with path_prefix to LFN
@@ -64,9 +65,9 @@ class PathConverter(object):
         # after removing the <path_prefix>, then <remove_prefix> and adding <add_prefix> it will look like /store/root/path/file
     
         path = canonic_path(path)
-        assert path.startswith(self.PathPrefix)
+        assert path.startswith(self.SitePrefix)
 
-        lfn = "/" + path[len(self.PathPrefix):]
+        lfn = "/" + path[len(self.SitePrefix):]
 
         if self.RemovePrefix and lfn.startswith(self.RemovePrefix):
             lfn = lfn[len(self.RemovePrefix):]
@@ -75,6 +76,12 @@ class PathConverter(object):
             lfn = self.AddPrefix + lfn
 
         return lfn
+        
+    def relative_path(self, path):
+        root_path = canonic_path(self.SitePrefix + "/" + root)
+        assert path.startswith(root_path + "/")
+        return canonic_path(path[len(root_path)+1:])
+            
 
 class Prescanner(Primitive):
 
@@ -271,14 +278,12 @@ class ScannerMaster(PyThread):
         
     def dir_ignored(self, path):
         # path is expected to be canonic here
-        lfn = self.PathConverter.path_to_lfn(path)
-        relpath = relative_path(self.Root, lfn)
+        relpath = self.PathConverter.relative_path(path)
         return any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
     def file_ignored(self, path):
         # path is expected to be canonic here
-        lfn = self.PathConverter.path_to_lfn(path)
-        relpath = relative_path(self.Root, lfn)
+        relpath = self.PathConverter.relative_path(path)
         return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreList) or relpath in self.IgnoreList
 
     @synchronized
@@ -496,7 +501,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
 
     remove_prefix = config.RemovePrefix
     add_prefix = config.AddPrefix
-    path_converter = PathConverter(server_root, remove_prefix, add_prefix)
+    path_converter = PathConverter(server_root, remove_prefix, add_prefix, root)
 
     master = ScannerMaster(client, path_converter, root, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
