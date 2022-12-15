@@ -53,7 +53,7 @@ def relative_path(root, path):
     
 class PathConverter(object):
     
-    def __init__(self, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
+    def __init__(self, path_prefix, remove_prefix, add_prefix):
         self.PathPrefix = path_prefix
         self.RemovePrefix = remove_prefix
         self.AddPrefix = add_prefix
@@ -492,12 +492,14 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
 
     ignore_list = config.ignore_subdirs(root)
 
-    master = ScannerMaster(client, root, recursive_threshold, max_scanners, timeout, quiet, display_progress,
+    remove_prefix = config.RemovePrefix
+    add_prefix = config.AddPrefix
+    path_converter = PathConverter(server_root, remove_prefix, add_prefix)
+
+    master = ScannerMaster(client, path_converter, root, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
             ignore_list = ignore_list)
 
-    remove_prefix = config.RemovePrefix
-    add_prefix = config.AddPrefix
     path_filter = None          # -- obsolete -- config.scanner_filter(rse)
     #if path_filter is not None:
     #    path_filter = re.compile(path_filter)
