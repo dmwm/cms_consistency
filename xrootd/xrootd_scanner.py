@@ -6,7 +6,7 @@ from py3 import to_str
 from stats import Stats
 from xrootd_client import XRootDClient
 
-Version = "2.1"
+Version = "2.2"
 
 GB = 1024*1024*1024
 
@@ -201,7 +201,7 @@ class ScannerMaster(PyThread):
     RESULTS_BUFFER_SISZE = 100
     
     def __init__(self, client, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
-                include_sizes=True, ignore_subdirs=[]):
+                include_sizes=True, ignore_list=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
         self.Client = client
@@ -225,7 +225,7 @@ class ScannerMaster(PyThread):
             self.LastV = 0
         self.NFiles = self.NDirectories = 0
         self.MaxFiles = max_files       # will stop after number of files found exceeds this number. Used for debugging
-        self.IgnoreSubdirs = ignore_subdirs
+        self.IgnoreList = ignore_list
         self.IgnoredFiles = self.IgnoredDirs = 0
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
@@ -246,13 +246,12 @@ class ScannerMaster(PyThread):
     def dir_ignored(self, path):
         # path is expected to be canonic here
         relpath = relative_path(self.Root, path)
-        ignore =  any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreSubdirs)
-        return ignore
+        return any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
     def file_ignored(self, path):
         # path is expected to be canonic here
         relpath = relative_path(self.Root, path)
-        return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreSubdirs)
+        return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreList) or relpath in self.IgnoreList
 
     @synchronized
     def addFiles(self, files):
@@ -469,7 +468,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
 
     master = ScannerMaster(client, root, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
-            ignore_subdirs = ignore_list)
+            ignore_list = ignore_list)
 
     remove_prefix = config.RemovePrefix
     add_prefix = config.AddPrefix
