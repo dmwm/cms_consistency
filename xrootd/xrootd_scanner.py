@@ -66,7 +66,7 @@ class PathConverter(object):
         path = canonic_path(path)
         assert path.startswith(self.PathPrefix)
 
-        lfn = "/" + path[len(pself.PathPrefix):]
+        lfn = "/" + path[len(self.PathPrefix):]
 
         if self.RemovePrefix and lfn.startswith(self.RemovePrefix):
             lfn = lfn[len(self.RemovePrefix):]
