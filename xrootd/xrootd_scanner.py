@@ -54,7 +54,7 @@ def relative_path(root, path):
 class PathConverter(object):
     
     def __init__(self, site_prefix, remove_prefix, add_prefix, root):
-        self.SitePrefix = path_prefix
+        self.SitePrefix = site_prefix
         self.RemovePrefix = remove_prefix
         self.AddPrefix = add_prefix
         self.Root = root
