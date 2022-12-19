@@ -192,12 +192,10 @@ class Scanner(Task):
         if recursive:
             empty_dirs = set(p for p, _ in dirs)
             for path, _ in files:
-                while path and path != '/':
-                    path = self.parent(path)
-                    try:
-                        empty_dirs.remove(path)
-                    except KeyError:
-                        break
+                dirpath = self.parent(path)
+                while dirpath and dirpath != '/' and dirpath in empty_dirs:
+                    empty_dirs.remove(dirpath)
+                    dirpath = self.parent(dirpath)
 
         if self.ReportEmptyTop and (recursive or not dirs) and not files:
             empty_dirs.add(self.Location)
