@@ -357,14 +357,14 @@ class ScannerMaster(PyThread):
         allow_recursive = scan and len(dirs) > 1
         for path, size in dirs:
             logpath = self.PathConverter.path_to_logpath(path)
-            self.Results.append(('d', d))
+            self.Results.append(('d', logpath))
             self.NDirectories += 1
             if self.dir_ignored(logpath):
                 if scan:
                     print(logpath, " - ignored")
                     self.IgnoredDirs += 1
             elif scan:
-                self.addDirectory(d, scan, allow_recursive)
+                self.addDirectory(logpath, scan, allow_recursive)
 
         if empty_dirs:
             self.addEmptyDirectories(empty_dirs)            # do not convert to LFN
