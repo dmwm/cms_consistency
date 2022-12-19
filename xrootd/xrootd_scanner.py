@@ -276,13 +276,6 @@ class ScannerMaster(PyThread):
         # path is expected to be canonic here
         return any(logpath.startswith(subdir+"/") for subdir in self.IgnoreList) or logpath in self.IgnoreList
 
-    @synchronized
-    def addFiles(self, logpaths):
-        if not self.Failed:
-            for logpath in logpaths:
-                self.Results.append(('f', logpath))
-                self.NFiles += 1
-
     def addDirectory(self, logpath, scan, allow_recursive):
         if scan and not self.Failed:
             relpath = logpath[len(self.Root):]
@@ -351,34 +344,34 @@ class ScannerMaster(PyThread):
     @synchronized
     def scanner_succeeded(self, location, was_recursive, files, dirs, empty_dirs):
         self.NScanned += 1
-        if files:
-            paths, sizes = zip(*files)
-            paths = [self.PathConverter.path_to_logpath(p) for p in paths]      # convert to LFN space
-            self.addFiles(paths)
-            #for path, size in files:
-            #    print(f"path: {path}, size:{size}")
-            #print("total size:", sum(sizes), location)
-            if self.IncludeSizes:
-                self.TotalSize += sum(sizes)
+        for path, size in files:
+            logpath = self.PathConverter.path_to_logpath(path)
+            self.NFiles += 1
+            if not self.file_ignored(logpath):
+                self.Results.append(('f', logpath))
+                self.TotalSize += size
+            else:
+                self.IgnoredFiles += 1
 
-        if dirs:
-            paths, sizes = zip(*dirs)
-            paths = [self.PathConverter.path_to_logpath(p) for p in paths]      # convert to LFN space
-            scan = not was_recursive
-            allow_recursive = scan and len(dirs) > 1
-            self.addDirectories(paths, scan, allow_recursive)
-            #if self.IncludeSizes:
-            #    self.TotalSize += sum(sizes)
+        scan = not was_recursive
+        allow_recursive = scan and len(dirs) > 1
+        for path, size in dirs:
+            logpath = self.PathConverter.path_to_logpath(path)
+            self.Results.append(('d', d))
+            self.NDirectories += 1
+            if self.dir_ignored(logpath):
+                if scan:
+                    print(logpath, " - ignored")
+                    self.IgnoredDirs += 1
+            elif scan:
+                self.addDirectory(d, scan, allow_recursive)
 
         if empty_dirs:
             self.addEmptyDirectories(empty_dirs)            # do not convert to LFN
 
         self.show_progress()
 
-    def files(self):
-        yield from self.paths('f')
-                        
-    def paths(self, type=None):
+    def paths(self):
         # log paths, e.g. /store/mc/...
         for t, path in self.Results:
             if type is None or type == t:
