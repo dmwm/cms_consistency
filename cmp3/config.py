@@ -282,11 +282,11 @@ class ScannerConfiguration(CEConfiguration):
         CEConfiguration.__init__(self, rse, source, **source_agrs)
 
         self.Server = self.scanner_param(rse, "server", None, required=True)
-        self.ServerRoot = self.scanner_param(rse, "server_root", "/store")
+        self.ServerRoot = self.scanner_param(rse, "server_root", "/")           # prefix up to, but not including /store/
         self.ScannerTimeout = int(self.scanner_param(rse, "timeout", 300))
         self.RootList = self.root_list(rse)
-        self.RemovePrefix = self.scanner_param(rse, "remove_prefix", "/")
-        self.AddPrefix = self.scanner_param(rse, "add_prefix", "/store/")
+        self.RemovePrefix = self.scanner_param(rse, "remove_prefix", "")        # to be applied after site root is removed
+        self.AddPrefix = self.scanner_param(rse, "add_prefix", "")              # to be applied after site root is removed
         self.NWorkers = int(self.scanner_param(rse, "nworkers", 8))
         self.IncludeSizes = self.scanner_param(rse, "include_sizes", "yes") == "yes"
         self.RecursionThreshold = int(self.scanner_param(rse, "recursion", 1))

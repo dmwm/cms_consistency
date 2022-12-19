@@ -59,29 +59,19 @@ class PathConverter(object):
         self.AddPrefix = add_prefix
         self.Root = root
     
-    def path_to_lfn(self, path):
-        # convert absoulte physical path, which starts with path_prefix to LFN
-        # for CMS, path may look like /eos/cms/tier0/store/root/path/file
-        # after removing the <path_prefix>, then <remove_prefix> and adding <add_prefix> it will look like /store/root/path/file
+    def path_to_logpath(self, path):
+        # convert physical path after site prefix to LFN space by applying RemovePrefix and AddPrefix if any
+        # for CMS, this is a no-op as of now
     
         path = canonic_path(path)
-        assert path.startswith(self.SitePrefix)
-
-        lfn = "/" + path[len(self.SitePrefix):]
-
-        if self.RemovePrefix and lfn.startswith(self.RemovePrefix):
-            lfn = lfn[len(self.RemovePrefix):]
+        assert path.startswith('/'), f"Expected input path to start with /: {path}"
+        if self.RemovePrefix and path.startswith(self.RemovePrefix):
+            path = path[len(self.RemovePrefix):]
 
         if self.AddPrefix:
-            lfn = self.AddPrefix + lfn
+            path = self.AddPrefix + path
 
-        return lfn
-        
-    def relative_path(self, path):
-        root_path = canonic_path(self.SitePrefix + "/" + root)
-        assert path.startswith(root_path + "/")
-        return canonic_path(path[len(root_path)+1:])
-            
+        return canonic_path(path)
 
 class Prescanner(Primitive):
 
@@ -100,7 +90,7 @@ class Prescanner(Primitive):
 
         def run(self):
             self.Client = XRootDClient(self.Server, self.IsRedirector, self.ServerRoot, 
-                    root=self.Root, timeout=self.Timeout, name=f"XRootDClient({self.Root})")
+                    timeout=self.Timeout, name=f"XRootDClient({self.Root})")
             status, self.Error, _, _ = self.Client.ls(self.Root, False, False)
             self.Failed = status != "OK"
             return not self.Failed
@@ -186,7 +176,9 @@ class Scanner(Task):
         self.WasRecursive = recursive
         #self.message("start", stats)
 
+        # Location is relative to the server root, it does start with '/'. E.g. /store/mc/run2
         status, reason, dirs, files = self.Client.ls(self.Location, recursive, self.IncludeSizes)
+        # paths are relative to the Server Root, they do start with '/', e.g. /store/mc/run2/data.file
         files = list(files)
         dirs = list(dirs)
 
@@ -276,9 +268,8 @@ class ScannerMaster(PyThread):
         self.ScannerQueue.Delegate = None       # detach for garbage collection
         self.ScannerQueue = None
         
-    def dir_ignored(self, path):
+    def dir_ignored(self, logpath):
         # path is expected to be canonic here
-        relpath = self.PathConverter.relative_path(path)
         return any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
     def file_ignored(self, path):
@@ -364,6 +355,7 @@ class ScannerMaster(PyThread):
         self.NScanned += 1
         if files:
             paths, sizes = zip(*files)
+            paths = [self.PathConverter.path_to_logpath(p) for p in paths]      # convert to LFN space
             self.addFiles(paths)
             #for path, size in files:
             #    print(f"path: {path}, size:{size}")
@@ -373,6 +365,7 @@ class ScannerMaster(PyThread):
 
         if dirs:
             paths, sizes = zip(*dirs)
+            paths = [self.PathConverter.path_to_logpath(p) for p in paths]      # convert to LFN space
             scan = not was_recursive
             allow_recursive = scan and len(dirs) > 1
             self.addDirectories(paths, scan, allow_recursive)
@@ -380,7 +373,7 @@ class ScannerMaster(PyThread):
             #    self.TotalSize += sum(sizes)
 
         if empty_dirs:
-            self.addEmptyDirectories(empty_dirs)
+            self.addEmptyDirectories(empty_dirs)            # do not convert to LFN
 
         self.show_progress()
 
