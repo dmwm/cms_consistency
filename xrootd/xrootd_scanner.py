@@ -490,8 +490,6 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     if stats is not None:
         stats.update_section(stats_key, my_stats)
 
-    ignore_list = config.ignore_subdirs(root)
-
     remove_prefix = config.RemovePrefix
     add_prefix = config.AddPrefix
     path_converter = PathConverter(server_root, remove_prefix, add_prefix, root)
