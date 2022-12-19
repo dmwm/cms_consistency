@@ -270,7 +270,7 @@ class ScannerMaster(PyThread):
         
     def dir_ignored(self, logpath):
         # path is expected to be canonic here
-        return any((logpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
+        return any((logpath == subdir or logpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
     def file_ignored(self, logpath):
         # path is expected to be canonic here
