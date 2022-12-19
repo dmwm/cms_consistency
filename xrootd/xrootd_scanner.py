@@ -473,6 +473,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     max_scanners = override_max_scanners or config.NWorkers
     ignore_subdirs = config.ignore_subdirs(root)
     is_redirector = config.ServerIsRedirector
+    ignore_list = config.IgnoreList
 
     t0 = time.time()
     root_stats = {
