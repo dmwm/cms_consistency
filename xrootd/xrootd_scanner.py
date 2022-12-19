@@ -148,9 +148,7 @@ class Scanner(Task):
 
     def message(self, status, stats):
         if self.Master is not None:
-            path = self.Client.absolute_path(self.Location)
-            #self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, path), status, stats))
-            self.Master.message("%s %s %s" % (status, stats, truncated_path(self.Master.Root, path)))
+            self.Master.message("%s %s %s" % (status, stats, self.Location))
 
     @synchronized
     def killme(self):
@@ -295,21 +293,6 @@ class ScannerMaster(PyThread):
                 )
                 self.NToScan += 1
 
-    def addDirectories(self, dirs, scan=True, allow_recursive=True):
-        if not self.Failed:
-            for d in dirs:
-                self.Results.append(('d', d))
-                self.NDirectories += 1
-                d = canonic_path(d)
-                if self.dir_ignored(d):
-                    if scan:
-                        print(d, " - ignored")
-                        self.IgnoredDirs += 1
-                else:
-                    self.addDirectory(d, scan, allow_recursive)
-            self.show_progress()
-            self.report()
-
     def addEmptyDirectories(self, paths):
         if not self.Failed:
             for path in paths:
@@ -361,7 +344,7 @@ class ScannerMaster(PyThread):
             self.NDirectories += 1
             if self.dir_ignored(logpath):
                 if scan:
-                    print(logpath, " - ignored")
+                    print(logpath, " - directory ignored")
                     self.IgnoredDirs += 1
             elif scan:
                 self.addDirectory(logpath, scan, allow_recursive)
@@ -374,15 +357,7 @@ class ScannerMaster(PyThread):
     def paths(self):
         # log paths, e.g. /store/mc/...
         for t, path in self.Results:
-            if type is None or type == t:
-                path = canonic_path(path)
-                if self.file_ignored(path):
-                    self.IgnoredFiles += 1
-                else:
-                    if type is None:
-                        yield t, path
-                    else:
-                        yield path
+            yield t, path
 
     @synchronized
     def show_progress(self, message=None):
