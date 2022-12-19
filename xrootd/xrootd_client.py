@@ -17,7 +17,12 @@ class XRootDClient(Primitive):
         self.Timeout = timeout
         self.Server = server 
         self.ServerRoot = canonic_path(server_root)
-        self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
+        self.Servers = [server]
+        self.IsRedirector = is_redirector
+        
+    def prescan(self, root):
+        if self.IsRedirector:
+            self.Servers = self.get_underlying_servers(self.Server, root, self.Timeout)
 
     def absolute_path(self, path):
         path = canonic_path(path)
