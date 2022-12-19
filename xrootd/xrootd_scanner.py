@@ -200,7 +200,7 @@ class Scanner(Task):
                         break
 
         if self.ReportEmptyTop and (recursive or not dirs) and not files:
-            empty_dirs.add(self.Client.absolute_path(self.Location))
+            empty_dirs.add(self.Location)
 
         if status != "OK":
             stats += " " + reason
