@@ -379,6 +379,7 @@ class ScannerMaster(PyThread):
         yield from self.paths('f')
                         
     def paths(self, type=None):
+        # log paths, e.g. /store/mc/...
         for t, path in self.Results:
             if type is None or type == t:
                 path = canonic_path(path)
@@ -522,17 +523,15 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     if not path_prefix.endswith("/"):
         path_prefix += "/"
 
-    for t, path in master.paths():
+    for t, logpath in master.paths():
         # here, path is absolute path, which includes site root
-        lfn = path_to_lfn(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
-        if path:
-            if t == 'f':
-                file_list.add(lfn)             
-            elif t == 'd' and dir_list is not None:
-                dir_list.add(lfn)
-            elif t == 'e' and empty_dirs_file is not None:
-                empty_dirs_file.write(lfn)
-                empty_dirs_file.write("\n")
+        if t == 'f':
+            file_list.add(logpath)             
+        elif t == 'd' and dir_list is not None:
+            dir_list.add(logpath)
+        elif t == 'e' and empty_dirs_file is not None:
+            empty_dirs_file.write(logpath)
+            empty_dirs_file.write("\n")
 
     if display_progress:
         master.close_progress()
