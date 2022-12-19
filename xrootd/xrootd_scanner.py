@@ -180,8 +180,14 @@ class Scanner(Task):
         # paths are relative to the Server Root, they do start with '/', e.g. /store/mc/run2/data.file
         files = list(files)
         dirs = list(dirs)
-
         self.Elapsed = time.time() - self.Started
+        if status != "OK":
+            stats += " " + reason
+            self.message(status, stats)
+            if self.Master is not None:
+                self.Master.scanner_failed(self, f"{status}: {reason}")
+            return
+
         #stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
         stats = "r" if recursive else " "
     
@@ -200,20 +206,13 @@ class Scanner(Task):
         if self.ReportEmptyTop and (recursive or not dirs) and not files:
             empty_dirs.add(self.Location)
 
-        if status != "OK":
-            stats += " " + reason
-            self.message(status, stats)
-            if self.Master is not None:
-                self.Master.scanner_failed(self, f"{status}: {reason}")
-
-        else:
-            counts = " files: %-8d dirs: %-8d empty: %-8d" % (len(files), len(dirs), len(empty_dirs))
-            if self.IncludeSizes:
-                total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
-                counts += " size: %10.3fGB" % (total_size/GB,)
-            self.message("done", stats+counts)
-            if self.Master is not None:
-                self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, empty_dirs)
+        counts = " files: %-8d dirs: %-8d empty: %-8d" % (len(files), len(dirs), len(empty_dirs))
+        if self.IncludeSizes:
+            total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
+            counts += " size: %10.3fGB" % (total_size/GB,)
+        self.message("done", stats+counts)
+        if self.Master is not None:
+            self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, sorted(empty_dirs, reverse=True))
 
 class ScannerMaster(PyThread):
     
