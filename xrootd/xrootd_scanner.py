@@ -232,7 +232,6 @@ class ScannerMaster(PyThread):
         self.PathConverter = path_converter
         self.Client = client
         self.Root = root
-        self.AbsoluteRootPath = client.absolute_path(root)
         self.MaxScanners = max_scanners
         self.Results = DEQueue(self.RESULTS_BUFFER_SISZE)
         self.ScannerQueue = TaskQueue(max_scanners, stagger=0.2)
@@ -271,24 +270,22 @@ class ScannerMaster(PyThread):
         
     def dir_ignored(self, logpath):
         # path is expected to be canonic here
-        return any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
+        return any((logpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
-    def file_ignored(self, path):
+    def file_ignored(self, logpath):
         # path is expected to be canonic here
-        relpath = self.PathConverter.relative_path(path)
-        return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreList) or relpath in self.IgnoreList
+        return any(logpath.startswith(subdir+"/") for subdir in self.IgnoreList) or logpath in self.IgnoreList
 
     @synchronized
-    def addFiles(self, files):
+    def addFiles(self, logpaths):
         if not self.Failed:
-            for path in files:
-                self.Results.append(('f', path))
+            for logpath in logpaths:
+                self.Results.append(('f', logpath))
                 self.NFiles += 1
 
-    def addDirectory(self, path, scan, allow_recursive):
+    def addDirectory(self, logpath, scan, allow_recursive):
         if scan and not self.Failed:
-            assert path.startswith(self.AbsoluteRootPath)
-            relpath = path[len(self.AbsoluteRootPath):]
+            relpath = logpath[len(self.Root):]
             while relpath and relpath[0] == '/':
                 relpath = relpath[1:]
             while relpath and relpath[-1] == '/':
