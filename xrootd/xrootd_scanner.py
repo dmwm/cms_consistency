@@ -320,7 +320,7 @@ class ScannerMaster(PyThread):
     def addEmptyDirectories(self, paths):
         if not self.Failed:
             for path in paths:
-                if path != self.AbsoluteRootPath:
+                if path != self.Root:
                     # do not report root even if it is empty
                     self.Results.append(('e', path))
                     self.NEmptyDirs += 1
