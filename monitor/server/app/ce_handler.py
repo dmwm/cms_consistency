@@ -98,7 +98,7 @@ class CEHandler(WPHandler):
                 summary["order"] = 20
                 summary["attention"] = "started"
             elif summary.get("detection_status") == "done":
-                for part in ("missing_stats", "dark_stats", "empty_dirs_stats"):
+                for part in ("missing_stats", "dark_stats"):
                     if summary[part].get("action_status") in ("failed", "errors"):
                         summary["order"] = 30
                         summary["attention"] = summary[part].get("action_status")
