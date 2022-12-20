@@ -68,6 +68,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
         print("  Files in RSE:", num_scanned, file=sys.stderr)
         print("  Dark files:", detected_dark_count, file=sys.stderr)
 
+        status = "done"
         if latest_run.Timestamp < now - timedelta(days=max_age_last):
             status = "aborted"
             aborted_reason = "latest run is too old: %s, required: < %d days old" % (latest_run.Timestamp, max_age_last)
@@ -77,7 +78,6 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
             aborted_reason = "oldest run is not old enough: %s, required: > %d days old" % (first_run.Timestamp, min_age_first)
 
         else:
-            status = "done"
             confirmed = set(recent_runs[0].dark_files())
             for run in recent_runs[1:]:
                 confirmed &= set(run.dark_files())
