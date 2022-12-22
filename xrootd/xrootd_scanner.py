@@ -142,6 +142,7 @@ class Scanner(Task):
         self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
         self.IncludeSizes = include_sizes
         self.ReportEmptyTop = report_empty_top
+        #print("Scanner create for location:", self.Location)
 
     def __str__(self):
         return "Scanner(%s)" % (self.Location,)
