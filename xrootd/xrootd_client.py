@@ -3,6 +3,7 @@ import re, json, os, os.path, traceback
 import subprocess, time, random, gzip
 from py3 import to_str
 
+
 def canonic_path(path):
     while path and "//" in path:
         path = path.replace("//", "/")

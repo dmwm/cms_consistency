@@ -6,7 +6,7 @@ from py3 import to_str
 from stats import Stats
 from xrootd_client import XRootDClient
 
-Version = "2.2"
+Version = "2.3"
 
 GB = 1024*1024*1024
 
@@ -212,7 +212,7 @@ class Scanner(Task):
             counts += " size: %10.3fGB" % (total_size/GB,)
         self.message("done", stats+counts)
         if self.Master is not None:
-            self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, sorted(empty_dirs, reverse=True))
+            self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, empty_dirs)
 
 class ScannerMaster(PyThread):
     
