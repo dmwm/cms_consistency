@@ -310,6 +310,7 @@ class CCDataSource(DataSource):
     
     DarkSection = "dark_action"
     MissingSection = "missing_action"
+    EmptyDirSection = "empty_action"
 
     def __init__(self, path, cache, new=False):
         DataSource.__init__(self, path, cache)
@@ -467,6 +468,17 @@ class CCDataSource(DataSource):
     def get_missing(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "M", limit)
         
+    def empty_dirs_count(self, rse, run):
+        stats = self.get_stats(rse, run)[0]
+        count = None
+        if self.EmptyDirSection in stats:
+            count = stats[self.DarkSection].get("detected_empty_directories")
+        if count is None and "scanner" in stats:
+            roots = stats["scanner"].get("roots")
+            if roots is not None:
+                count = sum(r.get("empty_directories", 0) for r in roots)
+        return count
+
     def ___last_stats(self, rse):
         last_run = self.list_runs(rse, 1)
         if last_run:
@@ -547,31 +559,50 @@ class CCDataSource(DataSource):
         failed_comp = detection_failed or action_failed
         running_comp = detection_running or action_running
         status_by_comp.update(action_status_by_comp)
-
+        
         summary = {
             "status": status,
             "detection_status": detection_status,
             "action_status": action_status,
             "run":  stats.get("run"),
             "start_time": tstart,
+            "scan_time":    None,
             "end_time": tend,
             "failed": failed_comp,
             "running": running_comp,
             "comp_status": status_by_comp,
             "missing_stats" : {
+                "error_counts":     None,
                 "detected":         None,
                 "confirmed":        None,
                 "acted_on":         None,
-                "action_status":    None
+                "action_status":    None,
+                "elapsed":          None
             },
             "dark_stats": {
+                "error_counts":     None,
                 "detected":         None,
                 "confirmed":        None,
                 "acted_on":         None,
-                "action_status":    None
+                "action_status":    None,
+                "elapsed":          None
+            },
+            "empty_dirs_stats": {
+                "error_counts":     None,
+                "detected":         None,
+                "confirmed":        None,
+                "acted_on":         None,
+                "action_status":    None,
+                "elapsed":          None
             }
         }
         
+        if "scanner" in stats and stats["scanner"].get("status") == "done":
+            summary["scan_time"] = stats["scanner"].get("elapsed")
+            roots = stats["scanner"].get("roots")
+            if roots is not None:
+                summary["empty_dirs_stats"]["detected"] = sum(r.get("empty_directories", 0) for r in roots)
+
         if "error" in stats:
             summary["error"] = stats["error"]
         
@@ -585,22 +616,40 @@ class CCDataSource(DataSource):
             if self.DarkSection in stats:
                 dark_summary = summary["dark_stats"]
                 dark_stats = stats[self.DarkSection]
+                dark_summary["confirmed"] = dark_stats.get("confirmed_dark_files")
+                dark_summary["acted_on"] = dark_stats.get("declared_dark_files")
                 status = dark_summary["action_status"] = dark_stats.get("status", "").lower() or None
-                if status in ("done", "aborted"):
-                    dark_summary["confirmed"] = dark_stats.get("confirmed_dark_files")
-                    if status == "done":
-                        dark_summary["acted_on"] = dark_stats.get("declared_dark_files")
-                    else:
-                        dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
+                if status == "aborted":
+                    dark_summary["aborted_reason"] = dark_stats.get("aborted_reason", "")
+                dark_summary["elapsed"] = dark_stats.get("elapsed")
                 
             if self.MissingSection in stats:
                 missing_summary = summary["missing_stats"]
                 missing_stats = stats[self.MissingSection]
                 status = missing_summary["action_status"] = missing_stats.get("status", "").lower() or None
-                if status in ("done", "aborted"):
-                    missing_summary["confirmed"] = missing_stats.get("confirmed_missing_files")
-                    if status == "done":
-                        missing_summary["acted_on"] = missing_stats.get("declared_missing_files")
-                    else:
-                        missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
+                missing_summary["confirmed"] = missing_stats.get("confirmed_missing_files")
+                missing_summary["acted_on"] = missing_stats.get("declared_missing_files")
+                if status  == "aborted":
+                    missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
+                missing_summary["elapsed"] = missing_stats.get("elapsed")
+                missing_summary["error_counts"] = missing_stats.get("declaration_errors")
+
+        if self.EmptyDirSection in stats:
+            ed_summary = summary["empty_dirs_stats"]
+            ed_stats = stats[self.EmptyDirSection]
+            ed_summary["action_status"] = ed_stats.get("status", "").lower() or None
+            ed_summary["error_counts"] = ed_stats.get("error_counts")
+            if ed_summary["action_status"] == "done":
+                ed_summary["detected"] = ed_stats.get("detected_empty_directories")
+                confirmed = ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
+                ed_summary["elapsed"] = ed_stats.get("elapsed")
+                attempted = confirmed
+                limit = ed_stats.get("limit")
+                if limit is not None:
+                    attempted = min(attempted, limit)
+                ed_summary["acted_on"] = ed_stats.get("removed_count", 0)
+                failed = ed_stats.get("failed_count", 0)
+                if confirmed and failed > (attempted or 0)//2:
+                    ed_summary["action_status"] = "errors"
+
         return summary

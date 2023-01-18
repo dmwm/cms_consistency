@@ -10,27 +10,33 @@
 
 <table class="placement">
     <tr>
-        <td colspan=3 style="padding-top: 30px"><h1>Consistency Enforcement</h1>
+        <td style="padding-top: 30px"><h1>Consistency Enforcement</h1>
         </td>
     </tr>
-	<tr>
-		<td colspan=2>
-			<table class="data">
-			    <tr>
-			        <th rowspan=2>Run</th><th rowspan=2>Start time</th><th rowspan=2>Detection Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>
-			    </tr>
-			    <tr>
-			        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
-			        <th>Detected (old)</th><th>Confirmed</th><th>Acted on</th><th>Action status</th>
-			    </tr>
-			    {% for t, info in cc_runs %}
+        <tr>
+                <td>
+                <table class="data">
+                    <tr>
+                        <th rowspan=2>Run</th><th rowspan=2>Start time</th>
+                    <th rowspan=2>Scan time</th>
+                    <th rowspan=2>Detection Status</th><th colspan=4>Dark</th><th colspan=4>Missing</th>
+                    <th colspan=4>Empty directories</th>
+                    </tr>
+                    <tr>
+                        <th>Detected (old)</th><th>Confirmed</th><th>Quarantined</th><th>Action status</th>
+                        <th>Detected (old)</th><th>Confirmed</th><th>Declared</th><th>Action status</th>
+                        <th>Detected</th><th>Confirmed</th><th>Removed</th><th>Action status</th>
+                    </tr>
+                    {% for t, info in cc_runs %}
                     {% set summary = info["summary"] %}
                     {% set dark_stats = summary["dark_stats"] %}
                     {% set missing_stats = summary["missing_stats"] %}
-			        <tr>
-			            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
-			            <td>{{info["start_time"]|as_dt}}</td>
-			            <td class="{{summary['detection_status'] or ''}}">
+                    {% set ed_stats = summary["empty_dirs_stats"] %}
+                        <tr>
+                            <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
+                            <td>{{info["start_time"]|as_dt}}</td>
+                            <td>{{info["summary"]["scan_time"]|hms}}</td>
+                            <td class="{{summary['detection_status'] or ''}}">
                             {%- if summary["detection_status"] == "started" and "running" in summary -%}
                                 {{summary["running"] or ""}} started
                             {%- else -%}
@@ -57,64 +63,164 @@
                         </td>
 			            <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
 			            <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
-                        <td class="{{info['missing_status']|none_as_blank}}">
+                        <td class="{{missing_stats['action_status']|none_as_blank}}">
                             {{missing_stats['action_status']|none_as_blank}}
                             {%- if missing_stats['aborted_reason'] %}: {{missing_stats["aborted_reason"]}}
                             {%- endif -%}
+                        </td>
+
+                        <!-- empty directories -->
+			            <td>{% if not ed_stats["detected"] is none %}
+                                {{ed_stats["detected"]}}
+                            {% endif %}
+                        </td>
+			            <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
+			            <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
+                        <td class="{{ed_stats['action_status']|none_as_blank}}">
+                            {{ed_stats['action_status']|none_as_blank}}
                         </td>
 			        </tr>
 			    {% endfor %}
     
 			</table>
 		</td>
-		<td style="padding:1px 50px">
-			<div id="cc_chart"></div>
-		</td>
 	</tr>
+        <tr>
+    		<td style="padding:1px 10px">
+    			<div id="dark_chart"></div>
+    		</td>
+        <tr>
+        </tr>
+    		<td style="padding:1px 10px">
+    			<div id="missing_chart"></div>
+    		</td>
+        <tr>
+        </tr>
+    		<td style="padding:1px 10px">
+    			<div id="empty_chart"></div>
+    		</td>
+        </tr>
 
 </table>
 
 
 <script type="text/javascript">
 			
-	function drawCCChart()
-	{
+    function drawCCChart()
+    {
 		// runs is in reversed order
-		var data = [
+		var dark_data = [
 			{% for t, info in cc_runs|reverse %}
             {{',' if not loop.first }}
-            [	    new Date({{info["start_time_milliseconds"]}}), 
-					{{info["ndark"] if info["ndark"] is not none else "null"}},
-					{{info["nmissing"] if info["nmissing"] is not none else "null"}}
-				]
+                [	    
+                    new Date({{info["start_time_milliseconds"]}}), 
+                    {{info["ndark"] if info["ndark"] is not none else "null"}},
+                    {{info["confirmed_dark"] if info["confirmed_dark"] is not none else "null"}},
+                    {{info["acted_dark"] if info["acted_dark"] is not none else "null"}},
+                ]
 			{% endfor %}
 		];
 	
-		var options = {
-                  title: 'Statistics by run',
-                  legend: { position: "top" },
-                  width: 400,
-                  height: 300,
-				  colors: ["#888", "FA8"],
-                  hAxis: {
-                      format: "M/d/yy",
-                      title: "Date"
-                  },
-                  vAxis: {
-                      logScale: true,
-                      title: "Number of files"
-                  }
-		        };
-                
-        var dataTable = new google.visualization.DataTable();
-        dataTable.addColumn('date', 'Date');
-        dataTable.addColumn('number', 'Detected dark');
-        dataTable.addColumn('number', 'Detected missing');
-        dataTable.addRows(data);
+		var missing_data = [
+			{% for t, info in cc_runs|reverse %}
+            {{',' if not loop.first }}
+                [	    
+                    new Date({{info["start_time_milliseconds"]}}), 
+                    {{info["nmissing"] if info["nmissing"] is not none else "null"}},
+                    {{info["acted_missing"] if info["acted_missing"] is not none else "null"}}
+                ]
+			{% endfor %}
+		];
         
-		var chart = new google.visualization.LineChart(document.getElementById('cc_chart'));
-		chart.draw(dataTable, options);
-	}
+                var empty_data = [
+                {% for t, info in cc_runs|reverse %}
+                    {{',' if not loop.first }}
+                        [	    
+                            new Date({{info["start_time_milliseconds"]}}), 
+                            {{info["detected_empty"] if info["detected_empty"] is not none else "null"}},
+                            {{info["confirmed_empty"] if info["confirmed_empty"] is not none else "null"}},
+                            {{info["acted_empty"] if info["acted_empty"] is not none else "null"}}
+                        ]
+                {% endfor %}
+                ];
+                
+        var common_options = {
+                chartArea: {
+                        left: 100,
+                        right: 200
+                },
+                legend: { position: "right" },
+                width: 800,
+                height: 200,
+                hAxis: {
+                    format: "M/d/yy",
+                    title: "Date"
+                }
+        }
+
+        var empty_options = Object.assign({}, common_options, {
+            title: 'Empty directory counts',
+            colors: ["#4DA", "1C1", "281"],
+            series: {
+                    2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
+            },
+            vAxis: {
+                logScale: true,
+                title: "Number of directories"
+            }
+	});
+
+	var dark_options = Object.assign({}, common_options, {
+            title: 'Dark file counts',
+            colors: ["#888", "444", "222"],
+            series: {
+                    2: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
+            },
+            vAxis: {
+                logScale: true,
+                title: "Number of files"
+            }
+        });
+
+	var missing_options = Object.assign({}, common_options, {
+            title: 'Missing file counts',
+            colors: ["FAA", "D44"],
+            series: {
+                    1: {    pointShape: "circle", lineWidth: 0, pointSize: 5 }
+            },
+            vAxis: {
+                    logScale: true,
+                    title: "Number of files"
+                }
+        });
+                
+        var darkTable = new google.visualization.DataTable();
+        darkTable.addColumn('date', 'Date');
+        darkTable.addColumn('number', 'Detected dark');
+        darkTable.addColumn('number', 'Confirmed dark');
+        darkTable.addColumn('number', 'Acted dark');
+        darkTable.addRows(dark_data);
+        
+        var emptyTable = new google.visualization.DataTable();
+        emptyTable.addColumn('date', 'Date');
+        emptyTable.addColumn('number', 'Detected empty');
+        emptyTable.addColumn('number', 'Confirmed empty');
+        emptyTable.addColumn('number', 'Acted empty');
+        emptyTable.addRows(empty_data);
+
+        var missingTable = new google.visualization.DataTable();
+        missingTable.addColumn('date', 'Date');
+        missingTable.addColumn('number', 'Detected missing');
+        missingTable.addColumn('number', 'Acted missing');
+        missingTable.addRows(missing_data);
+        
+        var dark_chart = new google.visualization.LineChart(document.getElementById('dark_chart'));
+        dark_chart.draw(darkTable, dark_options);
+        var missing_chart = new google.visualization.LineChart(document.getElementById('missing_chart'));
+        missing_chart.draw(missingTable, missing_options);
+        var empty_chart = new google.visualization.LineChart(document.getElementById('empty_chart'));
+        empty_chart.draw(emptyTable, empty_options);
+    }
 
     function drawCharts()
     {

@@ -20,9 +20,11 @@
 
 {% if sort_options %}
     <p class="link_menu">
-        <span style="color:gray">sort by:</span>
-        [<a href="?sort=rse">RSE</a>]
-        [CE run: <a href="?sort=-ce_run">latest</a> | <a href="?sort=ce_run">oldest</a>]
+        <span style="color:gray">view:</span>
+        <a href="?view=attention">attention</a> |
+        <a href="?view=rse">by RSE</a> |
+        <a href="?view=-ce_run">latest</a> |
+        <a href="?view=ce_run">oldest</a> 
     </p>
 {% endif %}
 
@@ -136,21 +138,18 @@
 <tr>
     <th>Detected (old)</th>
     <th>Confirmed</th>
-    <th>Acted on</th>
+    <th>Quarantined</th>
     <th>Action status</th>
 
     <th>Detected (old)</th>
     <th>Confirmed</th>
-    <th>Acted on</th>
+    <th>Declared</th>
     <th>Action status</th>
 </tr>
 
 {% for summary in summaries %}
 
-    {% if summary == "attention" %}
-        {# <tr class="divisor"><th colspan=16>Attnetion<th></tr> #}
-
-    {% elif summary == "the_rest" %}
+    {% if summary == "the_rest" %}
         <tr class="divisor"><td colspan=16>&nbsp;<td></tr>
 
     {% else %}
@@ -195,6 +194,7 @@
             <td class="{{missing_stats['action_status']|none_as_blank}}">
                 {{missing_stats['action_status']|none_as_blank}}
             </td>
+
         </tr>
     {% endif %} {# divisor or attention #}
 {% endfor %}

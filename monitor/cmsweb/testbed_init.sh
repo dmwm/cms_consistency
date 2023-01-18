@@ -1,5 +1,7 @@
-cd $HOME
-wget https://cernbox.cern.ch/index.php/s/o4pP0BKhNdbPhCv/download -O config.cmsweb-testbed
+if [ ! -f `pwd`/config.cmsweb-testbednew ]; then
+	wget  https://cernbox.cern.ch/remote.php/dav/public-files/ibTvZrd5Sm6MlyD/config.cmsweb-testbednew -O `pwd`/config.cmsweb-testbednew
+fi
 export OS_TOKEN=$(openstack token issue -c id -f value)
-export KUBECONFIG=$PWD/config.cmsweb-testbed
-cd -
+export KUBECONFIG=`pwd`/config.cmsweb-testbednew
+alias kc='kubectl -n ruciocm'
+alias kc

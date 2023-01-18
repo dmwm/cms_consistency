@@ -283,7 +283,7 @@ dark_action_errors=${out}/${RSE}_${run}_dark_action.errors
 m_action_list=${out}/${RSE}_${run}_M_action.list
 d_action_list=${out}/${RSE}_${run}_D_action.list
 
-$python actions/declare_missing.py -d -a root -o ${m_action_list} -c ${config} -s $stats $out $scope $RSE 2> $missing_action_errors
-$python actions/declare_dark.py    -d -a root -o ${d_action_list} -c ${config} -s $stats $out        $RSE 2> $dark_action_errors
+$python actions/declare_missing.py -a root -o ${m_action_list} -c ${config} -s $stats $out $scope $RSE 2> $missing_action_errors
+$python actions/declare_dark.py    -a root -o ${d_action_list} -c ${config} -s $stats $out        $RSE 2> $dark_action_errors
 
 
