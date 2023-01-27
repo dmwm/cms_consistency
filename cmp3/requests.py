@@ -29,6 +29,7 @@ python requests.py <dbconfig> <command> [options] <args>
         -d <RSE>
         -a <activity>
         -s <state>
+        -c                    -- print count only
 """
 
 
@@ -96,10 +97,7 @@ class Request(Base):
     dest_rse_id = Column(GUID())
     source_rse_id = Column(GUID())
     attributes = Column(String(4000))
-    state = Column(Enum(RequestState, name='REQUESTS_STATE_CHK',
-                        create_constraint=True,
-                        values_callable=lambda obj: [e.value for e in obj]),
-                   default=RequestState.QUEUED)
+    state = Column(String)
     activity = Column(String(50), default='default')
 
 class RSE(Base):
@@ -107,33 +105,69 @@ class RSE(Base):
         id = Column(GUID(), primary_key=True)
         rse = Column(String)
 
-engine = create_engine(dbconfig.DBURL,  echo="-v" in opts)
+engine = create_engine(dbconfig.DBURL,  echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 rses = session.query(RSE).all()
 rse_map = {}
 for rse in rses:
-    print(rse.rse, rse.id)
     rse_map[rse.rse] = rse.id
 
 def do_list(session, argv):
 
-    opts, args = getopt.getopt(argv, "d:a:s:")
+    opts, args = getopt.getopt(argv, "d:a:s:cl:in:")
     opts = dict(opts)
     
     activity = opts.get("-a")
     dest_rse = opts.get("-d")
     state = opts.get("-s")
     
-    
     requests = session.query(Request)
     if activity:    requests = requests.filter(Request.activity == activity)
     if dest_rse:    requests = requests.filter(Request.dest_rse_id == rse_map[dest_rse])
     if state:       requests = requests.filter(Request.state == state)
+    if "-n" in opts:    requests = requests.filter(Request.name == opts["-n"])
+    if "-l" in opts:    requests = requests.limit(int(opts["-l"]))
     
-    for request in requests.yield_per(10000):
-        print(reqiest.id, request.request_type, request.state, request.activity, request.name)
+    if "-c" in opts:
+        print(requests.count())
+    else:
+        for request in requests.yield_per(10000):
+            print(request.id, request.request_type, request.state, request.activity, request.name)
+
+def do_update(session, argv):
+
+    opts, args = getopt.getopt(argv, "d:a:s:n:")
+    opts = dict(opts)
+    activity = opts.get("-a")
+    dest_rse = opts.get("-d")
+    state = opts.get("-s")
+    name = opts.get("-n")
+
+    update_opts, _ = getopt.getopt(args, "d:a:s:n:")
+    update_opts = dict(update_opts)
+
+    update_values = {
+        {
+            "-s":"state"
+        }[key]: value for key, value in update_opts.items()
+    }
+
+    print("Filter opts:", opts)
+    print("Update values:", update_values)
+
+    requests = session.query(Request)
+    if activity:    requests = requests.filter(Request.activity == activity)
+    if dest_rse:    requests = requests.filter(Request.dest_rse_id == rse_map[dest_rse])
+    if state:       requests = requests.filter(Request.state == state)
+    if name:        requests = requests.filter(Request.name == name)
+
+    if update_opts:
+        requests.update(update_values)
+        session.commit()
 
 if command == "list":
     do_list(session, rest)
+elif command == "update":
+    do_update(session, rest)
