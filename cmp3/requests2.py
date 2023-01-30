@@ -164,13 +164,14 @@ def do_update(session, argv):
     print("Update values:", update_values)
 
     if update_values:
-        requests = session.query(Request)
-        if activity:    requests = requests.filter(Request.activity == activity)
-        if dest_rse:    requests = requests.filter(Request.dest_rse_id == rse_map[dest_rse])
-        if state:       requests = requests.filter(Request.state == state)
-        if name:        requests = requests.filter(Request.name == name)
-        requests.update(update_values)
-        session.commit()
+        upd = update(Request)
+        if activity:    upd = upd.where(Request.activity == activity)
+        if dest_rse:    upd = upd.where(Request.dest_rse_id == rse_map[dest_rse])
+        if state:       upd = upd.where(Request.state == state)
+        if name:        upd = upd.where(Request.name == name)
+        upd.values(**update_values)
+        print(upd)
+        #results = session.execute(upd)
 
 if command == "list":
     do_list(session, rest)
