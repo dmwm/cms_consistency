@@ -126,7 +126,7 @@ def do_list(session, argv):
     
     
     if "-c" in opts:
-        sel = select(func.count())
+        sel = select(func.count()).select_from(Request)
     else:
         sel = select(Request)
     if activity:    sel = sel.where(Request.activity == activity)
@@ -135,9 +135,10 @@ def do_list(session, argv):
     if "-n" in opts:    sel = sel.where(Request.name == opts["-n"])
     if "-l" in opts:    sel = sel.limit(int(opts["-l"]))
     
-    results = session.execute(stmt)
+    results = session.execute(sel)
     
     if "-c" in opts:
+        #print(list(results))
         print(results.scalar())
     else:
         for request in results.yield_per(1000):
