@@ -5,7 +5,7 @@ import sys, uuid
 from config import DBConfig, DBDumpConfiguration
 from part import PartitionedList
 
-from sqlalchemy import create_engine, update
+from sqlalchemy import create_engine, update, select, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import sessionmaker
@@ -124,17 +124,23 @@ def do_list(session, argv):
     dest_rse = opts.get("-d")
     state = opts.get("-s")
     
-    requests = session.query(Request)
-    if activity:    requests = requests.filter(Request.activity == activity)
-    if dest_rse:    requests = requests.filter(Request.dest_rse_id == rse_map[dest_rse])
-    if state:       requests = requests.filter(Request.state == state)
-    if "-n" in opts:    requests = requests.filter(Request.name == opts["-n"])
-    if "-l" in opts:    requests = requests.limit(int(opts["-l"]))
     
     if "-c" in opts:
-        print(requests.count())
+        sel = select(func.count())
     else:
-        for request in requests.yield_per(10000):
+        sel = select(Request)
+    if activity:    sel = sel.where(Request.activity == activity)
+    if dest_rse:    sel = sel.where(Request.dest_rse_id == rse_map[dest_rse])
+    if state:       sel = sel.where(Request.state == state)
+    if "-n" in opts:    sel = sel.where(Request.name == opts["-n"])
+    if "-l" in opts:    sel = sel.limit(int(opts["-l"]))
+    
+    results = session.execute(stmt)
+    
+    if "-c" in opts:
+        print(results.scalar())
+    else:
+        for request in results.yield_per(1000):
             print(request.id, request.request_type, request.state, request.activity, request.name)
 
 def do_update(session, argv):
