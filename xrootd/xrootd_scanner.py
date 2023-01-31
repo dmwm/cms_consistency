@@ -686,7 +686,8 @@ if __name__ == "__main__":
     if empty_dirs_file is not None:
         empty_dirs_file.close()
 
-    if failed or all_roots_failed:
+    total_files = sum(root_stats["files"] for root_stats in my_stats["roots"])
+    if failed or all_roots_failed or total_files == 0:
         my_stats["status"] = "failed"
     else:
         my_stats["status"] = "done"
