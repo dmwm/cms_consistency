@@ -169,8 +169,8 @@ def do_update(session, argv):
         if dest_rse:    upd = upd.where(Request.dest_rse_id == rse_map[dest_rse])
         if state:       upd = upd.where(Request.state == state)
         if name:        upd = upd.where(Request.name == name)
-        upd.values(**update_values)
-        print(upd)
+        upd.values(update_values)
+        print("sql:", upd)
         #results = session.execute(upd)
 
 if command == "list":
