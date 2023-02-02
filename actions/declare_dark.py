@@ -67,6 +67,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
         print("Last run:", latest_run.Run, file=sys.stderr)
         print("  Files in RSE:", num_scanned, file=sys.stderr)
         print("  Dark files:", detected_dark_count, file=sys.stderr)
+        status = "done"
 
         status = "done"
         if latest_run.Timestamp < now - timedelta(days=max_age_last):

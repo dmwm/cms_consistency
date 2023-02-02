@@ -6,7 +6,7 @@ from py3 import to_str
 from stats import Stats
 from xrootd_client import XRootDClient
 
-Version = "2.2"
+Version = "2.3"
 
 GB = 1024*1024*1024
 
@@ -59,29 +59,19 @@ class PathConverter(object):
         self.AddPrefix = add_prefix
         self.Root = root
     
-    def path_to_lfn(self, path):
-        # convert absoulte physical path, which starts with path_prefix to LFN
-        # for CMS, path may look like /eos/cms/tier0/store/root/path/file
-        # after removing the <path_prefix>, then <remove_prefix> and adding <add_prefix> it will look like /store/root/path/file
+    def path_to_logpath(self, path):
+        # convert physical path after site prefix to LFN space by applying RemovePrefix and AddPrefix if any
+        # for CMS, this is a no-op as of now
     
         path = canonic_path(path)
-        assert path.startswith(self.SitePrefix)
-
-        lfn = "/" + path[len(self.SitePrefix):]
-
-        if self.RemovePrefix and lfn.startswith(self.RemovePrefix):
-            lfn = lfn[len(self.RemovePrefix):]
+        assert path.startswith('/'), f"Expected input path to start with /: {path}"
+        if self.RemovePrefix and path.startswith(self.RemovePrefix):
+            path = path[len(self.RemovePrefix):]
 
         if self.AddPrefix:
-            lfn = self.AddPrefix + lfn
+            path = self.AddPrefix + path
 
-        return lfn
-        
-    def relative_path(self, path):
-        root_path = canonic_path(self.SitePrefix + "/" + root)
-        assert path.startswith(root_path + "/")
-        return canonic_path(path[len(root_path)+1:])
-            
+        return canonic_path(path)
 
 class Prescanner(Primitive):
 
@@ -100,7 +90,8 @@ class Prescanner(Primitive):
 
         def run(self):
             self.Client = XRootDClient(self.Server, self.IsRedirector, self.ServerRoot, 
-                    root=self.Root, timeout=self.Timeout, name=f"XRootDClient({self.Root})")
+                    timeout=self.Timeout, name=f"XRootDClient({self.Root})")
+            self.Client.prescan(self.Root)
             status, self.Error, _, _ = self.Client.ls(self.Root, False, False)
             self.Failed = status != "OK"
             return not self.Failed
@@ -151,15 +142,14 @@ class Scanner(Task):
         self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
         self.IncludeSizes = include_sizes
         self.ReportEmptyTop = report_empty_top
+        #print("Scanner create for location:", self.Location)
 
     def __str__(self):
         return "Scanner(%s)" % (self.Location,)
 
     def message(self, status, stats):
         if self.Master is not None:
-            path = self.Client.absolute_path(self.Location)
-            #self.Master.message("%-100s\t%s %s" % (truncated_path(self.Master.Root, path), status, stats))
-            self.Master.message("%s %s %s" % (status, stats, truncated_path(self.Master.Root, path)))
+            self.Master.message("%s %s %s" % (status, stats, self.Location))
 
     @synchronized
     def killme(self):
@@ -186,11 +176,19 @@ class Scanner(Task):
         self.WasRecursive = recursive
         #self.message("start", stats)
 
+        # Location is relative to the server root, it does start with '/'. E.g. /store/mc/run2
         status, reason, dirs, files = self.Client.ls(self.Location, recursive, self.IncludeSizes)
+        # paths are relative to the Server Root, they do start with '/', e.g. /store/mc/run2/data.file
         files = list(files)
         dirs = list(dirs)
-
         self.Elapsed = time.time() - self.Started
+        if status != "OK":
+            stats += " " + reason
+            self.message(status, stats)
+            if self.Master is not None:
+                self.Master.scanner_failed(self, f"{status}: {reason}")
+            return
+
         #stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
         stats = "r" if recursive else " "
     
@@ -201,30 +199,21 @@ class Scanner(Task):
         if recursive:
             empty_dirs = set(p for p, _ in dirs)
             for path, _ in files:
-                while path and path != '/':
-                    path = self.parent(path)
-                    try:
-                        empty_dirs.remove(path)
-                    except KeyError:
-                        break
+                dirpath = self.parent(path)
+                while dirpath and dirpath != '/' and dirpath in empty_dirs:
+                    empty_dirs.remove(dirpath)
+                    dirpath = self.parent(dirpath)
 
         if self.ReportEmptyTop and (recursive or not dirs) and not files:
-            empty_dirs.add(self.Client.absolute_path(self.Location))
+            empty_dirs.add(self.Location)
 
-        if status != "OK":
-            stats += " " + reason
-            self.message(status, stats)
-            if self.Master is not None:
-                self.Master.scanner_failed(self, f"{status}: {reason}")
-
-        else:
-            counts = " files: %-8d dirs: %-8d empty: %-8d" % (len(files), len(dirs), len(empty_dirs))
-            if self.IncludeSizes:
-                total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
-                counts += " size: %10.3fGB" % (total_size/GB,)
-            self.message("done", stats+counts)
-            if self.Master is not None:
-                self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, empty_dirs)
+        counts = " files: %-8d dirs: %-8d empty: %-8d" % (len(files), len(dirs), len(empty_dirs))
+        if self.IncludeSizes:
+            total_size = sum(size for _, size in files) + sum(size for _, size in dirs)
+            counts += " size: %10.3fGB" % (total_size/GB,)
+        self.message("done", stats+counts)
+        if self.Master is not None:
+            self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, empty_dirs)
 
 class ScannerMaster(PyThread):
     
@@ -239,7 +228,6 @@ class ScannerMaster(PyThread):
         self.PathConverter = path_converter
         self.Client = client
         self.Root = root
-        self.AbsoluteRootPath = client.absolute_path(root)
         self.MaxScanners = max_scanners
         self.Results = DEQueue(self.RESULTS_BUFFER_SISZE)
         self.ScannerQueue = TaskQueue(max_scanners, stagger=0.2)
@@ -276,62 +264,33 @@ class ScannerMaster(PyThread):
         self.ScannerQueue.Delegate = None       # detach for garbage collection
         self.ScannerQueue = None
         
-    def dir_ignored(self, path):
+    def dir_ignored(self, logpath):
         # path is expected to be canonic here
-        relpath = self.PathConverter.relative_path(path)
-        return any((relpath == subdir or relpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
+        return any((logpath == subdir or logpath.startswith(subdir+"/")) for subdir in self.IgnoreList)
 
-    def file_ignored(self, path):
+    def file_ignored(self, logpath):
         # path is expected to be canonic here
-        relpath = self.PathConverter.relative_path(path)
-        return any(relpath.startswith(subdir+"/") for subdir in self.IgnoreList) or relpath in self.IgnoreList
+        return any(logpath.startswith(subdir+"/") for subdir in self.IgnoreList) or logpath in self.IgnoreList
 
-    @synchronized
-    def addFiles(self, files):
+    def addDirectoryToScan(self, logpath, allow_recursive):
         if not self.Failed:
-            for path in files:
-                self.Results.append(('f', path))
-                self.NFiles += 1
+            relpath = logpath[len(self.Root):]
+            reldepth = len([w for w in relpath.split('/') if w])
 
-    def addDirectory(self, path, scan, allow_recursive):
-        if scan and not self.Failed:
-            assert path.startswith(self.AbsoluteRootPath)
-            relpath = path[len(self.AbsoluteRootPath):]
-            while relpath and relpath[0] == '/':
-                relpath = relpath[1:]
-            while relpath and relpath[-1] == '/':
-                relpath = relpath[:-1]
-            reldepth = 0 if not relpath else len(relpath.split('/'))
-            
             allow_recursive = allow_recursive and (self.RecursiveThreshold is not None 
                 and reldepth >= self.RecursiveThreshold 
             )
 
             if self.MaxFiles is None or self.NFiles < self.MaxFiles:
                 self.ScannerQueue.addTask(
-                    Scanner(self, self.Client, path, allow_recursive, include_sizes=self.IncludeSizes)
+                    Scanner(self, self.Client, logpath, allow_recursive, include_sizes=self.IncludeSizes)
                 )
                 self.NToScan += 1
-
-    def addDirectories(self, dirs, scan=True, allow_recursive=True):
-        if not self.Failed:
-            for d in dirs:
-                self.Results.append(('d', d))
-                self.NDirectories += 1
-                d = canonic_path(d)
-                if self.dir_ignored(d):
-                    if scan:
-                        print(d, " - ignored")
-                        self.IgnoredDirs += 1
-                else:
-                    self.addDirectory(d, scan, allow_recursive)
-            self.show_progress()
-            self.report()
 
     def addEmptyDirectories(self, paths):
         if not self.Failed:
             for path in paths:
-                if path != self.AbsoluteRootPath:
+                if path != self.Root:
                     # do not report root even if it is empty
                     self.Results.append(('e', path))
                     self.NEmptyDirs += 1
@@ -362,42 +321,37 @@ class ScannerMaster(PyThread):
     @synchronized
     def scanner_succeeded(self, location, was_recursive, files, dirs, empty_dirs):
         self.NScanned += 1
-        if files:
-            paths, sizes = zip(*files)
-            self.addFiles(paths)
-            #for path, size in files:
-            #    print(f"path: {path}, size:{size}")
-            #print("total size:", sum(sizes), location)
-            if self.IncludeSizes:
-                self.TotalSize += sum(sizes)
+        for path, size in files:
+            logpath = self.PathConverter.path_to_logpath(path)
+            self.NFiles += 1
+            if not self.file_ignored(logpath):
+                self.Results.append(('f', logpath))
+                self.TotalSize += size
+            else:
+                self.IgnoredFiles += 1
 
-        if dirs:
-            paths, sizes = zip(*dirs)
-            scan = not was_recursive
-            allow_recursive = scan and len(dirs) > 1
-            self.addDirectories(paths, scan, allow_recursive)
-            #if self.IncludeSizes:
-            #    self.TotalSize += sum(sizes)
+        scan = not was_recursive
+        allow_recursive = scan and len(dirs) > 1
+        for path, size in dirs:
+            logpath = self.PathConverter.path_to_logpath(path)
+            self.NDirectories += 1
+            if self.dir_ignored(logpath):
+                self.IgnoredDirs += 1
+                if scan:    print(logpath, " - directory ignored")
+            else:
+                self.Results.append(('d', logpath))
+                if scan:
+                    self.addDirectoryToScan(logpath, allow_recursive)
 
         if empty_dirs:
-            self.addEmptyDirectories(empty_dirs)
+            self.addEmptyDirectories(empty_dirs)            # do not convert to LFN
 
         self.show_progress()
 
-    def files(self):
-        yield from self.paths('f')
-                        
-    def paths(self, type=None):
+    def paths(self):
+        # log paths, e.g. /store/mc/...
         for t, path in self.Results:
-            if type is None or type == t:
-                path = canonic_path(path)
-                if self.file_ignored(path):
-                    self.IgnoredFiles += 1
-                else:
-                    if type is None:
-                        yield t, path
-                    else:
-                        yield path
+            yield t, path
 
     @synchronized
     def show_progress(self, message=None):
@@ -481,6 +435,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     max_scanners = override_max_scanners or config.NWorkers
     ignore_subdirs = config.ignore_subdirs(root)
     is_redirector = config.ServerIsRedirector
+    ignore_list = config.IgnoreList
 
     t0 = time.time()
     root_stats = {
@@ -496,8 +451,6 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     my_stats["scanning"] = root_stats
     if stats is not None:
         stats.update_section(stats_key, my_stats)
-
-    ignore_list = config.ignore_subdirs(root)
 
     remove_prefix = config.RemovePrefix
     add_prefix = config.AddPrefix
@@ -531,17 +484,15 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     if not path_prefix.endswith("/"):
         path_prefix += "/"
 
-    for t, path in master.paths():
+    for t, logpath in master.paths():
         # here, path is absolute path, which includes site root
-        lfn = path_to_lfn(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out)
-        if path:
-            if t == 'f':
-                file_list.add(lfn)             
-            elif t == 'd' and dir_list is not None:
-                dir_list.add(lfn)
-            elif t == 'e' and empty_dirs_file is not None:
-                empty_dirs_file.write(lfn)
-                empty_dirs_file.write("\n")
+        if t == 'f':
+            file_list.add(logpath)             
+        elif t == 'd' and dir_list is not None:
+            dir_list.add(logpath)
+        elif t == 'e' and empty_dirs_file is not None:
+            empty_dirs_file.write(logpath)
+            empty_dirs_file.write("\n")
 
     if display_progress:
         master.close_progress()
@@ -731,7 +682,8 @@ if __name__ == "__main__":
     if empty_dirs_file is not None:
         empty_dirs_file.close()
 
-    if failed or all_roots_failed:
+    total_files = sum(root_stats["files"] for root_stats in my_stats["roots"])
+    if failed or all_roots_failed or total_files == 0:
         my_stats["status"] = "failed"
     else:
         my_stats["status"] = "done"
