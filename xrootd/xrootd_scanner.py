@@ -272,15 +272,11 @@ class ScannerMaster(PyThread):
         # path is expected to be canonic here
         return any(logpath.startswith(subdir+"/") for subdir in self.IgnoreList) or logpath in self.IgnoreList
 
-    def addDirectory(self, logpath, scan, allow_recursive):
-        if scan and not self.Failed:
+    def addDirectoryToScan(self, logpath, allow_recursive):
+        if not self.Failed:
             relpath = logpath[len(self.Root):]
-            while relpath and relpath[0] == '/':
-                relpath = relpath[1:]
-            while relpath and relpath[-1] == '/':
-                relpath = relpath[:-1]
-            reldepth = 0 if not relpath else len(relpath.split('/'))
-            
+            reldepth = len([w for w in relpath.split('/') if w])
+
             allow_recursive = allow_recursive and (self.RecursiveThreshold is not None 
                 and reldepth >= self.RecursiveThreshold 
             )
@@ -338,14 +334,14 @@ class ScannerMaster(PyThread):
         allow_recursive = scan and len(dirs) > 1
         for path, size in dirs:
             logpath = self.PathConverter.path_to_logpath(path)
-            self.Results.append(('d', logpath))
             self.NDirectories += 1
             if self.dir_ignored(logpath):
+                self.IgnoredDirs += 1
+                if scan:    print(logpath, " - directory ignored")
+            else:
+                self.Results.append(('d', logpath))
                 if scan:
-                    print(logpath, " - directory ignored")
-                    self.IgnoredDirs += 1
-            elif scan:
-                self.addDirectory(logpath, scan, allow_recursive)
+                    self.addDirectoryToScan(logpath, allow_recursive)
 
         if empty_dirs:
             self.addEmptyDirectories(empty_dirs)            # do not convert to LFN
