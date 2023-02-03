@@ -28,13 +28,6 @@ echo "out:                       $out"
 echo "cert:                      $cert"
 echo "key:                       $key"
 
-if [ ! -f /consistency/config.yaml ]; then
-    cp $config_file /consistency/config.yaml    # to make it editable
-    echo Config file $config_file copied to /consistency/config.yaml
-fi
-
-config_file=/consistency/config.yaml
-
 python=${PYTHON:-python}
 
 export PYTHONPATH=`pwd`:`pwd`/cmp3
