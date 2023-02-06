@@ -465,6 +465,9 @@ class CCDataSource(DataSource):
     def get_dark(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "D", limit)
 
+    def get_dark_action(self, rse, run, limit=None):
+        return self.get_dark_or_missing(rse, run, "D_action", limit)
+
     def get_missing(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "M", limit)
         

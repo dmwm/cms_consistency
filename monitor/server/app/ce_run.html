@@ -252,7 +252,13 @@
                             <td class="field_name">Dark files</td><td>{{ndark}}</td>
                             <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
                             <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
-                        <td>{{old_ndark|none_as_blank}}</td>
+                            <td>{{old_ndark|none_as_blank}}</td>
+                        </tr>
+                        <tr>
+                            <td class="field_name">Confirmed dark files</td><td>{{ndark_confirmed}}</td>
+                            <td>{% if dark %}<a href="#dark_confirmed_list_ref" id="dark_confirmed_list_toggle" onclick="show('dark_confirmed')">show</a>{% endif %}</td>
+                            <td>{% if dark %}<a href="./dark_confirmed/dark_confirmed_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                            <td></td>
                         </tr>
                     </table>
             

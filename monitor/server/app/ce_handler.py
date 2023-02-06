@@ -260,6 +260,13 @@ class CEHandler(WPHandler):
             "Content-Disposition":"attachment"
         }
             
+    def dark_confirmed(self, request, relpath, rse=None, run=None, **args):
+        lst = self.CCDataSource.get_dark_action(rse, run)
+        return (path+"\n" for path in lst), {
+            "Content-Type":"text/plain",
+            "Content-Disposition":"attachment"
+        }
+            
     def missing(self, request, relpath, rse=None, run=None, **args):
         lst = self.CCDataSource.get_missing(rse, run)
         return (path+"\n" for path in lst), {
@@ -309,6 +316,7 @@ class CEHandler(WPHandler):
         missing_truncated = (nmissing or 0) > self.LIMIT
         
         dark = self.CCDataSource.get_dark(rse, run, self.LIMIT)
+        dark_confirmed = self.CCDataSource.get_dark_action(rse, run, self.LIMIT)
         missing = self.CCDataSource.get_missing(rse, run, self.LIMIT)
         
         #
@@ -343,9 +351,10 @@ class CEHandler(WPHandler):
             scanner_roots = scanner_roots,
             cmp3=stats.get("cmp3"),
             stats=stats, summary=summary,
-            ndark = ndark, nmissing=nmissing,
+            ndark = ndark, nmissing=nmissing, ndark_confirmed=confirmed_dark,
             old_ndark = old_ndark, old_nmissing = old_nmissing,
             dark = self.display_file_list(dark),
+            dark_confirmed = self.display_file_list(dark_confirmed),
             missing = self.display_file_list(missing),
             stats_parts=stats_parts,
             time_now = time.time()
