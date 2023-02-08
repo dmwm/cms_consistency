@@ -256,8 +256,8 @@
                         </tr>
                         <tr>
                             <td class="field_name">Confirmed dark files</td><td>{{ndark_confirmed}}</td>
-                            <td>{% if dark %}<a href="#dark_confirmed_list_ref" id="dark_confirmed_list_toggle" onclick="show('dark_confirmed')">show</a>{% endif %}</td>
-                            <td>{% if dark %}<a href="./dark_confirmed/dark_confirmed_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                            <td>{% if dark_confirmed %}<a href="#dark_confirmed_list_ref" id="dark_confirmed_list_toggle" onclick="show('dark_confirmed')">show</a>{% endif %}</td>
+                            <td>{% if dark_confirmed %}<a href="./dark_confirmed/dark_confirmed_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
                             <td></td>
                         </tr>
                     </table>
@@ -280,6 +280,18 @@
                         <a id="dark_list_ref"></a>
                         <h4>Dark files{% if dark_truncated %} (truncated){% endif %}</h4>
                         {% for f in dark %}
+                            <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+                        {%- endfor %}
+                    </div>
+            
+                    {% endif %}
+                    
+                    {% if dark_confirmed %}
+
+                    <div id="dark_confirmed_list" class="hidden">
+                        <a id="dark_confirmed_list_ref"></a>
+                        <h4>Confirmed dark files{% if dark_confirmed_truncated %}(truncated){% endif %}</h4>
+                        {% for f in dark_confirmed %}
                             <span class="lfn {{f|path_type}}">{{f}}</span><br/>
                         {%- endfor %}
                     </div>

@@ -313,6 +313,7 @@ class CEHandler(WPHandler):
             scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"])
         
         dark_truncated = (ndark or 0)  > self.LIMIT
+        dark_confirmed_truncated = (confirmed_dark or 0)  > self.LIMIT
         missing_truncated = (nmissing or 0) > self.LIMIT
         
         dark = self.CCDataSource.get_dark(rse, run, self.LIMIT)
@@ -344,6 +345,7 @@ class CEHandler(WPHandler):
             rse=rse, run=run,
             errors = errors,
             dark_truncated = dark_truncated, 
+            dark_confirmed_truncated = dark_confirmed_truncated, 
             missing_truncated=missing_truncated,
             dbdump_before=stats.get("dbdump_before"),
             dbdump_after=stats.get("dbdump_after"),
