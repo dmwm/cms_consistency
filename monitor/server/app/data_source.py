@@ -115,11 +115,14 @@ class DataSource(object):
                 data.setdefault("rse", rse)
         except Exception as e:
             if not raw:
+                """
                 data = {
                     "rse":  rse,
                     "run":  run,
                     "error":    str(e)
                 }
+                """
+                return None
             else:
                 raise
         return self.postprocess_stats(data) if not raw else data
