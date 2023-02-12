@@ -146,18 +146,29 @@ class CCRun(object):
             line = line.strip()
             if line:
                 yield line
+                
+    def list_interator(self, typ):
+        path = f"{self.Path}/{self.RSE}_{self.Run}_{typ}.list"
+        gzipped_path = path + ".gz"
+        if os.path.isfile(path):
+            f = open(path, "r")
+        elif os.path.isfile(gzipped_path):
+            f = gzip.open(gzipped_path, "rt")
+        else:
+            raise RuntimeError("File not found: %s, %s" % (path, gzipped_path))
+        return (l for l in (line.strip() for line in f) if l)
 
     def missing_files(self):
-        yield from self.list_lines("M")
+        yield from self.list_interator("M")
 
     def dark_files(self):
-        yield from self.list_lines("D")
+        yield from self.list_interator("D")
         
     def confirmed_dark_files(self):
-        yield from self.list_lines("D_action")
+        yield from self.list_interator("D_action")
         
     def empty_directories(self):
-        try:    ed_list = self.list_lines("ED")
+        try:    ed_list = self.list_interator("ED")
         except RuntimeError:
             # if ED list file not found, return empty list
             ed_list = []
