@@ -149,7 +149,7 @@ echo
 echo Comparing ...
 echo
 
-$python cmp3/cmp5.py -s ${stats} \
+$python cmp3/cmp5.py -z -s ${stats} \
     ${bm_prefix} ${bd_prefix} \
     ${r_prefix} \
     ${am_prefix} ${ad_prefix} \

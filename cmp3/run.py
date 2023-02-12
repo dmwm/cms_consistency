@@ -157,7 +157,11 @@ class CCRun(object):
         yield from self.list_lines("D_action")
         
     def empty_directories(self):
-        yield from self.list_lines("ED")
+        try:    ed_list = self.list_lines("ED")
+        except RuntimeError:
+            # if ED list file not found, return empty list
+            ed_list = []
+        yield from ed_list
 
     def confirmed_empty_directories(self):
         yield from self.list_lines("ED_action")

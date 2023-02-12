@@ -331,7 +331,7 @@ class ScannerMaster(PyThread):
                 self.IgnoredFiles += 1
 
         scan = not was_recursive
-        allow_recursive = scan and len(dirs) > 1
+        allow_recursive = scan #and len(dirs) > 1
         for path, size in dirs:
             logpath = self.PathConverter.path_to_logpath(path)
             self.NDirectories += 1
