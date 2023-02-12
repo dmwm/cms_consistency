@@ -166,7 +166,8 @@ class CCRun(object):
         
     def confirmed_dark_files(self):
         yield from self.list_interator("D_action")
-        
+
+
     def empty_directories(self):
         try:    ed_list = self.list_interator("ED")
         except RuntimeError:
