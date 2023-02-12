@@ -141,18 +141,18 @@ class DataSource(object):
         return out
         
     def latest_stats_for_rse(self, rse):
-        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
+        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"), reverse=True)
         latest_file = None
         latest_run = None
+        latest_stats = None
         for path in files:
             tup = self.parse_stats_path(path)
             if tup:
                 r, run = tup
                 if r == rse:
-                    latest_file = path
-                    latest_run = run
-        if latest_file:
-            return self.read_stats(rse, latest_run, path=latest_file)
+                    stats = self.read_stats(rse, run, path=path)
+                    if stats:
+                        return stats
         else:
             return None
             
