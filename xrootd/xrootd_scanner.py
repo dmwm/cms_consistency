@@ -126,6 +126,7 @@ class Scanner(Task):
     
     MAX_ATTEMPTS_REC = 2
     MAX_ATTEMPTS_FLAT = 3
+    MAX_ZERO_RETRY = 1
 
     def __init__(self, master, client, location, recursive, include_sizes = True, report_empty_top = True):
         Task.__init__(self)
@@ -140,6 +141,7 @@ class Scanner(Task):
         self.Elapsed = None
         self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
         self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
+        self.ZeroAttempts = self.MAX_ZERO_RETRY
         self.IncludeSizes = include_sizes
         self.ReportEmptyTop = report_empty_top
         #print("Scanner create for location:", self.Location)
@@ -213,7 +215,7 @@ class Scanner(Task):
             counts += " size: %10.3fGB" % (total_size/GB,)
         self.message("done", stats+counts)
         if self.Master is not None:
-            self.Master.scanner_succeeded(location, self.WasRecursive, files, dirs, empty_dirs)
+            self.Master.scanner_succeeded(self, location, self.WasRecursive, files, dirs, empty_dirs)
 
 class ScannerMaster(PyThread):
     
@@ -309,7 +311,7 @@ class ScannerMaster(PyThread):
         path = scanner.Location                
         retry = (scanner.RecAttempts > 0) or (scanner.FlatAttempts > 0)
         if retry:
-            print("resubmitted:", scanner.Location, scanner.RecAttempts, scanner.FlatAttempts)
+            print("resubmitted because of error:", scanner.Location, scanner.RecAttempts, scanner.FlatAttempts)
             self.ScannerQueue.addTask(scanner)
         else:
             print("Gave up:", scanner.Location)
@@ -317,9 +319,15 @@ class ScannerMaster(PyThread):
             self.NScanned += 1  
             #sys.stderr.write("Gave up on: %s\n" % (path,))
             self.show_progress()            #"Error scanning %s: %s -- retrying" % (scanner.Location, error))
-        
+
     @synchronized
-    def scanner_succeeded(self, location, was_recursive, files, dirs, empty_dirs):
+    def scanner_succeeded(self, scanner, location, was_recursive, files, dirs, empty_dirs):
+        if not files and not dirs and scanner.ZeroAttempts > 0:
+            scanner.ZeroAttempts -= 1
+            print("resubmitted because nothing was found:", scanner.Location)
+            self.ScannerQueue.addTask(scanner)
+            return
+
         self.NScanned += 1
         for path, size in files:
             logpath = self.PathConverter.path_to_logpath(path)
