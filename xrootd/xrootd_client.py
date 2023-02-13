@@ -235,7 +235,7 @@ if __name__ == "__main__":
     timeout = int(opts.get("-t", 30))
 
     client = XRootDClient(args[0], True, args[1], timeout=timeout)
-    status, reason, dirs, files = client.ls(args[2])
+    status, reason, dirs, files = client.ls(args[2], "-R" in opts, "-l" in opts)
     print(status, reason)
     if status == "OK":
         for path in files:
