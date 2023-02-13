@@ -141,7 +141,7 @@ class Scanner(Task):
         self.Elapsed = None
         self.RecAttempts = self.MAX_ATTEMPTS_REC if recursive else 0
         self.FlatAttempts = self.MAX_ATTEMPTS_FLAT
-        self.ZeroAttempts = self.MAX_ZERO_RETRY
+        self.ZeroAttempts = self.MAX_REC_ZERO_RETRY
         self.IncludeSizes = include_sizes
         self.ReportEmptyTop = report_empty_top
         #print("Scanner create for location:", self.Location)
