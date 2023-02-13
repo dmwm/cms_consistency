@@ -228,13 +228,21 @@ if __name__ == "__main__":
     python xrootd_client <server> <root> [-t <timeout>] [-l] [-R] <path>
     """
     opts, args = getopt.getopt(sys.argv[1:], "lRt:")
-    if len(args) < 2:
+    if len(args) < 3:
         print(Usage)
         sys.exit(2)
     opts = dict(opts)
     timeout = int(opts.get("-t", 30))
 
-    client = XRootDClient(args[0], True, args[1], timeout=timeout)
+    server, root, path = args
+    client = XRootDClient(server, True, root, timeout=timeout)
+    
+    if root:
+        client.prescan()
+        print("Prescanned. Servers:")
+        for srv in client.Servers:
+            print("  ", srv)
+    
     status, reason, dirs, files = client.ls(args[2], "-R" in opts, "-l" in opts)
     print(status, reason)
     if status == "OK":
