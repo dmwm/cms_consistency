@@ -238,7 +238,7 @@ if __name__ == "__main__":
     client = XRootDClient(server, True, root, timeout=timeout)
     
     if root:
-        client.prescan()
+        client.prescan(root)
         print("Prescanned. Servers:")
         for srv in client.Servers:
             print("  ", srv)
