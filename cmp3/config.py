@@ -262,6 +262,7 @@ class CEConfiguration(object):
         self.RSE = rse
         self.NPartitions = int(backend.rse_param(rse, "npartitions", 10))
         self.IgnoreList = self.rse_param(rse, "ignore_list", [])
+        self.RootList = self.root_list(rse)
         
     def __contains__(self, name):
         try:    _ = self[name]
@@ -284,7 +285,6 @@ class ScannerConfiguration(CEConfiguration):
         self.Server = self.scanner_param(rse, "server", None, required=True)
         self.ServerRoot = self.scanner_param(rse, "server_root", "/")           # prefix up to, but not including /store/
         self.ScannerTimeout = int(self.scanner_param(rse, "timeout", 300))
-        self.RootList = self.root_list(rse)
         self.RemovePrefix = self.scanner_param(rse, "remove_prefix", "")        # to be applied after site root is removed
         self.AddPrefix = self.scanner_param(rse, "add_prefix", "")              # to be applied after site root is removed
         self.NWorkers = int(self.scanner_param(rse, "nworkers", 8))
