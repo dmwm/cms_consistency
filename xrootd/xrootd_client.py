@@ -243,7 +243,7 @@ if __name__ == "__main__":
         for srv in client.Servers:
             print("  ", srv)
     
-    status, reason, dirs, files = client.ls(args[2], "-R" in opts, "-l" in opts)
+    status, reason, dirs, files = client.ls(path, "-R" in opts, "-l" in opts)
     print(status, reason)
     if status == "OK":
         print("Files:   ", len(files))
