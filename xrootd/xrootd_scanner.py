@@ -178,6 +178,7 @@ class Scanner(Task):
             self.FlatAttempts -= 1
         self.WasRecursive = recursive
         #self.message("start", stats)
+        stats = "r" if recursive else " "
 
         # Location is relative to the server root, it does start with '/'. E.g. /store/mc/run2
         status, reason, dirs, files = self.Client.ls(self.Location, recursive, self.IncludeSizes, timeout=self.Timeout)
@@ -193,7 +194,6 @@ class Scanner(Task):
             return
 
         #stats = "%1s %7.3fs" % ("r" if recursive else " ", self.Elapsed)
-        stats = "r" if recursive else " "
     
         #
         # create the set of directories, which contain no files, recursively
