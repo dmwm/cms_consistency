@@ -124,9 +124,9 @@ class Prescanner(Primitive):
 
 class Scanner(Task):
     
-    MAX_ATTEMPTS_REC = 2
+    MAX_ATTEMPTS_REC = 3
     MAX_ATTEMPTS_FLAT = 3
-    MAX_ZERO_RETRY = 1
+    MAX_REC_ZERO_RETRY = 1
 
     def __init__(self, master, client, location, recursive, include_sizes = True, report_empty_top = True):
         Task.__init__(self)
@@ -322,9 +322,9 @@ class ScannerMaster(PyThread):
 
     @synchronized
     def scanner_succeeded(self, scanner, location, was_recursive, files, dirs, empty_dirs):
-        if not files and not dirs and scanner.ZeroAttempts > 0:
+        if not files and not dirs and was_recursive and scanner.ZeroAttempts > 0:
             scanner.ZeroAttempts -= 1
-            print("resubmitted because nothing was found:", scanner.Location)
+            print("resubmitted because recursive scan found nothing:", scanner.Location)
             self.ScannerQueue.addTask(scanner)
             return
 
