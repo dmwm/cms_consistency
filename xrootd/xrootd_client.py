@@ -163,13 +163,14 @@ class XRootDClient(Primitive):
                     size = None
         return "OK", None, typ, size
 
-    def ls(self, location, recursive, with_meta):
+    def ls(self, location, recursive, with_meta, timeout=None):
         # returns list of paths relative to the server root, relative paths do start with "/"
         #print(f"scan({location}, rec={recursive}, with_meta={with_meta}):...")
         files = []
         dirs = []
         status = "OK"
         reason = ""
+        timeout = timeout or self.Timeout
 
         location = self.absolute_path(location)
         server = self.next_server()
@@ -177,7 +178,7 @@ class XRootDClient(Primitive):
 
         try:
             #print(f"lscommand: {lscommand}")
-            retcode, out, err = ShellCommand.execute(lscommand, timeout=self.Timeout)
+            retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
             #print(f"retcode: {retcode}")
         except RuntimeError:
             status = "failed"
@@ -219,3 +220,25 @@ class XRootDClient(Primitive):
             self.release_server(server)
 
         return status, reason, dirs, files
+        
+if __name__ == "__main__":
+    # test
+    import sys, getopt
+    Usage = """
+    python xrootd_client <server> <root> [-t <timeout>] [-l] [-R] <path>
+    """
+    opts, args = getopt.getopt(sys.argv[1:], "lRt:")
+    if len(args) < 2:
+        print(Usage)
+        sys.exit(2)
+    opts = dict(opts)
+    timeout = int(opts.get("-t", 30))
+
+    client = (args[0], True, args[1], timeout=timeout)
+    status, reason, dirs, files = client.ls(args[2])
+    print(status, reason)
+    if status == "OK":
+        for path in files:
+            print(path)
+    
+    

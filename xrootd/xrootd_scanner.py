@@ -128,7 +128,7 @@ class Scanner(Task):
     MAX_ATTEMPTS_FLAT = 3
     MAX_REC_ZERO_RETRY = 1
 
-    def __init__(self, master, client, location, recursive, include_sizes = True, report_empty_top = True):
+    def __init__(self, master, client, timeout, location, recursive, include_sizes = True, report_empty_top = True):
         Task.__init__(self)
         self.Client = client
         self.Master = master
@@ -144,6 +144,7 @@ class Scanner(Task):
         self.ZeroAttempts = self.MAX_REC_ZERO_RETRY
         self.IncludeSizes = include_sizes
         self.ReportEmptyTop = report_empty_top
+        self.Timeout = timeout
         #print("Scanner create for location:", self.Location)
 
     def __str__(self):
@@ -179,7 +180,7 @@ class Scanner(Task):
         #self.message("start", stats)
 
         # Location is relative to the server root, it does start with '/'. E.g. /store/mc/run2
-        status, reason, dirs, files = self.Client.ls(self.Location, recursive, self.IncludeSizes)
+        status, reason, dirs, files = self.Client.ls(self.Location, recursive, self.IncludeSizes, timeout=self.Timeout)
         # paths are relative to the Server Root, they do start with '/', e.g. /store/mc/run2/data.file
         files = list(files)
         dirs = list(dirs)
@@ -252,13 +253,14 @@ class ScannerMaster(PyThread):
         self.IgnoredFiles = self.IgnoredDirs = 0
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
+        self.Timeout = timeout
 
     def run(self):
         #
         # scan Root non-recursovely first, if failed, return immediarely
         #
         #server, location, recursive, timeout
-        scanner_task = Scanner(self, self.Client, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes, report_empty_top=False)
+        scanner_task = Scanner(self, self.Client, self.Timeout, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes, report_empty_top=False)
         self.ScannerQueue.addTask(scanner_task)
         
         self.ScannerQueue.waitUntilEmpty()
