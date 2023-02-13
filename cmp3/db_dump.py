@@ -37,6 +37,7 @@ python db_dump.py [options] -c <config.yaml> <rse_name>
     -z -- produce gzipped output
     -s <stats file> -- write stats into JSON file
        -S <key> -- add dump stats to stats under the key
+    -r <file>   -- file counts per root and store in the file as JSON structure with file counts
     -m <N files> -- stop after N files
 """
 
@@ -90,7 +91,7 @@ class GUID(TypeDecorator):
         else:
             return str(uuid.UUID(value)).replace('-', '').lower()
 
-opts, args = getopt.getopt(sys.argv[1:], "f:c:ln:vd:s:S:zm:")
+opts, args = getopt.getopt(sys.argv[1:], "f:c:ln:vd:s:S:zm:r:")
 
 filters = {}
 all_states = set()
@@ -113,6 +114,9 @@ zout = "-z" in opts
 stats_file = opts.get("-s")
 stats_key = opts.get("-S", "db_dump")
 stop_after = int(opts.get("-m", 0)) or None
+root_file_counts_out = opts.get("-r")
+if root_file_counts_out:
+    root_file_counts_out = open(root_file_counts_out, "w")
 
 rse_name = args[0]
 
@@ -211,6 +215,7 @@ try:
     ignored_files = 0
     if filter_re:
         filter_re = re.compile(filter_re)
+    root_file_counts = {root: 0 for root in config.RootList}
     for r in replicas:
         path = r.name
         state = r.state
@@ -225,7 +230,13 @@ try:
         if any(path.startswith(ignore_prefix) for ignore_prefix in ignore_list):
             ignored_files += 1
             continue
-            
+
+        for r, n in list(root_file_counts.items()):
+            prefix = r + '/' if not r.endswith('/') else r
+            if path.startswith(prefix):
+                root_file_counts[r] = n + 1
+                break
+
         words = path.rsplit("/", 1)
         if len(words) == 1:
                 dirp = "/"
@@ -275,3 +286,6 @@ else:
             "directories":len(dirs),
             "ignore_list":ignore_list
         })
+    if root_file_counts_out is not None:
+        root_file_counts_out.write(json.dumps(root_file_counts, indent=4, sort_keys=True))
+        root_file_counts_out.close()
