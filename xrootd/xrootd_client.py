@@ -218,7 +218,7 @@ class XRootDClient(Primitive):
                         dirs.append((path, size))
         finally:
             self.release_server(server)
-
+        #print(status, reason, len(dirs), len(files))
         return status, reason, dirs, files
         
 if __name__ == "__main__":

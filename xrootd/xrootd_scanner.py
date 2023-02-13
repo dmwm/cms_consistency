@@ -233,7 +233,7 @@ class ScannerMaster(PyThread):
         self.Root = root
         self.MaxScanners = max_scanners
         self.Results = DEQueue(self.RESULTS_BUFFER_SISZE)
-        self.ScannerQueue = TaskQueue(max_scanners, stagger=0.2)
+        self.ScannerQueue = TaskQueue(max_scanners, stagger=0.2, delegate=self)
         self.Done = False
         self.Error = None
         self.Failed = False
@@ -254,6 +254,9 @@ class ScannerMaster(PyThread):
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
         self.Timeout = timeout
+
+    def taskFailed(self, queue, task, exc_type, exc_value, tb):
+        traceback.print_exception(exc_type, exc_value, tb, file=sys.stderr)
 
     def run(self):
         #
@@ -277,6 +280,7 @@ class ScannerMaster(PyThread):
         return any(logpath.startswith(subdir+"/") for subdir in self.IgnoreList) or logpath in self.IgnoreList
 
     def addDirectoryToScan(self, logpath, allow_recursive):
+        #print("addDirectoryToScan:", logpath)
         if not self.Failed:
             relpath = logpath[len(self.Root):]
             reldepth = len([w for w in relpath.split('/') if w])
@@ -287,9 +291,10 @@ class ScannerMaster(PyThread):
 
             if self.MaxFiles is None or self.NFiles < self.MaxFiles:
                 self.ScannerQueue.addTask(
-                    Scanner(self, self.Client, logpath, allow_recursive, include_sizes=self.IncludeSizes)
+                    Scanner(self, self.Client, self.Timeout, logpath, allow_recursive, include_sizes=self.IncludeSizes)
                 )
                 self.NToScan += 1
+        #print("  added")
 
     def addEmptyDirectories(self, paths):
         if not self.Failed:
@@ -342,6 +347,7 @@ class ScannerMaster(PyThread):
 
         scan = not was_recursive
         allow_recursive = scan #and len(dirs) > 1
+        #print("scanner_succeeded: loop over dirs... scan:", scan)
         for path, size in dirs:
             logpath = self.PathConverter.path_to_logpath(path)
             self.NDirectories += 1
