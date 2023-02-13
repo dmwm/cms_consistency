@@ -238,13 +238,15 @@ if __name__ == "__main__":
     client = XRootDClient(server, True, root, timeout=timeout)
     
     if root:
+        t0 = time.time()
         client.prescan(root)
-        print("Prescanned. Servers:")
+        print("Prescanned, %.3f seconds. Servers:" % (time.time()-t0,))
         for srv in client.Servers:
             print("  ", srv)
     
+    t0 = time.time()
     status, reason, dirs, files = client.ls(path, "-R" in opts, "-l" in opts)
-    print(status, reason)
+    print(status, reason, time.time()-t0, "seconds")
     if status == "OK":
         print("Files:   ", len(files))
         print("Dirs:    ", len(dirs))
