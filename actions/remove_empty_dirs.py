@@ -184,8 +184,12 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     runs = list(CCRun.runs_for_rse(storage_path, rse, complete_only=False))
     now = datetime.now()
-    #for r in runs:
-    #    print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count())
+    for r in runs:
+        print(r.Run, ":  in window:", r.Timestamp >= now - timedelta(days=window), 
+                "  ED info collected:", r.empty_directories_collected(), 
+                "  count:", r.empty_directory_count(),
+                "  list present:", r.empty_dir_list_exists()
+        )
     recent_runs = sorted(
             [r for r in runs 
                 if True
@@ -193,13 +197,13 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
                     and (r.Timestamp >= now - timedelta(days=window))
                     and r.empty_directories_collected()
                     and r.empty_directory_count() is not None
-                    and (r.empty_dir_list_exists() or print("Empty directories list not found for run", r.Timestamp) and False)
+                    and r.empty_dir_list_exists()
                     #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
             ], 
             key=lambda r: r.Timestamp
     )
 
-    print("recent runs:")
+    print("Usable runs:")
     for r in recent_runs:
         print("  ", r.Run)
 
