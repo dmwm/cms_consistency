@@ -17,7 +17,7 @@ from sqlalchemy.exc import ArgumentError
 
 from stats import Stats
 
-Version = "1.2"
+Version = "1.3"
 
 t0 = time.time()
 

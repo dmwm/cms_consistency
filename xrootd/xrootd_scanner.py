@@ -6,7 +6,7 @@ from py3 import to_str
 from stats import Stats
 from xrootd_client import XRootDClient
 
-Version = "3.0"
+Version = "3.1"
 
 GB = 1024*1024*1024
 
