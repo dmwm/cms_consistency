@@ -189,7 +189,7 @@ class XRootDClient(Primitive):
         else:
             if retcode:
                 status = "failed"
-                reason = "ls status code: %s, stderr: [%s]" % (retcode, err)
+                reason = "ls status code: %s, %s" % (retcode, err)
 
                 stat_status, reasoon, typ, size = self.stat(location)
                 if stat_status != "OK":
