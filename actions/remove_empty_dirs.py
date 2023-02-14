@@ -2,7 +2,7 @@ import sys, os, getopt, time, os.path
 from datetime import datetime, timedelta
 from pythreader import TaskQueue, Task, Primitive, synchronized
 
-from run import CCRun
+from run import CCRun, FileNotFoundException
 from stats import Stats
 from config import EmptyActionConfiguration, ScannerConfiguration
 from xrootd import XRootDClient
@@ -166,6 +166,15 @@ def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_r
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
+    
+def update_confirmed(confirmed, update):
+    new_confirmed = confirmed & update
+    unconfirmed = confirmed - update
+    for path in unconfirmed:
+        for parent in parents(path):
+            try:    new_confirmed.remove(parent)
+            except KeyError:    pass
+    return new_confirmed
 
 def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
     
@@ -183,6 +192,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
                     #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
                     and (r.Timestamp >= now - timedelta(days=window))
                     and r.empty_directories_collected()
+                    and (r.empty_dir_list_exists() or print("empty directories list not found for run", r.Timestamp) and False)
                     and r.empty_directory_count() is not None
                     #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
             ], 
@@ -228,19 +238,13 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
         else:
             # compute confirmed list and make sure the list would contain only removable directories
-            
             confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
-            for run in recent_runs[1:]:
+            confirmed = update_confirmed(confirmed, set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
+            for run in recent_runs[1:-1]:
                 if not confirmed:
                     break
                 run_set = set(lfn_converter.lfn_or_path_to_path(path) for path in run.empty_directories())
-                new_confirmed = confirmed & run_set
-                unconfirmed = confirmed - run_set
-                for path in unconfirmed:
-                    for parent in parents(path):
-                        try:    new_confirmed.remove(parent)
-                        except KeyError:    pass
-                confirmed = new_confirmed
+                confirmed = update_confirmed(confirmed, run_set)
 
             confirmed_empty_count = len(confirmed)
             print("Confirmed empty directories:", confirmed_empty_count, file=sys.stderr)

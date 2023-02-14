@@ -1,6 +1,9 @@
 import glob, re, sys, os, json, os.path, gzip
 from datetime import datetime, timedelta
 
+class FileNotFoundException(Exception):
+    pass
+
 class CCRun(object):
     def __init__(self, dir_path, rse, run):
         self.Path = dir_path
@@ -155,8 +158,12 @@ class CCRun(object):
         elif os.path.isfile(gzipped_path):
             f = gzip.open(gzipped_path, "rt")
         else:
-            raise RuntimeError("File not found: %s, %s" % (path, gzipped_path))
+            raise FileNotFoundException("File not found: %s, %s" % (path, gzipped_path))
         return (l for l in (line.strip() for line in f) if l)
+
+    def list_exists(self, typ):
+        path = f"{self.Path}/{self.RSE}_{self.Run}_{typ}.list"
+        return os.path.isfile(path) or os.path.isfile(path + ".gz")
 
     def missing_files(self):
         yield from self.list_interator("M")
@@ -167,13 +174,11 @@ class CCRun(object):
     def confirmed_dark_files(self):
         yield from self.list_interator("D_action")
 
-
     def empty_directories(self):
-        try:    ed_list = self.list_interator("ED")
-        except RuntimeError:
-            # if ED list file not found, return empty list
-            ed_list = []
-        yield from ed_list
+        yield from ed_list = self.list_interator("ED")
+        
+    def empty_dir_list_exists(self):
+        return self.list_exists("ED")
 
     def confirmed_empty_directories(self):
         yield from self.list_lines("ED_action")
