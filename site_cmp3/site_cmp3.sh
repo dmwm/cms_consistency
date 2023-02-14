@@ -57,6 +57,7 @@ m_out=${out}/${RSE}_${now}_M.list
 stats=${out}/${RSE}_${now}_stats.json
 scanner_errors=${out}/${RSE}_${now}_scanner.errors
 dbdump_errors=${out}/${RSE}_${now}_dbdump.errors
+root_file_counts=${out}/${RSE}_${now}_root_file_counts.json
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -106,7 +107,11 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -z -c ${config_file} $rucio_cfg \
+    -f A:${bm_prefix} -f "*:${bd_prefix}" \
+    -s ${stats} -S "dbdump_before" \
+    -r $root_file_counts \
+    ${RSE} 2>> ${dbdump_errors}
 
 sleep 10
 
@@ -124,6 +129,7 @@ echo "Site scan..." > ${scanner_errors}
 $python xrootd/xrootd_scanner.py -z -c ${config_file} -s ${stats} \
     -o ${r_prefix} \
     -e ${empty_dirs_out} \
+    -r $root_file_counts \
     ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then
@@ -141,7 +147,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_errors}
-$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -z -c ${config_file} $rucio_cfg -f A:${am_prefix} -f "*:${ad_prefix}" -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
 
 # 4. cmp3
 
