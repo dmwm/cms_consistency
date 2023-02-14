@@ -161,7 +161,10 @@ class XRootDClient(Primitive):
                     size = int(line.split(None, 1)[1])
                 except:
                     size = None
-        return "OK", None, typ, size
+        if typ is None:
+            return "failed", "flags not found", None, None
+        else:
+            return "OK", None, typ, size
 
     def ls(self, location, recursive, with_meta, timeout=None):
         # returns list of paths relative to the server root, relative paths do start with "/"
@@ -186,10 +189,10 @@ class XRootDClient(Primitive):
         else:
             if retcode:
                 status = "failed"
-                reason = "ls status code: %s, stderr: [%s]" % (retcode, err)
+                reason = "ls status code: %s, %s" % (retcode, err)
 
-                status, reasoon, typ, size = self.stat(location)
-                if status != "OK":
+                stat_status, reasoon, typ, size = self.stat(location)
+                if stat_status != "OK":
                     reason = "stat failed: " + (reason or "")
                 else:
                     if typ == 'f':

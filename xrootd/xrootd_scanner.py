@@ -224,7 +224,7 @@ class ScannerMaster(PyThread):
     REPORT_INTERVAL = 10.0
     RESULTS_BUFFER_SISZE = 100
     
-    def __init__(self, client, path_converter, root, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
+    def __init__(self, client, path_converter, root, root_expected, recursive_threshold, max_scanners, timeout, quiet, display_progress, max_files = None,
                 include_sizes=True, ignore_list=[]):
         PyThread.__init__(self)
         self.RecursiveThreshold = recursive_threshold
@@ -254,6 +254,10 @@ class ScannerMaster(PyThread):
         self.IncludeSizes = include_sizes
         self.TotalSize = 0.0 if include_sizes else None                  # Megabytes
         self.Timeout = timeout
+        self.RootExpected = root_expected
+
+    def taskFailed(self, queue, task, exc_type, exc_value, tb):
+        traceback.print_exception(exc_type, exc_value, tb, file=sys.stderr)
 
     def taskFailed(self, queue, task, exc_type, exc_value, tb):
         traceback.print_exception(exc_type, exc_value, tb, file=sys.stderr)
@@ -265,7 +269,6 @@ class ScannerMaster(PyThread):
         #server, location, recursive, timeout
         scanner_task = Scanner(self, self.Client, self.Timeout, self.Root, self.RecursiveThreshold == 0, include_sizes=self.IncludeSizes, report_empty_top=False)
         self.ScannerQueue.addTask(scanner_task)
-        
         self.ScannerQueue.waitUntilEmpty()
         self.Results.close()
         self.ScannerQueue.Delegate = None       # detach for garbage collection
@@ -411,6 +414,7 @@ python xrootd_scanner.py [options] <rse>
     -x                          - do not use metadata (ls -l), do not include file sizes
     -M <max_files>              - stop scanning the root after so many files were found
     -s <stats_file>             - write final statistics to JSON file
+    -r <root count file>        - JSON file with file counds by root
 """
 
 def path_to_lfn(path, path_prefix, remove_prefix, add_prefix, path_filter, rewrite_path, rewrite_out):
@@ -439,7 +443,7 @@ def path_to_lfn(path, path_prefix, remove_prefix, add_prefix, path_filter, rewri
         lfn = rewrite_path.sub(rewrite_out, lfn)   
     return lfn
 
-def scan_root(rse, config, client, root, my_stats, stats, stats_key,
+def scan_root(rse, config, client, root, root_expected, my_stats, stats, stats_key,
             recursive_threshold, max_scanners, file_list, dir_list, empty_dirs_file,
             ignore_failed_directories, include_sizes):
 
@@ -456,6 +460,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     t0 = time.time()
     root_stats = {
        "root": root,
+       "expected": root_expected,
        "start_time":t0,
        "timeout":timeout,
        "recursive_threshold":recursive_threshold,
@@ -472,7 +477,7 @@ def scan_root(rse, config, client, root, my_stats, stats, stats_key,
     add_prefix = config.AddPrefix
     path_converter = PathConverter(server_root, remove_prefix, add_prefix, root)
 
-    master = ScannerMaster(client, path_converter, root, recursive_threshold, max_scanners, timeout, quiet, display_progress,
+    master = ScannerMaster(client, path_converter, root, root_expected, recursive_threshold, max_scanners, timeout, quiet, display_progress,
             max_files = max_files, include_sizes=include_sizes,
             ignore_list = ignore_list)
 
@@ -570,7 +575,7 @@ if __name__ == "__main__":
     import getopt, sys, time
 
     t0 = time.time()    
-    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:vqM:s:S:zd:kxe:")
+    opts, args = getopt.getopt(sys.argv[1:], "t:m:o:R:n:c:vqM:s:S:zd:kxe:r:")
     opts = dict(opts)
     
     if len(args) != 1 or not "-c" in opts:
@@ -590,6 +595,11 @@ if __name__ == "__main__":
     stats_file = opts.get("-s")
     stats_key = opts.get("-S", "scanner")
     ignore_directory_scan_errors = "-k" in opts
+    root_file_counts = opts.get("-r")
+    if root_file_counts:
+        root_file_counts = json.load(open(root_file_counts, "r"))
+    else:
+        root_file_counts = {}
     
     stats = None if not stats_file else Stats(stats_file)
     
@@ -656,49 +666,54 @@ if __name__ == "__main__":
     t0 = time.time()
     good_roots, failed_roots = Prescanner(server, server_root, config.ServerIsRedirector, config.RootList, config.ScannerTimeout, max_scanners).run()
     t1 = time.time()
-    
-    my_stats["roots"] = [
-        {
-            "root": root,
-            "start_time":t0,
-            "timeout":config.ScannerTimeout,
-            "root_failed": True,
-            "error": error,
-            "end_time":t1,
-            "files": 0,
-            "directories": 0,
-            "elapsed_time": t1-t0
-        }
-        for root, error in failed_roots.items()
-    ]
 
     failed = False
-    all_roots_failed = not good_roots
-    for client, root in good_roots:
-        try:
-            print(f"Scanning root {root} ...", file=sys.stderr)
-            failed = scan_root(rse, config, client, root, my_stats, stats, stats_key, recursive_threshold, 
-                    max_scanners, out_list, dir_list, empty_dirs_file,
-                    ignore_directory_scan_errors, include_sizes)
-        except:
-            exc = traceback.format_exc()
-            print(exc)
-            lines = exc.split("\n")
-            scanning = my_stats.setdefault("scanning", {"root":client.Root})
-            scanning["exception"] = lines
-            scanning["exception_time"] = time.time()
-            failed = True
+    my_stats["roots"] = my_stats_roots = []
+    for root, error in failed_roots.items():
+        expected = root_file_counts.get(root, 0) > 0
+        my_stats_roots.append({
+                "root": root,
+                "expected": expected,
+                "start_time":t0,
+                "timeout":config.ScannerTimeout,
+                "root_failed": True,
+                "error": error,
+                "end_time":t1,
+                "files": 0,
+                "directories": 0,
+                "elapsed_time": t1-t0
+            })
+        failed = failed or expected
 
-        if failed:
-            break
+    if not failed:
+        all_roots_failed = not good_roots
+        for client, root in good_roots:
+            try:
+                print(f"Scanning root {root} ...", file=sys.stderr)
+                expected = root_file_counts.get(root, 0) > 0
+                failed = scan_root(rse, config, client, root, expected, my_stats, stats, stats_key, recursive_threshold, 
+                        max_scanners, out_list, dir_list, empty_dirs_file,
+                        ignore_directory_scan_errors, include_sizes)
+            except:
+                exc = traceback.format_exc()
+                print(exc)
+                lines = exc.split("\n")
+                scanning = my_stats.setdefault("scanning", {"root":client.Root})
+                scanning["exception"] = lines
+                scanning["exception_time"] = time.time()
+                failed = True
 
-    out_list.close()
-    if dir_list is not None:
-        dir_list.close()
-    if empty_dirs_file is not None:
-        empty_dirs_file.close()
+            if failed:
+                break
 
-    total_files = sum(root_stats["files"] for root_stats in my_stats["roots"])
+        out_list.close()
+        if dir_list is not None:
+            dir_list.close()
+        if empty_dirs_file is not None:
+            empty_dirs_file.close()
+
+        total_files = sum(root_stats["files"] for root_stats in my_stats["roots"])
+
     if failed or all_roots_failed or total_files == 0:
         my_stats["status"] = "failed"
     else:
