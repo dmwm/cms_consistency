@@ -1,8 +1,9 @@
 import sys, os, getopt, time
 from datetime import datetime, timedelta
 
+from rucio_ce import Stats
+
 from run import CCRun
-from stats import Stats
 from config import ActionConfiguration
 
 Version = "1.2"
