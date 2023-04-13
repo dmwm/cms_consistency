@@ -1,5 +1,6 @@
 import re, os, json, yaml
 from configparser import ConfigParser
+from rucio_ce import 
 
 class DBConfig:
 
