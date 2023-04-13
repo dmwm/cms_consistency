@@ -1,7 +1,7 @@
 import sys, os, getopt, time, json
 from datetime import datetime, timedelta
 
-from rucio_ce import Stats
+from rucio_consistency import Stats
 
 from run import CCRun
 from config import ActionConfiguration
