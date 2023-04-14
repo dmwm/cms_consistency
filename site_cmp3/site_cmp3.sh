@@ -161,12 +161,6 @@ rce_cmp5 -z -s ${stats} \
     ${am_prefix} ${ad_prefix} \
     ${d_out} ${m_out}
 
-ndark=`wc -l ${d_out}`
-nmissing=`wc -l ${m_out}`
-
-echo "Dark list:    " $ndark
-echo "Missing list: " $nmissing
-
 # 4.1 Calculate diffs with previous run
 $python cmp3/diffs.py -u -s ${stats} $out $RSE $now
 

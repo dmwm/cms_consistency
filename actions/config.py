@@ -1,4 +1,5 @@
 import re, os, json, yaml
+from rucio_consistency import CEConfiguration
 
 class ActionConfiguration(CEConfiguration):
     
