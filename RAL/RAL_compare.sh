@@ -213,7 +213,7 @@ for attempt in $attempts; do
             echo making unmerged files list ...
             filtered_unmerged_list=${scratch}/${RSE}_filtered_unmerged
             gunzip -c $site_dump_tmp | grep -v ^/store/unmerged/logs/ > $filtered_unmerged_list
-            n=`$python cmp3/partition.py -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $filtered_unmerged_list`
+            n=`rce_partition -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $filtered_unmerged_list`
 	        echo $n files in the list
 
             if [ "$um_stats" != "" ]; then
@@ -255,13 +255,13 @@ echo DB dump after ...
 echo
 
 #$python cmp3/db_dump.py -o ${a_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
-$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE}
+rce_db_dump -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE}
                 
 echo
 echo Comparing ...
 echo
 
-$python cmp3/cmp5.py -s ${stats} \
+rce_cmp5 -s ${stats} \
     ${bm_prefix} ${bd_prefix} \
     ${r_prefix} \
     ${am_prefix} ${ad_prefix} \

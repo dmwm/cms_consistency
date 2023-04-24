@@ -22,9 +22,7 @@ echo "out:                       $out"
 echo "cert:                      $cert"
 echo "key:                       $key"
 
-python=${PYTHON:-python3}
-
-echo will use python: $python
+echo will use RCE CLI toold
 
 file_list_prefix=${out}/${RSE}_files.list
 
@@ -43,7 +41,7 @@ fi
 
 export PYTHONPATH=`pwd`/cmp3
 
-$python xrootd_scanner.py -k -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
+rce_xrootd_scanner -k -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
 scan_status=$?
 
 if [ -f ${stats} ]; then

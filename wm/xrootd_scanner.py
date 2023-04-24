@@ -1,1 +1,0 @@
-../xrootd/xrootd_scanner.py
