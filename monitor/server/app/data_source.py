@@ -317,6 +317,9 @@ class CCDataSource(DataSource):
 
     def __init__(self, path, cache, new=False):
         DataSource.__init__(self, path, cache)
+        
+    def config_file(self):
+        return open(f"{self.Path}/ce_config.yaml", "r").read()
     
     def is_mounted(self):
         return os.path.isdir(self.Path)

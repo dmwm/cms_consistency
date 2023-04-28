@@ -41,28 +41,10 @@ class CEHandler(WPHandler):
         
     def probe(self, request, relpath, **args):
         return self.CCDataSource.status(), "text/plain"
-        return "OK" if self.CCDataSource.is_mounted() else ("CE data directory unreachable", 500)
 
-    def ___index(self, request, relpath, sort="rse", **args):
-        #
-        # list available RSEs
-        #
-        data_source = self.CCDataSource
-
-        stats = data_source.latest_stats_per_rse()
-        summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
-        for rse, summary in summaries.items():
-            summary["rse"] = rse
-        summaries = summaries.values()
-
-        if sort == "ce_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]))
-        elif sort == "-ce_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]), reverse=True)
-        else:
-            summaries = sorted(summaries, key=lambda s: s["rse"])
-
-        return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
+    def ce_config(self, request, relpath, **args):
+        text = self.CCDataSource.config_file()
+        return text, "text/yaml"
 
     def attention(self, request, relpath, **args):
         self.redirect("./index")
