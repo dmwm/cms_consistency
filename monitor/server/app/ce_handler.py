@@ -41,28 +41,10 @@ class CEHandler(WPHandler):
         
     def probe(self, request, relpath, **args):
         return self.CCDataSource.status(), "text/plain"
-        return "OK" if self.CCDataSource.is_mounted() else ("CE data directory unreachable", 500)
 
-    def ___index(self, request, relpath, sort="rse", **args):
-        #
-        # list available RSEs
-        #
-        data_source = self.CCDataSource
-
-        stats = data_source.latest_stats_per_rse()
-        summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
-        for rse, summary in summaries.items():
-            summary["rse"] = rse
-        summaries = summaries.values()
-
-        if sort == "ce_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]))
-        elif sort == "-ce_run":
-            summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, s["rse"]), reverse=True)
-        else:
-            summaries = sorted(summaries, key=lambda s: s["rse"])
-
-        return self.render_to_response("ce_index.html", summaries=summaries, sort_options=True)
+    def ce_config(self, request, relpath, **args):
+        text = self.CCDataSource.config_file()
+        return text, "text/yaml"
 
     def attention(self, request, relpath, **args):
         self.redirect("./index")
@@ -79,6 +61,13 @@ class CEHandler(WPHandler):
         now = time.time()
         problems = []
         the_rest = []
+        
+        log = open("/tmp/index.log", "w")
+        
+        for rse, summary in summaries.items():
+            if summary.get("detection_status") == "started" and not summary.get("start_time"):
+                print("rse:", rse, " run:", summary["run"], file=log)
+        
         for summary in summaries.values():
 
             summary["order"] = None
@@ -91,7 +80,7 @@ class CEHandler(WPHandler):
                 summary["order"] = 20
                 summary["attention"] = "started"
             elif summary.get("detection_status") == "done":
-                for part in ("missing_stats", "dark_stats", "empty_dirs_stats"):
+                for part in ("missing_stats", "dark_stats"):
                     if summary[part].get("action_status") in ("failed", "errors"):
                         summary["order"] = 30
                         summary["attention"] = summary[part].get("action_status")
@@ -253,6 +242,13 @@ class CEHandler(WPHandler):
             "Content-Disposition":"attachment"
         }
             
+    def dark_confirmed(self, request, relpath, rse=None, run=None, **args):
+        lst = self.CCDataSource.get_dark_action(rse, run)
+        return (path+"\n" for path in lst), {
+            "Content-Type":"text/plain",
+            "Content-Disposition":"attachment"
+        }
+            
     def missing(self, request, relpath, rse=None, run=None, **args):
         lst = self.CCDataSource.get_missing(rse, run)
         return (path+"\n" for path in lst), {
@@ -299,9 +295,11 @@ class CEHandler(WPHandler):
             scanner_roots = sorted(stats["scanner"]["roots"], key=lambda x:x["root"])
         
         dark_truncated = (ndark or 0)  > self.LIMIT
+        dark_confirmed_truncated = (confirmed_dark or 0)  > self.LIMIT
         missing_truncated = (nmissing or 0) > self.LIMIT
         
         dark = self.CCDataSource.get_dark(rse, run, self.LIMIT)
+        dark_confirmed = self.CCDataSource.get_dark_action(rse, run, self.LIMIT)
         missing = self.CCDataSource.get_missing(rse, run, self.LIMIT)
         
         #
@@ -329,6 +327,7 @@ class CEHandler(WPHandler):
             rse=rse, run=run,
             errors = errors,
             dark_truncated = dark_truncated, 
+            dark_confirmed_truncated = dark_confirmed_truncated, 
             missing_truncated=missing_truncated,
             dbdump_before=stats.get("dbdump_before"),
             dbdump_after=stats.get("dbdump_after"),
@@ -336,9 +335,10 @@ class CEHandler(WPHandler):
             scanner_roots = scanner_roots,
             cmp3=stats.get("cmp3"),
             stats=stats, summary=summary,
-            ndark = ndark, nmissing=nmissing,
+            ndark = ndark, nmissing=nmissing, ndark_confirmed=confirmed_dark,
             old_ndark = old_ndark, old_nmissing = old_nmissing,
             dark = self.display_file_list(dark),
+            dark_confirmed = self.display_file_list(dark_confirmed),
             missing = self.display_file_list(missing),
             stats_parts=stats_parts,
             time_now = time.time()

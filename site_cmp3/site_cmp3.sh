@@ -28,13 +28,6 @@ echo "out:                       $out"
 echo "cert:                      $cert"
 echo "key:                       $key"
 
-if [ ! -f /consistency/config.yaml ]; then
-    cp $config_file /consistency/config.yaml    # to make it editable
-    echo Config file $config_file copied to /consistency/config.yaml
-fi
-
-config_file=/consistency/config.yaml
-
 python=${PYTHON:-python}
 
 export PYTHONPATH=`pwd`:`pwd`/cmp3
@@ -64,6 +57,7 @@ m_out=${out}/${RSE}_${now}_M.list
 stats=${out}/${RSE}_${now}_stats.json
 scanner_errors=${out}/${RSE}_${now}_scanner.errors
 dbdump_errors=${out}/${RSE}_${now}_dbdump.errors
+root_file_counts=${out}/${RSE}_${now}_root_file_counts.json
 
 # X509 proxy
 if [ "$cert" != "" ]; then
@@ -113,7 +107,11 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-$python cmp3/db_dump.py -z -f A:${bm_prefix} -f "*:${bd_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_before" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -z -c ${config_file} $rucio_cfg \
+    -f A:${bm_prefix} -f "*:${bd_prefix}" \
+    -s ${stats} -S "dbdump_before" \
+    -r $root_file_counts \
+    ${RSE} 2>> ${dbdump_errors}
 
 sleep 10
 
@@ -131,6 +129,7 @@ echo "Site scan..." > ${scanner_errors}
 $python xrootd/xrootd_scanner.py -z -c ${config_file} -s ${stats} \
     -o ${r_prefix} \
     -e ${empty_dirs_out} \
+    -r $root_file_counts \
     ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then
@@ -148,7 +147,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_errors}
-$python cmp3/db_dump.py -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config_file} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
+$python cmp3/db_dump.py -z -c ${config_file} $rucio_cfg -f A:${am_prefix} -f "*:${ad_prefix}" -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
 
 # 4. cmp3
 
@@ -156,7 +155,7 @@ echo
 echo Comparing ...
 echo
 
-$python cmp3/cmp5.py -s ${stats} \
+$python cmp3/cmp5.py -z -s ${stats} \
     ${bm_prefix} ${bd_prefix} \
     ${r_prefix} \
     ${am_prefix} ${ad_prefix} \
@@ -197,7 +196,7 @@ echo Empty directories ...
 echo
 ed_action_list=${out}/${RSE}_${now}_ED_action.list
 ed_action_errors=${out}/${RSE}_${now}_ED_action.errors
-$python actions/remove_empty_dirs.py -o $ed_action_list -s $stats -c ${config_file} -L 10000 $out $RSE 2> $ed_action_errors
+$python actions/remove_empty_dirs.py -s $stats -c ${config_file} -L 10000 $out $RSE 2> $ed_action_errors
 
 end_time=`date -u +%s`
 

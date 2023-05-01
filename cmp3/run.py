@@ -1,6 +1,9 @@
 import glob, re, sys, os, json, os.path, gzip
 from datetime import datetime, timedelta
 
+class FileNotFoundException(Exception):
+    pass
+
 class CCRun(object):
     def __init__(self, dir_path, rse, run):
         self.Path = dir_path
@@ -49,8 +52,6 @@ class CCRun(object):
     def scanner_num_files(self):
         scanner_stats = self.Stats["scanner"]
         nfiles = scanner_stats.get("total_files") or sum(root_stats.get("files", 0) for root_stats in scanner_stats.get("roots", []))
-        if nfiles <= 0:
-            raise ValueError("Number of files found my the scanner not found or is 0")
         return nfiles
 
     FileNameRE = re.compile(r"""
@@ -148,18 +149,36 @@ class CCRun(object):
             line = line.strip()
             if line:
                 yield line
+                
+    def list_interator(self, typ):
+        path = f"{self.Path}/{self.RSE}_{self.Run}_{typ}.list"
+        gzipped_path = path + ".gz"
+        if os.path.isfile(path):
+            f = open(path, "r")
+        elif os.path.isfile(gzipped_path):
+            f = gzip.open(gzipped_path, "rt")
+        else:
+            raise FileNotFoundException("File not found: %s, %s" % (path, gzipped_path))
+        return (l for l in (line.strip() for line in f) if l)
+
+    def list_exists(self, typ):
+        path = f"{self.Path}/{self.RSE}_{self.Run}_{typ}.list"
+        return os.path.isfile(path) or os.path.isfile(path + ".gz")
 
     def missing_files(self):
-        yield from self.list_lines("M")
+        yield from self.list_interator("M")
 
     def dark_files(self):
-        yield from self.list_lines("D")
+        yield from self.list_interator("D")
         
     def confirmed_dark_files(self):
-        yield from self.list_lines("D_action")
-        
+        yield from self.list_interator("D_action")
+
     def empty_directories(self):
-        yield from self.list_lines("ED")
+        yield from self.list_interator("ED")
+        
+    def empty_dir_list_exists(self):
+        return self.list_exists("ED")
 
     def confirmed_empty_directories(self):
         yield from self.list_lines("ED_action")

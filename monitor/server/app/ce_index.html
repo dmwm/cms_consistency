@@ -10,10 +10,8 @@
 {% endblock %}
 
 
-{#
-{% block link_menu %}&nbsp;|&nbsp;<a href="./attention">CE attention</a>
+{% block link_menu %}&nbsp;|&nbsp;<a href="./ce_config/ce_config.yaml" target="_blank">CE configuration</a>
 {% endblock %}
-#}
 
 
 {% block content %}
@@ -134,22 +132,16 @@
     <th rowspan=2>Detecton status</th>
     <th colspan=4>Dark files</th>
     <th colspan=4>Missing files</th>
-    <th colspan=4>Empty directories</th>
 </tr>
 <tr>
     <th>Detected (old)</th>
     <th>Confirmed</th>
-    <th>Acted on</th>
+    <th>Quarantined</th>
     <th>Action status</th>
 
     <th>Detected (old)</th>
     <th>Confirmed</th>
-    <th>Acted on</th>
-    <th>Action status</th>
-
-    <th>Detected</th>
-    <th>Confirmed</th>
-    <th>Acted on</th>
+    <th>Declared</th>
     <th>Action status</th>
 </tr>
 
@@ -201,13 +193,6 @@
                 {{missing_stats['action_status']|none_as_blank}}
             </td>
 
-            {% set ed_stats = summary["empty_dirs_stats"] %}
-            <td>{{ed_stats["detected"]|none_as_blank}}</td>
-            <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
-            <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
-            <td class="{{ed_stats['action_status']|none_as_blank}}">
-                {{ed_stats['action_status']|none_as_blank}}
-            </td>
         </tr>
     {% endif %} {# divisor or attention #}
 {% endfor %}

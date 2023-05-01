@@ -115,11 +115,14 @@ class DataSource(object):
                 data.setdefault("rse", rse)
         except Exception as e:
             if not raw:
+                """
                 data = {
                     "rse":  rse,
                     "run":  run,
                     "error":    str(e)
                 }
+                """
+                return None
             else:
                 raise
         return self.postprocess_stats(data) if not raw else data
@@ -138,18 +141,18 @@ class DataSource(object):
         return out
         
     def latest_stats_for_rse(self, rse):
-        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
+        files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"), reverse=True)
         latest_file = None
         latest_run = None
+        latest_stats = None
         for path in files:
             tup = self.parse_stats_path(path)
             if tup:
                 r, run = tup
                 if r == rse:
-                    latest_file = path
-                    latest_run = run
-        if latest_file:
-            return self.read_stats(rse, latest_run, path=latest_file)
+                    stats = self.read_stats(rse, run, path=path)
+                    if stats:
+                        return stats
         else:
             return None
             
@@ -314,6 +317,9 @@ class CCDataSource(DataSource):
 
     def __init__(self, path, cache, new=False):
         DataSource.__init__(self, path, cache)
+        
+    def config_file(self):
+        return open(f"{self.Path}/ce_config.yaml", "r").read()
     
     def is_mounted(self):
         return os.path.isdir(self.Path)
@@ -464,6 +470,9 @@ class CCDataSource(DataSource):
 
     def get_dark(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "D", limit)
+
+    def get_dark_action(self, rse, run, limit=None):
+        return self.get_dark_or_missing(rse, run, "D_action", limit)
 
     def get_missing(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "M", limit)
@@ -643,9 +652,13 @@ class CCDataSource(DataSource):
                 ed_summary["detected"] = ed_stats.get("detected_empty_directories")
                 confirmed = ed_summary["confirmed"] = ed_stats.get("confirmed_empty_directories")
                 ed_summary["elapsed"] = ed_stats.get("elapsed")
-                acted_on = ed_summary["acted_on"] = min(ed_stats.get("confirmed_empty_directories", 0), ed_stats.get("limit", 0))
+                attempted = confirmed
+                limit = ed_stats.get("limit")
+                if limit is not None:
+                    attempted = min(attempted, limit)
+                ed_summary["acted_on"] = ed_stats.get("removed_count", 0)
                 failed = ed_stats.get("failed_count", 0)
-                if confirmed and failed > (acted_on or 0)/2:
+                if confirmed and failed > (attempted or 0)//2:
                     ed_summary["action_status"] = "errors"
 
         return summary

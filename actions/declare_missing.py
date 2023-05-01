@@ -70,18 +70,23 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
         print("Files found by scanner in the latest run:", num_scanned, file=sys.stderr)
 
         missing_count = my_stats["detected_missing_files"] = my_stats["confirmed_missing_files"] = latest_run.missing_file_count()
+        status = "done"
+        abort = False
 
         if num_scanned == 0:
-            ratio = 0.0
+            aborted_reason = "no files found by the scanner"
+            print("No files found by the scanner -- aborting action", file=sys.stderr)
+            abort = True
         else:
             ratio = missing_count/num_scanned
-        print("Missing replicas:", missing_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
+            print("Missing replicas:", missing_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
+            if ratio > fraction:
+                abort = True
+                aborted_reason = "too many missing files: %d (%.2f%% > %.2f%%)" % (missing_count, ratio*100.0, fraction*100.0)
+                print("Missing ratio is too high (above %.2f%%) -- aborting action" % (fraction*100.0,), file=sys.stderr)
 
-        status = "done"
-
-        if ratio > fraction:
+        if abort:
             status = "aborted"
-            aborted_reason = "too many missing files: %d (%.2f%% > %.2f%%)" % (missing_count, ratio*100.0, fraction*100.0)
         elif missing_count > 0:
             if out is not None:
                 for f in latest_run.missing_files():

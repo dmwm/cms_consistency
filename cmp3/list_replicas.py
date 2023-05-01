@@ -131,9 +131,7 @@ class QuarantinedReplica(Base):
     """Represents the quarantined replicas"""
     __tablename__ = 'quarantined_replicas'
     rse_id = Column(GUID(), primary_key=True)
-    path = Column(String)
-    scope = Column(String, primary_key=True)
-    name = Column(String, primary_key=True)
+    path = Column(String, primary_key=True)
 
 class RSE(Base):
         __tablename__ = "rses"
@@ -182,9 +180,11 @@ if names is not None:
     replicas = replicas.filter(model.name.in_(names))
 
 for r in replicas.yield_per(10000):
-    name = r.name
-    scope = r.scope
-    tup = (name,)
+    tup = ()
+    if replicas_table != "quarantined":
+        scope = r.scope
+        name = r.name
+        tup = (name,) + tup
     if include_rse:
         tup = (rse_names[r.rse_id],) + tup
     if include_scope:

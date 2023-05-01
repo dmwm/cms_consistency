@@ -2,7 +2,7 @@ import sys, os, getopt, time, os.path
 from datetime import datetime, timedelta
 from pythreader import TaskQueue, Task, Primitive, synchronized
 
-from run import CCRun
+from run import CCRun, FileNotFoundException
 from stats import Stats
 from config import EmptyActionConfiguration, ScannerConfiguration
 from xrootd import XRootDClient
@@ -166,6 +166,15 @@ def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_r
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
+    
+def update_confirmed(confirmed, update):
+    new_confirmed = confirmed & update
+    unconfirmed = confirmed - update
+    for path in unconfirmed:
+        for parent in parents(path):
+            try:    new_confirmed.remove(parent)
+            except KeyError:    pass
+    return new_confirmed
 
 def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
     
@@ -175,8 +184,12 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     runs = list(CCRun.runs_for_rse(storage_path, rse, complete_only=False))
     now = datetime.now()
-    #for r in runs:
-    #    print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count())
+    for r in runs:
+        print(r.Run, ":  in window:", r.Timestamp >= now - timedelta(days=window), 
+                "  ED info collected:", r.empty_directories_collected(), 
+                "  count:", r.empty_directory_count(),
+                "  list present:", r.empty_dir_list_exists()
+        )
     recent_runs = sorted(
             [r for r in runs 
                 if True
@@ -184,12 +197,13 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
                     and (r.Timestamp >= now - timedelta(days=window))
                     and r.empty_directories_collected()
                     and r.empty_directory_count() is not None
+                    and r.empty_dir_list_exists()
                     #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
             ], 
             key=lambda r: r.Timestamp
     )
 
-    print("recent runs:")
+    print("Usable runs:")
     for r in recent_runs:
         print("  ", r.Run)
 
@@ -228,19 +242,13 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
         else:
             # compute confirmed list and make sure the list would contain only removable directories
-            
             confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
-            for run in recent_runs[1:]:
+            confirmed = update_confirmed(confirmed, set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
+            for run in recent_runs[1:-1]:
                 if not confirmed:
                     break
                 run_set = set(lfn_converter.lfn_or_path_to_path(path) for path in run.empty_directories())
-                new_confirmed = confirmed & run_set
-                unconfirmed = confirmed - run_set
-                for path in unconfirmed:
-                    for parent in parents(path):
-                        try:    new_confirmed.remove(parent)
-                        except KeyError:    pass
-                confirmed = new_confirmed
+                confirmed = update_confirmed(confirmed, run_set)
 
             confirmed_empty_count = len(confirmed)
             print("Confirmed empty directories:", confirmed_empty_count, file=sys.stderr)

@@ -12,17 +12,21 @@ def canonic_path(path):
     
 class XRootDClient(Primitive):
 
-    def __init__(self, server, is_redirector, server_root, root=None, timeout=300, name=None):
+    def __init__(self, server, is_redirector, server_root, timeout=300, name=None):
         Primitive.__init__(self, name=name)
-        root = root or server_root
         self.Timeout = timeout
         self.Server = server 
-        self.ServerRoot = server_root
-        self.Root = root
-        self.Servers = [server] if not is_redirector else self.get_underlying_servers(server, root, timeout)
+        self.ServerRoot = canonic_path(server_root)
+        self.Servers = [server]
+        self.IsRedirector = is_redirector
+        
+    def prescan(self, root):
+        if self.IsRedirector:
+            self.Servers = self.get_underlying_servers(self.Server, root, self.Timeout)
 
     def absolute_path(self, path):
-        return canonic_path(path if path.startswith("/") else self.ServerRoot + "/" + path)
+        path = canonic_path(path)
+        return canonic_path(path if path.startswith(self.ServerRoot) else self.ServerRoot + "/" + path)
         
     @synchronized
     def next_server(self):
@@ -157,14 +161,19 @@ class XRootDClient(Primitive):
                     size = int(line.split(None, 1)[1])
                 except:
                     size = None
-        return "OK", None, typ, size
+        if typ is None:
+            return "failed", "flags not found", None, None
+        else:
+            return "OK", None, typ, size
 
-    def ls(self, location, recursive, with_meta):
+    def ls(self, location, recursive, with_meta, timeout=None):
+        # returns list of paths relative to the server root, relative paths do start with "/"
         #print(f"scan({location}, rec={recursive}, with_meta={with_meta}):...")
         files = []
         dirs = []
         status = "OK"
         reason = ""
+        timeout = timeout or self.Timeout
 
         location = self.absolute_path(location)
         server = self.next_server()
@@ -172,7 +181,7 @@ class XRootDClient(Primitive):
 
         try:
             #print(f"lscommand: {lscommand}")
-            retcode, out, err = ShellCommand.execute(lscommand, timeout=self.Timeout)
+            retcode, out, err = ShellCommand.execute(lscommand, timeout=timeout)
             #print(f"retcode: {retcode}")
         except RuntimeError:
             status = "failed"
@@ -180,10 +189,10 @@ class XRootDClient(Primitive):
         else:
             if retcode:
                 status = "failed"
-                reason = "ls status code: %s, stderr: [%s]" % (retcode, err)
+                reason = "ls status code: %s, %s" % (retcode, err)
 
-                status, reasoon, typ, size = self.stat(location)
-                if status != "OK":
+                stat_status, reasoon, typ, size = self.stat(location)
+                if stat_status != "OK":
                     reason = "stat failed: " + (reason or "")
                 else:
                     if typ == 'f':
@@ -202,12 +211,51 @@ class XRootDClient(Primitive):
                     is_file, size, path = tup
                     if path.endswith("/."):
                         continue
-                    path if path.startswith(location) else location + "/" + path     # ????
+                    path = canonic_path(path)
+                    assert self.ServerRoot == '/' or path.startswith(self.ServerRoot + "/"), f"Parsed path {path} is expected to start with server root {self.ServerRoot}"
+                    if self.ServerRoot != '/':
+                        path = path[len(self.ServerRoot):]
                     if is_file:
                         files.append((path, size))
                     else:
                         dirs.append((path, size))
         finally:
             self.release_server(server)
-
+        #print(status, reason, len(dirs), len(files))
         return status, reason, dirs, files
+        
+if __name__ == "__main__":
+    # test
+    import sys, getopt
+    Usage = """
+    python xrootd_client <server> <root> [-t <timeout>] [-l] [-R] <path>
+    """
+    opts, args = getopt.getopt(sys.argv[1:], "lRt:")
+    if len(args) < 3:
+        print(Usage)
+        sys.exit(2)
+    opts = dict(opts)
+    timeout = int(opts.get("-t", 30))
+
+    server, root, path = args
+    client = XRootDClient(server, True, root, timeout=timeout)
+    
+    if root:
+        t0 = time.time()
+        client.prescan(root)
+        print("Prescanned, %.3f seconds. Servers:" % (time.time()-t0,))
+        for srv in client.Servers:
+            print("  ", srv)
+    
+    t0 = time.time()
+    status, reason, dirs, files = client.ls(path, "-R" in opts, "-l" in opts)
+    print(status, reason, time.time()-t0, "seconds")
+    if status == "OK":
+        print("Files:   ", len(files))
+        print("Dirs:    ", len(dirs))
+        for path in dirs:
+            print("d", path)
+        for path in files:
+            print("f", path)
+    
+    

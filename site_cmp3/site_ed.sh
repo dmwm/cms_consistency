@@ -48,7 +48,7 @@ fi
 now=`date -u +%Y_%m_%d_%H_%M`
 timestamp=`date -u +%s`
 
-stats=${out}/${RSE}_${now}_edstats.json
+stats=${out}/${RSE}_${now}_stats.json
 scanner_errors=${out}/${RSE}_${now}_scanner.errors
 
 # X509 proxy
@@ -109,7 +109,7 @@ echo Empty directories ...
 echo
 ed_action_list=${out}/${RSE}_${now}_ED_action.list
 ed_action_errors=${out}/${RSE}_${now}_ED_action.errors
-$python actions/remove_empty_dirs.py -o $ed_action_list -s $stats -c ${config_file} -L 10000 $out $RSE 2> $ed_action_errors
+$python actions/remove_empty_dirs.py -s $stats -c ${config_file} -L 10000 $out $RSE 2> $ed_action_errors
 
 end_time=`date -u +%s`
 

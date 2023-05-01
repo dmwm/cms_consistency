@@ -67,7 +67,9 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
         print("Last run:", latest_run.Run, file=sys.stderr)
         print("  Files in RSE:", num_scanned, file=sys.stderr)
         print("  Dark files:", detected_dark_count, file=sys.stderr)
+        status = "done"
 
+        status = "done"
         if latest_run.Timestamp < now - timedelta(days=max_age_last):
             status = "aborted"
             aborted_reason = "latest run is too old: %s, required: < %d days old" % (latest_run.Timestamp, max_age_last)
@@ -82,34 +84,32 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
                 confirmed &= set(run.dark_files())
 
             confirmed_dark_count = len(confirmed)
-            if num_scanned > 0:
-                ratio = confirmed_dark_count/num_scanned
-            else:
-                ratio = 0.0
-            print("Confirmed dark files:", confirmed_dark_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
+            print("Confirmed dark files:", confirmed_dark_count, file=sys.stderr)
             my_stats["confirmed_dark_files"] = confirmed_dark_count
+            if confirmed_dark_count > 0 and num_scanned > 0:
+                ratio = confirmed_dark_count/num_scanned
+                print("Ratio: %.2f%%" % (ratio*100.0,), file=sys.stderr)
         
-            status = "done"
-            if confirmed:
-                if out is not None:
-                    for f in sorted(confirmed):
-                        print(f, file=out)
-                    if out is not sys.stdout:
-                        out.close()                 
-                if ratio > fraction:
-                    status = "aborted"
-                    aborted_reason = "too many dark files: %d (%.2f%% > %.2f%%)" % (confirmed_dark_count, ratio*100.0, fraction*100.0)
-                elif not dry_run:
-                    try:
-                        from rucio.client.replicaclient import ReplicaClient
-                        client = ReplicaClient(account=account)
-                        replicas = [{"path":path} for path in confirmed]
-                        for chunk in chunked(replicas):
-                            client.quarantine_replicas(chunk, rse=rse)
-                        my_stats["declared_dark_files"] = len(replicas)
-                    except Exception as e:
-                        error = f"rucio error: {e}"
-                        status = "failed"
+                if confirmed:
+                    if out is not None:
+                        for f in sorted(confirmed):
+                            print(f, file=out)
+                        if out is not sys.stdout:
+                            out.close()                 
+                    if ratio > fraction:
+                        status = "aborted"
+                        aborted_reason = "too many dark files: %d (%.2f%% > %.2f%%)" % (confirmed_dark_count, ratio*100.0, fraction*100.0)
+                    elif not dry_run:
+                        try:
+                            from rucio.client.replicaclient import ReplicaClient
+                            client = ReplicaClient(account=account)
+                            replicas = [{"path":path} for path in confirmed]
+                            for chunk in chunked(replicas):
+                                client.quarantine_replicas(chunk, rse=rse)
+                            my_stats["declared_dark_files"] = len(replicas)
+                        except Exception as e:
+                            error = f"rucio error: {e}"
+                            status = "failed"
 
     t1 = time.time()
     my_stats.update(
