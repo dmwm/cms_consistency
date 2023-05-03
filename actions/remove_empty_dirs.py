@@ -7,6 +7,12 @@ from stats import Stats
 from config import EmptyActionConfiguration, ScannerConfiguration
 from xrootd import XRootDClient
 
+from rucio_ce import Stats
+
+from run import CCRun
+from config import ActionConfiguration
+
+
 Version = "1.0"
 
 Usage = """

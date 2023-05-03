@@ -1,6 +1,20 @@
-import random, string, sys
+import random, string, sys, glob, time, gzip
+from cmplib import cmp3_generator
+
+from part import PartitionedList
+
 
 import os
+from stats import Stats
+
+Version = "1.1"
+
+
+
+Usage = """
+python cmp3.py [-z] [-s <stats file> [-S <stats key>]] <b prefix> <r prefix> <a prefix> <dark output> <missing output>
+"""
+
 
 def getMemory():
         # returns memory utilization in MB
@@ -15,85 +29,100 @@ def getMemory():
                 vmrss = int(l.split()[1])
         return float(vmsize)/1024.0, float(vmrss)/1024.0
 
-alphabet = string.ascii_letters + string.digits + "/"
-
-def random_name(l):
-	return "/" + "".join(random.choices(alphabet, k=l-1))
-	
-
-def cmp3(a, r, b):
-	#
-	# produces 2 lists:
-	#
-	# 	D = R-A-B = (R-A)-B
-	# 	M = A*B-R = (A-R)*B
-	#
-	a_r = set(a) 	# this will be A-R
-	r_a = set()	# this will be R-A
-	for x in r:
-		if x in a_r:
-			a_r.remove(x)
-		else:
-			r_a.add(x)
-	d = r_a
-	m = set()
-	for x in b:
-		if x in d:
-			d.remove(x)
-		if x in a_r:
-			m.add(x)
-	print("memory utilization at the end of cmp3, MB:", getMemory())
-	return list(d), list(m)
-
-def gen3(n, r):
-	# generates 3 almost identical lists. r controls the "errors"
-
-	for _ in range(n):
-		x = random_name(100)
-		yield tuple(None if r > random.random() else x for _ in (0,0,0))
-
 def main():
-	if sys.argv[1] == "gen":
-		n = int(sys.argv[2])
-		fa = open("/tmp/a.list", "w")
-		fr = open("/tmp/r.list", "w")
-		fb = open("/tmp/b.list", "w")
-		for a, r, b in gen3(n, 0.01):
-			if a:	fa.write(a + "\n")
-			if b:	fb.write(b + "\n")
-			if r:	fr.write(r + "\n")
-		fa.close()
-		fb.close()
-		fr.close()
+        import getopt, json
 
-	elif sys.argv[1] == "cmp":
-		fa = open("/tmp/a.list", "r")
-		fr = open("/tmp/r.list", "r")
-		fb = open("/tmp/b.list", "r")
+        t0 = time.time()
 
-		def lines(f):
-			l = f.readline()
-			while l:
-				yield l
-				l = f.readline()
+        opts, args = getopt.getopt(sys.argv[1:], "s:S:z")
+        opts = dict(opts)
 
-		d, m = cmp3(lines(fa), lines(fr), lines(fb))
-		fd = open("/tmp/d.list","w")
-		fm = open("/tmp/m.list","w")
-		for x in d:
-			fd.write(x)			# training newlines are there already
-		for x in m:
-			fm.write(x)
-		fd.close()
-		fm.close()
+        if len(args) < 5:
+                print (Usage)
+                sys.exit(2)
+        compress = "-z" in opts
+        stats_file = opts.get("-s")
+        stats_key = opts.get("-S", "cmp3")
+        stats = Stats(stats_file) if stats_file else None
 
-		
+        b_prefix, r_prefix, a_prefix, out_dark, out_missing = args
 
-		
+        a_list = PartitionedList.open(a_prefix)
+        r_list = PartitionedList.open(r_prefix)
+        b_list = PartitionedList.open(b_prefix)
 
+        my_stats= {
+                "version": Version,
+                "elapsed": None,
+                "start_time": t0,
+                "end_time": None,
+                "missing": None,
+                "dark": None,
+                
+                "missing_list_file": None,
+                "dark_list_file": None,
+                
+                "b_prefix": b_prefix,
+                "a_prefix": a_prefix,
+                "r_prefix": r_prefix,
 
+                "a_files": a_list.FileNames,
+                "b_files": b_list.FileNames,
+                "r_files": r_list.FileNames,
 
+                "a_nfiles": a_list.NParts,
+                "b_nfiles": b_list.NParts,
+                "r_nfiles": r_list.NParts,
+
+                "status": "started"
+            }
+        
+        if stats is not None:
+            stats[stats_key] = my_stats
+
+        if compress:
+            if not out_dark.endswith(".gz"):    out_dark += ".gz"
+            if not out_missing.endswith(".gz"):    out_missing += ".gz"
+            fd = gzip.open(out_dark, "wt")
+            fm = gzip.open(out_missing, "wt")
+        else:
+            fd = open(out_dark, "w")
+            fm = open(out_missing, "w")
+
+        diffs = cmp3_generator(a_list, r_list, b_list)
+        nm = nd = 0
+        for t, path in diffs:
+            if t == 'd':
+                fd.write(path)
+                nd += 1
+            else:
+                fm.write(path)
+                nm += 1
+        fd.close()
+        fm.close()
+
+        print("Found %d dark and %d missing replicas" % (nd, nm))
+        t1 = time.time()
+        
+        my_stats.update({
+                "elapsed": t1-t0,
+                "end_time": t1,
+                "missing": nm,
+                "dark": nd,
+                "status": "done",
+                "missing_list_file": out_missing,
+                "dark_list_file": out_dark
+            })
+                
+        if stats is not None:
+            stats[stats_key] = my_stats
+
+        t = int(t1 - t0)
+        s = t % 60
+        m = t // 60
+        print("Elapsed time: %dm%02ds" % (m, s))
+        
 if __name__ == "__main__":
-	main()
-		
+        main()
+                
 

@@ -107,7 +107,7 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-$python cmp3/db_dump.py -z -c ${config_file} $rucio_cfg \
+rce_db_dump -z -c ${config_file} $rucio_cfg \
     -f A:${bm_prefix} -f "*:${bd_prefix}" \
     -s ${stats} -S "dbdump_before" \
     -r $root_file_counts \
@@ -126,7 +126,7 @@ rm -f ${r_prefix}.*
 empty_dirs_out=${out}/${RSE}_${now}_ED.list
 
 echo "Site scan..." > ${scanner_errors}
-$python xrootd/xrootd_scanner.py -z -c ${config_file} -s ${stats} \
+rce_scan -z -c ${config_file} -s ${stats} \
     -o ${r_prefix} \
     -e ${empty_dirs_out} \
     -r $root_file_counts \
@@ -147,7 +147,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_errors}
-$python cmp3/db_dump.py -z -c ${config_file} $rucio_cfg -f A:${am_prefix} -f "*:${ad_prefix}" -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
+rce_db_dump -z -c ${config_file} $rucio_cfg -f A:${am_prefix} -f "*:${ad_prefix}" -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
 
 # 4. cmp3
 
@@ -155,17 +155,11 @@ echo
 echo Comparing ...
 echo
 
-$python cmp3/cmp5.py -z -s ${stats} \
+rce_cmp5 -z -s ${stats} \
     ${bm_prefix} ${bd_prefix} \
     ${r_prefix} \
     ${am_prefix} ${ad_prefix} \
     ${d_out} ${m_out}
-
-ndark=`wc -l ${d_out}`
-nmissing=`wc -l ${m_out}`
-
-echo "Dark list:    " $ndark
-echo "Missing list: " $nmissing
 
 # 4.1 Calculate diffs with previous run
 $python cmp3/diffs.py -u -s ${stats} $out $RSE $now
@@ -200,6 +194,6 @@ $python actions/remove_empty_dirs.py -s $stats -c ${config_file} -L 10000 $out $
 
 end_time=`date -u +%s`
 
-$python cmp3/stats.py $stats << _EOF_
+rce_update_stats $stats << _EOF_
 { "end_time":${end_time}.0 }
 _EOF_
