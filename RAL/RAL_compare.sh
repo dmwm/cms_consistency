@@ -62,10 +62,12 @@ while [ -n "$1" ]; do
     -r)
         run=${2}_00_00
         shift
+        echo will be using $run for the run timestamp
         ;;
     -t)
         timestamp=$2
         shift
+        echo will be using $timestamp for the site dump filename
         ;;
     *)
 	echo Unknown option $1
@@ -90,7 +92,9 @@ case $RSE in
 		exit 1
 		;;
 esac
-	
+
+echo Input site dump path: $dump_path
+
 export PYTHONPATH=`pwd`/cmp3:`pwd`
 
 
