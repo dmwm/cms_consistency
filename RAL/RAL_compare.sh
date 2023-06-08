@@ -70,9 +70,9 @@ while [ -n "$1" ]; do
         echo will be using $timestamp for the site dump filename
         ;;
     *)
-	echo Unknown option $1
-	exit 1
-	;;
+        echo Unknown option $1
+        exit 1
+        ;;
     esac
     shift
 done    
@@ -209,7 +209,7 @@ for attempt in $attempts; do
     else
         echo download succeeded
         echo partitioning ...
-        n=`rce_partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
+        n=`rce_partition -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
         echo "$n lines after partitioning"
 
     	t1=`date +%s`
