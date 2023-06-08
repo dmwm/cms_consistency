@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# alias python=python3 ??
-
 #
 # Usage:
 #   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> [options ...]
@@ -9,6 +7,10 @@
 #         -c <cert or proxy file> 
 #         -k <key file>
 #         -u <unmerged config.yaml> <unmerged list output directory>
+#
+#   Debug options:
+#         -r <YYYY_MM_DD> CE run timestamp to use
+#         -t <YYYYMMDD> timestamp to use for RAL site dump filename
 #
 
 config=$1
@@ -21,6 +23,9 @@ key=""
 cert=""
 unmerged_out_dir=""
 unmerged_config=""
+
+run=`date -u +%Y_%m_%d_00_00`
+timestamp=`date -u +%Y%m%d`
 
 if [ ! -f /consistency/config.yaml ]; then
     cp $config /consistency/config.yaml    # to make it editable
@@ -54,6 +59,14 @@ while [ -n "$1" ]; do
         shift
         shift
         ;;
+    -r)
+        run=${2}_00_00
+        shift
+        ;;
+    -t)
+        timestamp=$2
+        shift
+        ;;
     *)
 	echo Unknown option $1
 	exit 1
@@ -84,8 +97,6 @@ export PYTHONPATH=`pwd`/cmp3:`pwd`
 sleep_interval=1800      # 30 minutes
 attempts="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"
 
-run=`date -u +%Y_%m_%d_00_00`
-timestamp=`date -u +%Y%m%d`
 
 # hack
 #run=2021_08_27_00_00
@@ -194,7 +205,7 @@ for attempt in $attempts; do
     else
         echo download succeeded
         echo partitioning ...
-        n=`$python cmp3/partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
+        n=`rce_partition.py -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
         echo "$n lines after partitioning"
 
     	t1=`date +%s`
@@ -213,8 +224,10 @@ for attempt in $attempts; do
             echo making unmerged files list ...
             filtered_unmerged_list=${scratch}/${RSE}_filtered_unmerged
             gunzip -c $site_dump_tmp | grep -v ^/store/unmerged/logs/ > $filtered_unmerged_list
-            n=`rce_partition -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $filtered_unmerged_list`
-	        echo $n files in the list
+            stderr=${out}/${RSE}_${run}_partition.stderr
+            n=`rce_partition -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $filtered_unmerged_list 2> $stderr`
+            echo partitioning status: $?
+            echo $n files in the partitioned list
 
             if [ "$um_stats" != "" ]; then
                 $python cmp3/json_file.py $um_stats set scanner.files $n
@@ -254,7 +267,6 @@ echo
 echo DB dump after ...
 echo
 
-#$python cmp3/db_dump.py -o ${a_prefix} -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE} 
 rce_db_dump -z -f A:${am_prefix} -f "*:${ad_prefix}" -c ${config} $rucio_cfg -s ${stats} -S "dbdump_after" ${RSE}
                 
 echo
