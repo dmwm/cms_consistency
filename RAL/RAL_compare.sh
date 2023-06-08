@@ -209,8 +209,9 @@ for attempt in $attempts; do
     else
         echo download succeeded
         echo partitioning ...
-        n=`rce_partition -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp}`
-        echo "$n lines after partitioning"
+        stderr=${out}/${RSE}_${run}_partition.stderr
+        n=`rce_partition -c $config -r $RSE -q -o ${r_prefix} ${site_dump_tmp} 2> $stderr`
+        echo "$n replicas in the site dump"
 
     	t1=`date +%s`
         downloaded="yes"
@@ -228,7 +229,7 @@ for attempt in $attempts; do
             echo making unmerged files list ...
             filtered_unmerged_list=${scratch}/${RSE}_filtered_unmerged
             gunzip -c $site_dump_tmp | grep -v ^/store/unmerged/logs/ > $filtered_unmerged_list
-            stderr=${out}/${RSE}_${run}_partition.stderr
+            stderr=${out}/${RSE}_${run}_um_partition.stderr
             n=`rce_partition -c $unmerged_config -r $RSE -z -q -n 1 -o $um_list_prefix $filtered_unmerged_list 2> $stderr`
             echo partitioning status: $?
             echo $n files in the partitioned list
