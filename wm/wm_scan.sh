@@ -41,7 +41,7 @@ fi
 
 export PYTHONPATH=`pwd`/cmp3
 
-rce_xrootd_scanner -k -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
+rce_scan -k -o ${file_list_prefix} -n 1 -R 1 -z -c ${config_file} -s ${stats} ${RSE} 
 scan_status=$?
 
 if [ -f ${stats} ]; then
