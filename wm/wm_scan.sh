@@ -22,7 +22,7 @@ echo "out:                       $out"
 echo "cert:                      $cert"
 echo "key:                       $key"
 
-echo will use RCE CLI toold
+echo will use RCE CLI tools
 
 file_list_prefix=${out}/${RSE}_files.list
 
