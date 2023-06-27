@@ -139,6 +139,9 @@ class App(WPApp):
                 "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank,
                 "as_date":as_date, "format_gigabytes":format_gigabytes,
                 "if_none":if_none
+            },
+            globals={
+                "GLOBAL_AppVersion": Version
             }
         )
         
