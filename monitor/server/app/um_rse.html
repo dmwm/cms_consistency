@@ -12,6 +12,10 @@
 
 {% block content %}
 
+{% if stats_url %}
+    <p><a href="{{stats_url}}">latest run stats as JSON</a></p>
+{% endif %}
+
 <table class="placement">
 	<tr>
 		<td>

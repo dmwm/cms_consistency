@@ -178,8 +178,9 @@ class UMHandler(WPHandler):
                 summaries = sorted(summaries, key=lambda s: (s.get("start_time") or -1, x["rse"]), reverse=True)
             else:
                 summaries = sorted(summaries, key=lambda s: s["rse"])
+        stats_url = "./stats"
         
-        return self.render_to_response("um_index.html", infos=summaries, sort_options=not attention)
+        return self.render_to_response("um_index.html", infos=summaries, sort_options=not attention, stats_url=stats_url)
         
     def show_rse(self, request, relpath, rse=None, **args):
         data_source = self.DataSource
@@ -197,7 +198,10 @@ class UMHandler(WPHandler):
                     r["elapsed_time_hours"] = (r["end_time"] - r["start_time"])/3600
             r.setdefault("total_size_gb", None)
             summaries.append((run, r))
-        return self.render_to_response("um_rse.html", rse=rse, summaries=summaries)
+        stats_url = None
+        if summaries:
+            stats_url = f"./stats?rse={rse}"
+        return self.render_to_response("um_rse.html", rse=rse, summaries=summaries, stats_url=stats_url)
 
     def show_run(self, request, relpath, rse=None, run=None, **args):
         if not rse or not run:
@@ -209,8 +213,11 @@ class UMHandler(WPHandler):
         run_stats = data_source.read_stats(rse, run)
         raw_stats = data_source.read_stats(rse, run, raw=True)
 
+        stats_url = f"./stats?rse={rse}&run={run}"
+
         return self.render_to_response("um_run.html", rse=rse, run=run, run_stats=run_stats,
-            raw_stats = raw_stats, is_latest_run = run == latest_stats_for_rse["run"]
+            raw_stats = raw_stats, is_latest_run = run == latest_stats_for_rse["run"],
+            stats_url = stats_url
         )
         
     def stats(self, request, relpath, rse=None, run=None):
