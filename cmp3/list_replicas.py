@@ -1,8 +1,7 @@
 import getopt, os, time, re, gzip, json, traceback
 import sys, uuid
 
-from config import DBConfig, DBDumpConfiguration
-from part import PartitionedList
+from rucio_consistency import DBConfig, PartitionedList
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
