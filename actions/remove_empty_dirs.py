@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 from pythreader import TaskQueue, Task, Primitive, synchronized
 
 from run import CCRun, FileNotFoundException
-from stats import Stats
-from config import EmptyActionConfiguration, ScannerConfiguration
-from xrootd import XRootDClient
+from config import EmptyActionConfiguration
+from rucio_consistency import ScannerConfiguration, Stats
+from rucio_consistency.xrootd import XRootDClient
 
 from rucio_ce import Stats
 
