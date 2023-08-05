@@ -7,8 +7,6 @@ from config import EmptyActionConfiguration
 from rucio_consistency import ScannerConfiguration, Stats
 from rucio_consistency.xrootd import XRootDClient
 
-from rucio_ce import Stats
-
 from run import CCRun
 from config import ActionConfiguration
 
