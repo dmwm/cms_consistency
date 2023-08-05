@@ -128,7 +128,6 @@ empty_dirs_out=${out}/${RSE}_${now}_ED.list
 echo "Site scan..." > ${scanner_errors}
 rce_scan -z -c ${config_file} -s ${stats} \
     -o ${r_prefix} \
-    -e ${empty_dirs_out} \
     -r $root_file_counts \
     ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
