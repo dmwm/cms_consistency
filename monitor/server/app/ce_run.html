@@ -73,6 +73,9 @@
 		                    {%- if "scanning" in stats -%}
 		                        <br/>scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
 							{%- endif -%}
+							{%- if "heartbeat_utc" in stats -%}
+								<br/>heartbeat: {{stats["heartbeat_utc"]}}
+							{%- endif -%}
 						{% endif %}
                     {%- endif -%}
                 </td>
