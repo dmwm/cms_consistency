@@ -52,12 +52,7 @@
         </tr>
                         
                         {% for step, step_name, stats in stats_parts %}
-            <!--
-                stats:
-                     {% for k, v in stats.items() %}
-                        {{k}}: {{v}}
-                    {% endfor %}
-            -->
+							{% set comp_status = summary["step"] %}
                                 <tr>
                                         <td>{{step_name}}</td>
                                         <td>{% if step == "scanner" %}
@@ -67,12 +62,17 @@
                                                 {% endif %}
                                         </td>
                                         <td>{% if "start_time" in stats %}{{stats["start_time"]|as_dt|default("")}}{% endif %}</td>
-                                        <td class="{{stats['status'] or ''}}">
+                                        <td class="{{comp_status or ''}}">
 											<!-- 
 												{{summary["comp_status"]}}
 											-->
-                    {%- if step == "scanner" and "scanning" in stats -%}
-                        scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
+					{{comp_status or ''}}
+					{%- if step == "scanner" -%}
+						{% if comp_status != "died" %}
+		                    {%- if "scanning" in stats -%}
+		                        scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
+							{%- endif -%}
+						{% endif %}
                     {%- else -%}
                         {{stats["status"]}}
                     {%- endif -%}
