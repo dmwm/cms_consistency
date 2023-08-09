@@ -68,6 +68,9 @@
                                         </td>
                                         <td>{% if "start_time" in stats %}{{stats["start_time"]|as_dt|default("")}}{% endif %}</td>
                                         <td class="{{stats['status'] or ''}}">
+											<!-- 
+												{{stats["status"]}} 
+											-->
                     {%- if step == "scanner" and "scanning" in stats -%}
                         scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
                     {%- else -%}
