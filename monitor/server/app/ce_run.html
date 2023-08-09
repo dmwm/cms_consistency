@@ -74,8 +74,6 @@
 		                        scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
 							{%- endif -%}
 						{% endif %}
-                    {%- else -%}
-                        {{stats["status"]}}
                     {%- endif -%}
                 </td>
                                         <td>{% if "end_time" in stats %}{{stats["end_time"]|as_dt|default("")}}{% endif %}</td>
