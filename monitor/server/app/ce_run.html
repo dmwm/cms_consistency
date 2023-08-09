@@ -71,7 +71,7 @@
 					{%- if step == "scanner" -%}
 						{% if comp_status != "died" %}
 		                    {%- if "scanning" in stats -%}
-		                        scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
+		                        <br/>scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
 							{%- endif -%}
 						{% endif %}
                     {%- endif -%}
