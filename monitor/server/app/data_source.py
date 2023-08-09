@@ -511,7 +511,11 @@ class CCDataSource(DataSource):
             status_by_comp[comp] = None
             if comp in stats:
                 comp_stats = stats[comp]
-                status_by_comp[comp] = comp_status = comp_stats.get("status")
+                comp_status = comp_stats.get("status")
+                if comp_status == "started" and "heartbeat" in comp_stats:
+                    comp_status = "running" if comp_stats["heartbeat"] > time.time() - 30*60 else "died"
+
+                status_by_comp[comp] = comp_status
 
                 t0 = comp_stats.get("start_time")
                 if tstart is None:
@@ -520,6 +524,8 @@ class CCDataSource(DataSource):
                     tstart = min(tstart, t0)
 
                 t1 = comp_stats.get("end_time")
+                if t1 is None and comp_status == "died":
+                    t1 = comp_stats["heartbeat"]
                 if tend is None:
                     tend = t1
                 elif t1 is None:
@@ -534,11 +540,11 @@ class CCDataSource(DataSource):
                 if comp_status == "started" and not status:
                     status = "started"
 
-                if comp_status == "failed":
-                    status = "failed"
+                elif comp_status in ("failed", "died"):
+                    status = comp_status
                     failed_comp = comp
 
-                if comp_status == "aborted" and status != "failed":
+                if comp_status == "aborted" and status not in ("died", "failed"):
                     status = "aborted"
 
                 all_done = all_done and comp_status == "done"
