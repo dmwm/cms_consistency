@@ -52,7 +52,7 @@
         </tr>
                         
                         {% for step, step_name, stats in stats_parts %}
-							{% set comp_status = summary["comp_status"][step] %}
+							{% set comp_status = summary["comp_status"][step] or stats["status"] or ''%}
                                 <tr>
                                         <td>{{step_name}}</td>
                                         <td>{% if step == "scanner" %}
@@ -67,7 +67,7 @@
 												step: {{step}}
 												comp_status: {{comp_status}}
 											-->
-					{{comp_status or stats["status"] or ''}}
+					{{comp_status}}
 					{%- if step == "scanner" -%}
 						{% if comp_status != "died" %}
 		                    {%- if "scanning" in stats -%}
