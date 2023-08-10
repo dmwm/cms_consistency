@@ -67,7 +67,7 @@
 												step: {{step}}
 												comp_status: {{comp_status}}
 											-->
-					{{comp_status or ''}}
+					{{comp_status or stats["status"] or ''}}
 					{%- if step == "scanner" -%}
 						{% if comp_status != "died" %}
 		                    {%- if "scanning" in stats -%}
