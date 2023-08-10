@@ -534,7 +534,7 @@ class CCDataSource(DataSource):
                     tend = max(tend, t1)
 
                 comp_started = comp_status == "started" or comp_stats.get("start_time") is not None
-                if comp_started and not (comp_status in ("done", "failed", "aborted")):
+                if comp_started and comp_status not in ("done", "failed", "aborted"):
                     running_comp = comp
 
                 if comp_status == "started" and not status:
@@ -548,8 +548,8 @@ class CCDataSource(DataSource):
                     status = "aborted"
 
                 all_done = all_done and comp_status == "done"
-            else:
-                all_done = False
+            #else:
+            #    all_done = False
         if all_done:
             status = "done"
         elif status not in ("failed", "aborted"):

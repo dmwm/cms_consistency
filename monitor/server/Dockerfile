@@ -2,7 +2,7 @@
 FROM conda/miniconda3-centos7
 
 RUN conda update -n base -c defaults conda && \
-    conda clean
+    conda clean -a
 
 RUN pip install webpie pythreader jinja2 && \
     rm -rf ~/.cache/pip
