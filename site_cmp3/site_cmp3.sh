@@ -129,6 +129,7 @@ echo "Site scan..." > ${scanner_errors}
 rce_scan -z -c ${config_file} -s ${stats} \
     -o ${r_prefix} \
     -r $root_file_counts \
+    -E 4 -e count-only \
     ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then
