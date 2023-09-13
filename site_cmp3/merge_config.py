@@ -80,7 +80,7 @@ if __name__ == "__main__":
         path = path.split(".")
         try:
             while path:
-                cfg.get(cfg, path[0])
+                cfg = cfg.get(path[0])
                 path.pop(0)
         except KeyError:
             sys.exit(1)
