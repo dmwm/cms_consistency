@@ -150,7 +150,7 @@ class CCRun(object):
             if line:
                 yield line
                 
-    def list_interator(self, typ):
+    def list_iterator(self, typ):
         path = f"{self.Path}/{self.RSE}_{self.Run}_{typ}.list"
         gzipped_path = path + ".gz"
         if os.path.isfile(path):
@@ -166,16 +166,16 @@ class CCRun(object):
         return os.path.isfile(path) or os.path.isfile(path + ".gz")
 
     def missing_files(self):
-        yield from self.list_interator("M")
+        yield from self.list_iterator("M")
 
     def dark_files(self):
-        yield from self.list_interator("D")
+        yield from self.list_iterator("D")
         
     def confirmed_dark_files(self):
-        yield from self.list_interator("D_action")
+        yield from self.list_iterator("D_action")
 
     def empty_directories(self):
-        yield from self.list_interator("ED")
+        yield from self.list_iterator("ED")
         
     def empty_dir_list_exists(self):
         return self.list_exists("ED")
