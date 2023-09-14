@@ -80,7 +80,7 @@ if __name__ == "__main__":
         merged = {     # keep format for backward compatibility
             "rses":
                 {   "*":        {}, 
-                    self.RSE:   cfg.merged_config()
+                    rse:   cfg.merged_config()
                 }
         }
         yaml.dump(merged, sys.stdout)
