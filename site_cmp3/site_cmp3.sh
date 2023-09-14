@@ -70,7 +70,7 @@ fi
 
 merged_config_file=${out}/${RSE}_${run}_config.yaml
 $python merge_config.py merge $RSE $config_file > $merged_config_file
-disabled=`$python merge_config.py get -d false $merged_config_file rses.$RSE.disabled`
+disabled=`$python merge_config.py get -d false $merged_config_file rses.$RSE.ce_disabled`
 echo $RSE Disabled: $disabled
 
 if [ "$disabled" == "true" ]; then
