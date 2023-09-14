@@ -73,15 +73,23 @@ Several configuration parameters can be controlled by the RSE admin by modifying
   
 The following site attributes are recognized:
 
+Things an RSE admin may want to change:
+
   * CE_config.ce_disabled - can be used to disable CE runs for the RSE. To disable, use "yes" as the value, to enable either delete the parameter or set it to "no"
-  * CE_config.ignore_list - comma-separated list of LFN path prefixes to ignore, e.g. "/store/mc/X,/store/mc/YY"
   * CE_config.sever - hostname:port for the RSE xrootd server, e.g. "ingrid-se08.cism.ucl.ac.be:1094"
   * CE_config.server_root - the top path of the area to scan in the xrood namespace
-  * CE_config.roots - comma-separated list of top level directories to scan, e.g.: "/store/mc,/store/data"
-  * CE_config.nworkers - integer number of parallel "xrdfs ls" clients to run
   * CE_config.timeout - integer number of seconds to use as an individual "ls" command timeout
+
+Things an RSE admin should change only if they know what they are doing:
+
+  * CE_config.roots - comma-separated list of top level directories to scan, e.g.: "/store/mc,/store/data"
+  * CE_config.ignore_list - comma-separated list of LFN path prefixes to ignore, e.g. "/store/mc/X,/store/mc/YY"
+  * CE_config.nworkers - integer number of parallel "xrdfs ls" clients to run
   * CE_config.max_dark_fraction - floating point maximum fraction of confirmed dark files to allow the dark action. Default: 0.01
   * CE_config.max_missing_fraction - floating point maximum fraction of missing files to allow the missing action. Default: 0.01
 
 When the same value is present in the base configuraion file and in the RSE attributes, the value from the RSE attributes
 will be used, which allows the RSE admin to override the configuration values for the RSE.
+
+If you want to keep the changes for forseable future, please notify those who maintain the base configuration file
+to incorporate your changes so they are recorded permanently.
