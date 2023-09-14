@@ -5,7 +5,7 @@ class MergedCEConfiguration(object):
 
     CONFIG_PREFIX = "CE_config."
     """
-            Enable/disable CE for the site
+            Disable CE for the site
             Thresholds for CE actions (fraction of dark/missing files to abort the action)
             List of roots to scan
             List of ignored directories
@@ -23,8 +23,8 @@ class MergedCEConfiguration(object):
     def config_from_rse(self):
         rse_config = self.RSEClient.list_rse_attributes(rse)
         cfg = {}
-        if self.CONFIG_PREFIX+"disabled" in rse_config:     
-            cfg["disabled"] = rse_config[self.CONFIG_PREFIX+"disabled"] == "yes"
+        if self.CONFIG_PREFIX+"ce_disabled" in rse_config:     
+            cfg["ce_disabled"] = rse_config[self.CONFIG_PREFIX+"ce_disabled"] == "yes"
         if self.CONFIG_PREFIX+"ignore_list" in rse_config: 
             cfg["ignore_list"] = rse_config[self.CONFIG_PREFIX+"ignore_list"].split(",")
 
@@ -56,7 +56,7 @@ class MergedCEConfiguration(object):
                 out[key] = value
         return out
 
-    def config(self):
+    def merged_config(self):
         rse_config = self.merge(self.ConfigFromFile["rses"].get("*", {}), self.ConfigFromFile["rses"].get(rse, {}))
         #print("merged rse config from file:")
         #pprint.pprint(rse_config)
@@ -73,18 +73,28 @@ if __name__ == "__main__":
     if cmd == "merge":
         rse, config_file = args[1:]
         cfg = MergedCEConfiguration(rse, config_file)
-        yaml.dump(cfg.config(), sys.stdout)
+        merged = {     # keep format for backward compatibility
+            "rses":
+                {   "*":        {}, 
+                    self.RSE:   cfg.merged_config()
+                }
+        }
+        yaml.dump(merged, sys.stdout)
+
     elif cmd == "get":
         merged_config_file, path = args[1:]
         cfg = yaml.load(open(merged_config_file, "r"), Loader=yaml.SafeLoader)
         path = path.split(".")
+        value = cfg
         try:
             while path:
-                cfg = cfg.get(path[0])
-                path.pop(0)
-        except KeyError:
+                head = path.pop(0)
+                if head:
+                    value = value[head]
+    except KeyError:
+            print("Path not fond", file=sys.etderr)
             sys.exit(1)
-        print(cfg)
+        print(value)
         
         
     
