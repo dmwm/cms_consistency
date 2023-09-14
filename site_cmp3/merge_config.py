@@ -81,7 +81,7 @@ if __name__ == "__main__":
     if cmd == "merge":
         opts, args = getopt.getopt(argv, "j")
         opts = dict(opts)
-        rse, config_file = args[1:]
+        rse, config_file = args
         cfg = MergedCEConfiguration(rse, config_file)
         merged = {     # keep format for backward compatibility
             "rses":
