@@ -96,7 +96,7 @@ cat > ${stats} <<_EOF_
     "rse":          "${RSE}",
     "scratch":      "${scratch}",
     "out":          "${out}",
-    "config":       "${config_file}",
+    "config":       "${merged_config_file}",
     "rucio_config": "${rucio_config_file}",
     "driver_version":   "${version}",
     "python_version":   "${python_version}",
@@ -122,7 +122,7 @@ if [ "$rucio_config_file" != "-" ]; then
 fi
 
 echo "DB dump before the scan..." > ${dbdump_errors}
-rce_db_dump -z -c ${config_file} $rucio_cfg \
+rce_db_dump -z -c ${merged_config_file} $rucio_cfg \
     -f A:${bm_prefix} -f "*:${bd_prefix}" \
     -s ${stats} -S "dbdump_before" \
     -r $root_file_counts \
@@ -141,7 +141,7 @@ rm -f ${r_prefix}.*
 empty_dirs_out=${out}/${RSE}_${now}_ED.list
 
 echo "Site scan..." > ${scanner_errors}
-rce_scan -z -c ${config_file} -s ${stats} \
+rce_scan -z -c ${merged_config_file} -s ${stats} \
     -o ${r_prefix} \
     -r $root_file_counts \
     -E 4 -e count-only \
@@ -162,7 +162,7 @@ echo DB dump after ...
 echo
 
 echo "DB dump after the scan..." >> ${dbdump_errors}
-rce_db_dump -z -c ${config_file} $rucio_cfg -f A:${am_prefix} -f "*:${ad_prefix}" -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
+rce_db_dump -z -c ${merged_config_file} $rucio_cfg -f A:${am_prefix} -f "*:${ad_prefix}" -s ${stats} -S "dbdump_after" ${RSE} 2>> ${dbdump_errors}
 
 # 4. cmp3
 
@@ -188,14 +188,14 @@ echo Missing files ...
 echo
 missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
 m_action_list=${out}/${RSE}_${now}_M_action.list
-$python actions/declare_missing.py -a root -o ${m_action_list} -c ${config_file} -s $stats $out $scope $RSE 2>> ${missing_action_errors}
+$python actions/declare_missing.py -a root -o ${m_action_list} -c ${merged_config_file} -s $stats $out $scope $RSE 2>> ${missing_action_errors}
 
 echo
 echo Dark files ...
 echo
 d_action_list=${out}/${RSE}_${now}_D_action.list
 dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
-$python actions/declare_dark.py    -a root -o ${d_action_list} -c ${config_file} -s $stats $out        $RSE 2>> ${dark_action_errors}
+$python actions/declare_dark.py    -a root -o ${d_action_list} -c ${merged_config_file} -s $stats $out        $RSE 2>> ${dark_action_errors}
 
 #
 # 6. Remove empty directories
@@ -205,7 +205,7 @@ echo Empty directories ...
 echo
 ed_action_list=${out}/${RSE}_${now}_ED_action.list
 ed_action_errors=${out}/${RSE}_${now}_ED_action.errors
-$python actions/remove_empty_dirs.py -s $stats -c ${config_file} -L 10000 $out $RSE 2> $ed_action_errors
+$python actions/remove_empty_dirs.py -s $stats -c ${merged_config_file} -L 10000 $out $RSE 2> $ed_action_errors
 
 end_time=`date -u +%s`
 
