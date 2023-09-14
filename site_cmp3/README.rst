@@ -91,5 +91,5 @@ Things an RSE admin should change only if they know what they are doing:
 When the same value is present in the base configuraion file and in the RSE attributes, the value from the RSE attributes
 will be used, which allows the RSE admin to override the configuration values for the RSE.
 
-If you want to keep the changes for forseable future, please notify those who maintain the base configuration file
+If you want to keep the changes for forseeable future, please notify those who maintain the base configuration file
 to incorporate your changes into the base configuraton so they are recorded permanently.
