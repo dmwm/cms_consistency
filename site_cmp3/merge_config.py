@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 if head:
                     value = value[head]
         except KeyError:
-                print("Path not fond", file=sys.etderr)
+                print("Path not fond", file=sys.stderr)
                 sys.exit(1)
         print(value)
         
