@@ -35,7 +35,7 @@ python=${PYTHON:-python}
 
 export PYTHONPATH=`pwd`:`pwd`/cmp3
 
-echo will use python: $python
+echo "python:                    $python"
 
 if [ ! -d ${scratch} ] && [ ! -L ${scratch} ]; then
         mkdir -p ${scratch}
@@ -76,7 +76,7 @@ $python merge_config.py merge $RSE $config_file > $merged_config_file
 disabled=`$python merge_config.py get -d false $merged_config_file rses.$RSE.ce_disabled`
 echo "RSE disabled:              $disabled"
 
-if [ "$disabled" == "true" ]; then
+if [ "$disabled" == "True" ]; then
     echo \|
     echo \| The CE for RSE is disabled. Stopping
     echo \|
