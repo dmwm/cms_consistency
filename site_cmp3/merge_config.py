@@ -79,7 +79,7 @@ if __name__ == "__main__":
     cmd, argv = sys.argv[1], sys.argv[2:]
     
     if cmd == "merge":
-        opts, args = getopt.getopt(sys.argv[1:], "j")
+        opts, args = getopt.getopt(argv, "j")
         opts = dict(opts)
         rse, config_file = args[1:]
         cfg = MergedCEConfiguration(rse, config_file)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
             yaml.dump(merged, sys.stdout)
 
     elif cmd == "get":
-        merged_config_file, path = args[1:]
+        merged_config_file, path = argv[1:]
         cfg = yaml.load(open(merged_config_file, "r"), Loader=yaml.SafeLoader)
         path = path.split(".")
         value = cfg
