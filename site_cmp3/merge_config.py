@@ -66,7 +66,7 @@ class MergedCEConfiguration(object):
 
 Usage = """
 python merge_config.py merge [-j] <rse> <config file> 
-python merge_config.py get <config file> <path, dot-separated>
+python merge_config.py get [-d <default>] <config file> <path, dot-separated>
 """
 
 if __name__ == "__main__":
@@ -95,7 +95,10 @@ if __name__ == "__main__":
             yaml.dump(merged, sys.stdout)
 
     elif cmd == "get":
-        merged_config_file, path = argv[1:]
+        opts, args = getopt.getopt(argv, "d:")
+        opts = dict(opts)
+        default = opts.get("-d")
+        merged_config_file, path = args
         cfg = yaml.load(open(merged_config_file, "r"), Loader=yaml.SafeLoader)
         path = path.split(".")
         value = cfg
@@ -105,6 +108,9 @@ if __name__ == "__main__":
                 if head:
                     value = value[head]
         except KeyError:
+            if default is not None:
+                value = default
+            else:
                 print("Path not fond", file=sys.stderr)
                 sys.exit(1)
         print(value)

@@ -9,6 +9,9 @@ if [ "$1" == "" ]; then
 	exit 2
 fi
 
+now=`date -u +%Y_%m_%d_%H_%M`
+run=$now
+timestamp=`date -u +%s`
 
 config_file=$1
 rucio_config_file=$2
@@ -49,9 +52,6 @@ ad_prefix=${a_prefix}_D
 bm_prefix=${b_prefix}_M
 bd_prefix=${b_prefix}_D
 
-now=`date -u +%Y_%m_%d_%H_%M`
-timestamp=`date -u +%s`
-
 d_out=${out}/${RSE}_${now}_D.list
 m_out=${out}/${RSE}_${now}_M.list
 stats=${out}/${RSE}_${now}_stats.json
@@ -68,6 +68,11 @@ if [ "$cert" != "" ]; then
         fi
 fi
 
+merged_config_file=${out}/${RSE}_${run}_config.yaml
+$python merge_config.py merge $RSE $config_file > $merged_config_file
+disabled=`$python merge_config.py get -d false $merged_config_file rses.$RSE.disabled`
+echo $RSE Disabled: $disabled
+
 # init stats file
 now_date_time=`date -u`
 python_version=`$python -V`
@@ -76,7 +81,7 @@ cat > ${stats} <<_EOF_
     "driver_script_version": "$version",
     "start_time":   ${timestamp}.0,
     "start_date_time_utc":  "${now_date_time}",
-    "run":          "${now}",
+    "run":          "${run}",
     "scope":        "${scope}",
     "rse":          "${RSE}",
     "scratch":      "${scratch}",
