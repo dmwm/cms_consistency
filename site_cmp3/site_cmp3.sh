@@ -77,7 +77,7 @@ if [ "$disabled" == "true" ]; then
     echo \|
     echo \| The CE for RSE is disabled. Stopping
     echo \|
-    exit(0)
+    exit 0
 fi
 
 # init stats file
