@@ -1,4 +1,4 @@
-import os, yaml, pprint
+import os, yaml, pprint, json
 from rucio.client.rseclient import RSEClient
 
 class MergedCEConfiguration(object):
@@ -65,16 +65,22 @@ class MergedCEConfiguration(object):
         return out
 
 Usage = """
-python merge_config.py <rse> <config file> 
+python merge_config.py merge [-j] <rse> <config file> 
+python merge_config.py get <config file> <path, dot-separated>
 """
 
 if __name__ == "__main__":
     import sys, getopt
-    opts, args = getopt.getopt(sys.argv[1:], "")
-    opts = dict(opts)
     
-    cmd = args[0]
+    if not sys.argv[1:]:
+        print(Usage)
+        sys.exit(2)
+    
+    cmd, argv = sys.argv[1], sys.argv[2:]
+    
     if cmd == "merge":
+        opts, args = getopt.getopt(sys.argv[1:], "j")
+        opts = dict(opts)
         rse, config_file = args[1:]
         cfg = MergedCEConfiguration(rse, config_file)
         merged = {     # keep format for backward compatibility
@@ -83,7 +89,10 @@ if __name__ == "__main__":
                     rse:   cfg.merged_config()
                 }
         }
-        yaml.dump(merged, sys.stdout)
+        if "-j" in opts:
+            json.dump(merged, sys.stdout, sort_keys=True, indent=4)
+        else:
+            yaml.dump(merged, sys.stdout)
 
     elif cmd == "get":
         merged_config_file, path = args[1:]
