@@ -73,6 +73,13 @@ $python merge_config.py merge $RSE $config_file > $merged_config_file
 disabled=`$python merge_config.py get -d false $merged_config_file rses.$RSE.disabled`
 echo $RSE Disabled: $disabled
 
+if [ "$disabled" == "true" ]; then
+    echo \|
+    echo \| The CE for RSE is disabled. Stopping
+    echo \|
+    exit(0)
+fi
+
 # init stats file
 now_date_time=`date -u`
 python_version=`$python -V`
