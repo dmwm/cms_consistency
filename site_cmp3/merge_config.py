@@ -24,7 +24,10 @@ class MergedCEConfiguration(object):
         rse_config = self.RSEClient.list_rse_attributes(rse)
         cfg = {}
         if self.CONFIG_PREFIX+"ce_disabled" in rse_config:     
-            cfg["ce_disabled"] = rse_config[self.CONFIG_PREFIX+"ce_disabled"].lower() in ("yes", "true", "disabled")
+            value = rse_config[self.CONFIG_PREFIX+"ce_disabled"]
+            if isinstance(value, str):
+                value = value in ("yes", "true", "disabled")
+            cfg["ce_disabled"] = value
         if self.CONFIG_PREFIX+"ignore_list" in rse_config: 
             cfg["ignore_list"] = rse_config[self.CONFIG_PREFIX+"ignore_list"].split(",")
 
