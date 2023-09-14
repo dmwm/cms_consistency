@@ -64,6 +64,10 @@ class MergedCEConfiguration(object):
         #print("final merged:", out)
         return out
 
+Usage = """
+python merge_config.py <rse> <config file> 
+"""
+
 if __name__ == "__main__":
     import sys, getopt
     opts, args = getopt.getopt(sys.argv[1:], "")
@@ -91,9 +95,9 @@ if __name__ == "__main__":
                 head = path.pop(0)
                 if head:
                     value = value[head]
-    except KeyError:
-            print("Path not fond", file=sys.etderr)
-            sys.exit(1)
+        except KeyError:
+                print("Path not fond", file=sys.etderr)
+                sys.exit(1)
         print(value)
         
         
