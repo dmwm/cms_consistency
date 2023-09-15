@@ -75,7 +75,7 @@ The following site attributes are recognized:
 
 Things an RSE admin may want to change:
 
-  * CE_config.ce_disabled - can be used to disable CE runs for the RSE. To disable, use "yes" as the value, to enable either delete the parameter or set it to "no"
+  * CE_config.ce_disabled - can be used to disable CE runs for the RSE. To disable, use "true" as the value, to enable either delete the parameter or set it to "false"
   * CE_config.sever - hostname:port for the RSE xrootd server, e.g. "ingrid-se08.cism.ucl.ac.be:1094"
   * CE_config.server_root - the top path of the CMS area to scan in the xrood namespace
   * CE_config.timeout - integer number of seconds to use as an individual "ls" command timeout
