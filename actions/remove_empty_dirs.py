@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from pythreader import TaskQueue, Task, Primitive, synchronized
 
 from run import CCRun, FileNotFoundException
-from config import EmptyActionConfiguration
-from rucio_consistency import ScannerConfiguration, Stats
+from config import ActionConfiguration
+from rucio_consistency import CEConfiguration, Stats
 from rucio_consistency.xrootd import XRootDClient
 
 from run import CCRun
