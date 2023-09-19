@@ -6,7 +6,7 @@ from rucio_consistency import Stats
 from run import CCRun
 from config import ActionConfiguration
 
-Version = "1.3"
+Version = "1.4"
 
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
