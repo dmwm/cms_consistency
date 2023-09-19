@@ -67,24 +67,37 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
 
     else:
         num_scanned = latest_run.scanner_num_files()
-        print("Latest run:", latest_run.Run, file=sys.stderr)
-        print("Files found by scanner in the latest run:", num_scanned, file=sys.stderr)
+        print("Latest run:", latest_run.Run)
+        print("Files found by scanner in the latest run:", num_scanned)
 
         missing_count = my_stats["detected_missing_files"] = my_stats["confirmed_missing_files"] = latest_run.missing_file_count()
         status = "done"
         abort = False
+        num_expected = latest_run.expected_file_count()
+        if num_expected is None:
+            # estimate expected number of files as min of number of file in the before and after db dumps
+            n_before = latest_run.dbdump_file_count("before")
+            n_after = latest_run.dbdump_file_count("after")
+            if n_before is not None:
+                num_expected = n_before
+                if n_after is not None:
+                    num_expected = min(num_expected, n_after)
 
         if num_scanned == 0:
             aborted_reason = "no files found by the scanner"
-            print("No files found by the scanner -- aborting action", file=sys.stderr)
+            print("No files found by the scanner -- aborting action")
+            abort = True
+        elif not num_expected:
+            aborted_reason = "can not estimate the number of expected files"
+            print("No estimate for the number of expected files -- aborting action")
             abort = True
         else:
-            ratio = missing_count/num_scanned
-            print("Missing replicas:", missing_count, "(%.2f%%)" % (ratio*100.0,), file=sys.stderr)
+            ratio = missing_count/num_expected
+            print("Missing replicas:", missing_count, "  expected:", num_expected, "  ratio:", "%.2f%%" % (ratio*100.0,))
             if ratio > fraction:
                 abort = True
                 aborted_reason = "too many missing files: %d (%.2f%% > %.2f%%)" % (missing_count, ratio*100.0, fraction*100.0)
-                print("Missing ratio is too high (above %.2f%%) -- aborting action" % (fraction*100.0,), file=sys.stderr)
+                print("Missing ratio is too high (above %.2f%%) -- aborting action" % (fraction*100.0,))
 
         if abort:
             status = "aborted"

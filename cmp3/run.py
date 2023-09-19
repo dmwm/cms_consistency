@@ -29,12 +29,18 @@ class CCRun(object):
 
     def missing_list_path(self):
         return self.absolute_path(self.Stats["cmp3"]["missing_list_file"])
-        
+
     def missing_file_count(self):
         return self.Stats["cmp3"]["missing"]
-        
+
     def dark_file_count(self):
         return self.Stats["cmp3"]["dark"]
+
+    def expected_file_count(self):
+        return self.Stats.get("cmp3", {}).get("expected_files")
+
+    def dbdump_file_count(self, before_or_after):
+        return self.Stats.get("dbdump_" + before_or_after, {}).get("files")
 
     def empty_directories_collected(self):
         return not not self.Stats.get("scanner", {}).get("empty_dirs_output_file")
