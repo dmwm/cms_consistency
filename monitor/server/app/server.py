@@ -126,9 +126,9 @@ def format_human(n):
         else:
             return "%.3f" % (n,)
     elif n < 1000000:
-        return "%f.3K" % (n/1000,)
+        return "%.3fK" % (n/1000,)
     elif n < 1000000000:
-        return "%f.3M" % (n/1000000,)
+        return "%.3fM" % (n/1000000,)
     else:
         return "%.3fB" % (n/1e9,)
 
