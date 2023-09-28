@@ -235,7 +235,7 @@ class DataSource(object):
             per_root_counts = {}
             out = {"run": stats["run"], "root_counts": per_root_counts}
             for stats in root_stats:
-                per_root_counts[stats["root"]] = stats["empty_directories"]
+                per_root_counts[stats["root"]] = stats.get("empty_directories", 0)
             break
         return out
 
