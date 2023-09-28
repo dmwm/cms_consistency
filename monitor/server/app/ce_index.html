@@ -132,6 +132,7 @@
     <th rowspan=2>Detecton status</th>
     <th colspan=4>Dark files</th>
     <th colspan=4>Missing files</th>
+    <th rowspan=2>Empty dirs</th>
 </tr>
 <tr>
     <th>Detected (old)</th>
@@ -192,7 +193,7 @@
             <td class="{{missing_stats['action_status']|none_as_blank}}">
                 {{missing_stats['action_status']|none_as_blank}}
             </td>
-
+            <td>{{summary['empty_dirs_count']|format_human}}</td>
         </tr>
     {% endif %} {# divisor or attention #}
 {% endfor %}

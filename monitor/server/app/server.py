@@ -117,6 +117,21 @@ def format_gigabytes(x):
     if the_l == " ": the_l = ""
     return "%.1f%s" % (x, the_l)
 
+def format_human(n):
+    if n is None:
+        return ""
+    elif n < 1000:
+        if isinstance(n, int):
+            return str(n)
+        else:
+            return "%.3f" % (n,)
+    elif n < 1000000:
+        return "%f.3K" % (n/1000,)
+    elif n < 1000000000:
+        return "%f.3M" % (n/1000000,)
+    else:
+        return "%.3fB" % (n/1e9,)
+
 class App(WPApp):
 
     Version = Version
@@ -138,7 +153,7 @@ class App(WPApp):
                 "hms":hms , "as_dt":as_dt, "as_json":as_json, "path_type":path_type,
                 "as_JSON_Date":as_JSON_Date, "none_as_blank":none_as_blank,
                 "as_date":as_date, "format_gigabytes":format_gigabytes,
-                "if_none":if_none
+                "if_none":if_none, "format_human":format_human
             },
             globals={
                 "GLOBAL_AppVersion": Version

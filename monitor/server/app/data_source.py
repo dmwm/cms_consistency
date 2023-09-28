@@ -215,7 +215,38 @@ class DataSource(object):
         
     def open_file(self, path):
         return open(self.Path+"/"+path, "r")
-        
+
+    def latest_empty_dir_counts(self, rse):
+        # returns latest empty dirs counts as a dictionary {rse->count}
+        all_stats = self.all_stats_for_rse(rse)
+        if not all_stats:   return None
+        out = None
+        for stats in all_stats[::-1]:           # latest first
+            scanner_stats = stats.get("scanner")
+            if not scanner_stats:
+                continue
+            if scanner_stats.get("status") != "done":
+                continue
+            if not scanner_stats.get("compute_empty_dirs"):
+                continue
+            root_stats = scanner_stats.get("roots")
+            if not root_stats:
+                continue
+            per_root_counts = {}
+            out = {"run": stats["run"], "root_counts": per_root_counts}
+            for stats in root_stats:
+                per_root_counts[stats["root"]] = stats["empty_directories"]
+            break
+        return out
+
+    def latest_empty_dirs_count(self, rse):
+        # returns (run, count) tuple
+        data = self.latest_empty_dir_counts(rse)
+        if data is not None:
+            return data["run"], sum(data["root_counts"].values())
+        else:
+            return None, None
+
 class UMDataSource(DataSource):
 
     def __init__(self, path, cache, ignore_list):
@@ -611,16 +642,16 @@ class CCDataSource(DataSource):
                 "elapsed":          None
             }
         }
-        
+
         if "scanner" in stats and stats["scanner"].get("status") == "done":
             summary["scan_time"] = stats["scanner"].get("elapsed")
             roots = stats["scanner"].get("roots")
-            if roots is not None:
+            if roots and stats["scanner"].get("compute_empty_dirs", False):
                 summary["empty_dirs_stats"]["detected"] = sum(r.get("empty_directories", 0) for r in roots)
 
         if "error" in stats:
             summary["error"] = stats["error"]
-        
+
         if "cmp3" in stats and stats["cmp3"]["status"] == "done":
             summary["missing_stats"]["detected"] = summary["missing_stats"]["confirmed"] = stats["cmp3"]["missing"]
             summary["dark_stats"]["detected"] = stats["cmp3"]["dark"]

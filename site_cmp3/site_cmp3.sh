@@ -145,7 +145,7 @@ echo "Site scan..." > ${scanner_errors}
 rce_scan -z -c ${merged_config_file} -s ${stats} \
     -o ${r_prefix} \
     -r $root_file_counts \
-    -E 4 -e count-only \
+    -E 2 -e $empty_dirs_out \
     ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then

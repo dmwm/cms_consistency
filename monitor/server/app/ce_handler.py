@@ -72,6 +72,8 @@ class CEHandler(WPHandler):
 
             summary["order"] = None
             summary["attention"] = ""
+            
+            summary["empty_dirs_count"] = data_source.latest_empty_dirs_count(summary["rse"])
 
             if summary.get("failed") or summary.get("detection_status") == "failed":
                 summary["attention"] = "failed"
