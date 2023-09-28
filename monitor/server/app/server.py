@@ -120,17 +120,17 @@ def format_gigabytes(x):
 def format_human(n):
     if n is None:
         return ""
-    elif n < 1000:
+    elif n < 10000:
         if isinstance(n, int):
             return str(n)
         else:
-            return "%.3f" % (n,)
-    elif n < 1000000:
-        return "%.3fK" % (n/1000,)
-    elif n < 1000000000:
-        return "%.3fM" % (n/1000000,)
+            return "%.1f" % (n,)
+    elif n < 10000000:
+        return "%.1fK" % (n/1000,)
+    elif n < 10000000000:
+        return "%.1fM" % (n/1000000,)
     else:
-        return "%.3fB" % (n/1e9,)
+        return "%.1fB" % (n/1e9,)
 
 class App(WPApp):
 
