@@ -25,7 +25,9 @@ class MergedCEConfiguration(object):
         cfg = {}
         if self.CONFIG_PREFIX+"ce_disabled" in rse_config:     
             value = rse_config[self.CONFIG_PREFIX+"ce_disabled"]
-            cfg["ce_disabled"] = value.lower() in ("yes", "true", "disabled")
+            if isinstance(value, str):
+                value = value.lower() in ("yes", "true", "disabled")
+            cfg["ce_disabled"] = value
         if self.CONFIG_PREFIX+"ignore_list" in rse_config: 
             cfg["ignore_list"] = rse_config[self.CONFIG_PREFIX+"ignore_list"].split(",")
 
@@ -107,7 +109,10 @@ if __name__ == "__main__":
             while path:
                 head = path.pop(0)
                 if head:
-                    value = value[head]
+                    if isinstance(value, dict) and head in value:
+                        value = value[head]
+                    else:
+                        raise KeyError()
         except KeyError:
             if default is not None:
                 value = default
