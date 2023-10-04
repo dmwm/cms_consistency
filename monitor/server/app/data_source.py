@@ -601,6 +601,9 @@ class CCDataSource(DataSource):
         if tend2 is not None:
             tend = tend2
 
+        if tstart is None:
+            tstart = stats.get("start_time")
+
         status = (action_status or (detection_status if detection_status == "failed" else "started")) or "not started"
         failed_comp = detection_failed or action_failed
         running_comp = detection_running or action_running
