@@ -617,7 +617,7 @@ class CCDataSource(DataSource):
             "failed": failed_comp,
             "running": running_comp,
             "comp_status": status_by_comp,
-            "disabled": stats.get("disabled", False)
+            "disabled": stats.get("disabled", False),
             "missing_stats" : {
                 "error_counts":     None,
                 "detected":         None,
