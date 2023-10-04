@@ -74,14 +74,20 @@ echo "merged_confg_file:         $merged_config_file"
 
 $python merge_config.py merge $RSE $config_file > $merged_config_file
 disabled=`$python merge_config.py get -d false $merged_config_file rses.$RSE.ce_disabled`
-echo "RSE disabled:              $disabled"
 
-if [ "$disabled" == "True" ]; then
-    echo \|
-    echo \| The CE for RSE is disabled. Stopping
-    echo \|
-    exit 0
-fi
+case $disabled in
+  True|true)
+    disabled="true"
+    ;;
+  False|false)
+    disabled="false"
+    ;;
+  *)
+    disabled="false"
+    ;;
+esac
+
+echo "RSE disabled:              $disabled"
 
 # init stats file
 now_date_time=`date -u`
@@ -101,9 +107,18 @@ cat > ${stats} <<_EOF_
     "rucio_config": "${rucio_config_file}",
     "driver_version":   "${version}",
     "python_version":   "${python_version}",
-    "end_time":     null
+    "end_time":     null,
+    "disabled":     $disabled
 }
 _EOF_
+
+
+if [ "$disabled" == "true" ]; then
+    echo \|
+    echo \| The CE for RSE is disabled. Stopping
+    echo \|
+    exit 0
+fi
 
 
 # 0. delete old lists

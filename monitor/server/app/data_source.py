@@ -577,7 +577,7 @@ class CCDataSource(DataSource):
 
                 if comp_status == "aborted" and status not in ("died", "failed"):
                     status = "aborted"
-
+                    
                 all_done = all_done and comp_status == "done"
             #else:
             #    all_done = False
@@ -617,6 +617,7 @@ class CCDataSource(DataSource):
             "failed": failed_comp,
             "running": running_comp,
             "comp_status": status_by_comp,
+            "disabled": stats.get("disabled", False)
             "missing_stats" : {
                 "error_counts":     None,
                 "detected":         None,

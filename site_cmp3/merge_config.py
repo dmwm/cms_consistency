@@ -114,8 +114,13 @@ if __name__ == "__main__":
             else:
                 print("Path not fond", file=sys.stderr)
                 sys.exit(1)
+        try:
+            value = json.dumps(value)
+        except:
+            print("non-jsonable value:", value, file=sys.stderr)
+            sys.exit(1)
         print(value)
-        
+
         
     
 
