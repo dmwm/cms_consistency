@@ -62,12 +62,6 @@ class CEHandler(WPHandler):
         problems = []
         the_rest = []
         
-        log = open("/tmp/index.log", "w")
-        
-        for rse, summary in summaries.items():
-            if summary.get("detection_status") == "started" and not summary.get("start_time"):
-                print("rse:", rse, " run:", summary["run"], file=log)
-        
         for summary in summaries.values():
 
             summary["order"] = None
@@ -75,7 +69,11 @@ class CEHandler(WPHandler):
             
             _, summary["empty_dirs_count"] = data_source.latest_empty_dirs_count(summary["rse"])
 
-            if summary.get("failed") or summary.get("detection_status") == "failed":
+            if summary.get("disabled"):
+                summary["attention"] = "disabled"
+                summary["order"] = 55
+                summary["detection_status"] = "disabled"
+            elif summary.get("failed") or summary.get("detection_status") == "failed":
                 summary["attention"] = "failed"
                 summary["order"] = 10
             elif summary.get("detection_status") == "started" and summary["start_time"] < 3*24*3600:
