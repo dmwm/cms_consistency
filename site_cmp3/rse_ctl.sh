@@ -11,7 +11,7 @@ enable)
 	rucio-admin rse set-attribute --rse $rse --key CE_config.ce_disabled --value false
   ;;
 show)
-  rucio-admin rse get-attribute $rse | grep ^CE_config.ce_disabled:
+  rucio-admin rse get-attribute $rse | grep -e ^CE_config.ce_disabled:
   ;;
 *)
   echo Unknown action: $action
