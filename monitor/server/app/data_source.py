@@ -590,7 +590,7 @@ class CCDataSource(DataSource):
 
     def run_summary(self, stats):
         status = None
-        tstart, tend = None, None
+        tstart, tend = stats.get("start_time"), stats.get("end_time")
         failed_comp = None
         running_comp = None
         all_done = True
@@ -604,6 +604,9 @@ class CCDataSource(DataSource):
         if tstart is None:
             tstart = stats.get("start_time")
 
+        if tend is None:
+            tend = stats.get("end_time")
+
         status = (action_status or (detection_status if detection_status == "failed" else "started")) or "not started"
         failed_comp = detection_failed or action_failed
         running_comp = detection_running or action_running
@@ -614,9 +617,9 @@ class CCDataSource(DataSource):
             "detection_status": detection_status,
             "action_status": action_status,
             "run":  stats.get("run"),
-            "start_time": tstart,
+            "start_time":   tstart,
+            "end_time":     tend,
             "scan_time":    None,
-            "end_time": tend,
             "failed": failed_comp,
             "running": running_comp,
             "comp_status": status_by_comp,
