@@ -12,4 +12,9 @@ enable)
   ;;
 show)
   rucio-admin rse get-attribute $rse | grep ^CE_config.ce_disabled:
-fi
+  ;;
+*)
+  echo Unknown action: $action
+  exit 1
+  ;;
+esac
