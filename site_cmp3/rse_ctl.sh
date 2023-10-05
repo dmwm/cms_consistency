@@ -2,7 +2,7 @@
 
 action=$1
 rse=$2
-disabled_command=CE_config.disabled
+disabled_command=CE_config.ce_disabled
 
 case $action in
 disable)
