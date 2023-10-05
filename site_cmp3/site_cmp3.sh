@@ -103,11 +103,11 @@ cat > ${stats} <<_EOF_
     "scratch":      "${scratch}",
     "out":          "${out}",
     "config":       "${config_file}",
-    "merged_config":       "${merged_config_file}",
-    "rucio_config": "${rucio_config_file}",
-    "driver_version":   "${version}",
-    "python_version":   "${python_version}",
-    "end_time":     null,
+    "merged_config":      "${merged_config_file}",
+    "rucio_config":       "${rucio_config_file}",
+    "driver_version":     "${version}",
+    "python_version":     "${python_version}",
+    "end_time":     ${timestamp}.0,
     "disabled":     $disabled
 }
 _EOF_
