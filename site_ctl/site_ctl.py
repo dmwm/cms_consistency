@@ -41,8 +41,6 @@ def external_name(name):
 
 def internal_to_external(config):
     config = {external_name(name): value for name, value in config.items() if name in Params}
-    if "ce_disabled" in config:
-        config["ce_config"] = config["ce_config"] == "true"
     for name in Lists:
         if name in config:
             config["name"] = config["name"].split('/')
@@ -53,8 +51,6 @@ def external_to_internal(config):
     for name in Lists:
         if name in config:
             config[name] = ','.join(config[name])
-    if "ce_disabled" in config:
-        config["ce_config"] = "true" if config["ce_config"] else "false"
     return {internal_name(name): value for name, value in config.items() if name in Params}
 
 def read_config(rse):
