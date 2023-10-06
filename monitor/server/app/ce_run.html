@@ -36,274 +36,282 @@
         </p>
 
     {% endif %}
-
-    <h3>Steps statistics</h3>
     
-    <table class="data">
-        <tr>
-                <th>Step</th>
-                <th>Version</th>
-                <th>Start time</th>
-                <th>Status</th>
-                <th>End time</th>
-                <th>Elapsed time</th>
-                <th>Files</th>
-                <th>Directories</th>
-        </tr>
+    {% if disabled %}
+    
+      <h3>Run was disabled by RSE configration</h3>
+      
+    {% else %}    {# run disabled #}
+
+      <h3>Steps statistics</h3>
+    
+      <table class="data">
+          <tr>
+                  <th>Step</th>
+                  <th>Version</th>
+                  <th>Start time</th>
+                  <th>Status</th>
+                  <th>End time</th>
+                  <th>Elapsed time</th>
+                  <th>Files</th>
+                  <th>Directories</th>
+          </tr>
                         
-                        {% for step, step_name, stats in stats_parts %}
-							{% set comp_status = summary["comp_status"][step] or stats["status"] or ''%}
-                                <tr>
-                                        <td>{{step_name}}</td>
-                                        <td>{% if step == "scanner" %}
-                                                        {{stats["scanner"]["type"]}}&nbsp;{{stats["scanner"]["version"]}}
-                                                {% else %}
-                                                        {% if "version" in stats %}{{stats["version"]}}{% endif %}
-                                                {% endif %}
-                                        </td>
-                                        <td>{% if "start_time" in stats %}{{stats["start_time"]|as_dt|default("")}}{% endif %}</td>
-                                        <td class="{{comp_status or ''}}">
-											<!-- 
-												step: {{step}}
-												comp_status: {{comp_status}}
-											-->
-					{{comp_status}}
-					{%- if step == "scanner" -%}
-						{% if comp_status != "died" %}
-		                    {%- if "scanning" in stats -%}
-		                        <br/>scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
-							{%- endif -%}
-							{%- if "heartbeat_utc" in stats -%}
-								<br/>heartbeat: {{stats["heartbeat_utc"]}}
-							{%- endif -%}
-						{% endif %}
-                    {%- endif -%}
-                </td>
-                                        <td>{% if "end_time" in stats %}{{stats["end_time"]|as_dt|default("")}}{% endif %}</td>
-                                        <td>
-                    {% if "elapsed" in stats %}         {{stats["elapsed"]|hms}}
-                    {% elif "start_time" in stats %}    {{(time_now-stats["start_time"])|hms}}
-                    {% endif %}
-                </td>
-                                        <td>
-                                                {%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["files"]|default("")}}
-                                                {%- elif step == "scanner" %}{{stats["total_files"]|default("")}}
-                                                {%- elif step == "cmp3" -%}
-                                                        {%- if stats["dark"] is not none %}&nbsp;dark: {{stats["dark"]}}{% endif -%}
-                                                        {%- if stats["missing"] is not none %}&nbsp;missing: {{stats["missing"]}}{% endif -%}
-                    {%- elif step == "cmp2dark" and stats is not none -%}
-                        {%- if "join_list_files" in stats %} confirmed:&nbsp;{{ stats["join_list_files"]|default("") }}{% endif -%}
-                    {%- elif step == "cc_dark" and stats is not none -%}
-                        acted:&nbsp;{{ stats["confirmed_dark_files"]|default("") }}
-                    {%- elif step == "cc_miss" and stats is not none -%}
-                        acted:&nbsp;{{ stats["confirmed_miss_files"]|default("") }}
-                                                {%- endif -%}
-                                        </td>
-                                        <td>
-                                                {%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["directories"]|default("")}}
-                                                {%- elif step == "scanner" %}{{stats["total_directories"]|default("")}}
-                                                {%- endif -%}
-                                        </td>
-                                </tr>
-                        {% endfor %}
-    </table>
+                          {% for step, step_name, stats in stats_parts %}
+  							{% set comp_status = summary["comp_status"][step] or stats["status"] or ''%}
+                                  <tr>
+                                          <td>{{step_name}}</td>
+                                          <td>{% if step == "scanner" %}
+                                                          {{stats["scanner"]["type"]}}&nbsp;{{stats["scanner"]["version"]}}
+                                                  {% else %}
+                                                          {% if "version" in stats %}{{stats["version"]}}{% endif %}
+                                                  {% endif %}
+                                          </td>
+                                          <td>{% if "start_time" in stats %}{{stats["start_time"]|as_dt|default("")}}{% endif %}</td>
+                                          <td class="{{comp_status or ''}}">
+  											<!-- 
+  												step: {{step}}
+  												comp_status: {{comp_status}}
+  											-->
+  					{{comp_status}}
+  					{%- if step == "scanner" -%}
+  						{% if comp_status != "died" %}
+  		                    {%- if "scanning" in stats -%}
+  		                        <br/>scanning "{{stats["scanning"]["root"]}}" {{(time_now - stats["scanning"]["start_time"])|hms}}
+  							{%- endif -%}
+  							{%- if "heartbeat_utc" in stats -%}
+  								<br/>heartbeat: {{stats["heartbeat_utc"]}}
+  							{%- endif -%}
+  						{% endif %}
+                      {%- endif -%}
+                  </td>
+                                          <td>{% if "end_time" in stats %}{{stats["end_time"]|as_dt|default("")}}{% endif %}</td>
+                                          <td>
+                      {% if "elapsed" in stats %}         {{stats["elapsed"]|hms}}
+                      {% elif "start_time" in stats %}    {{(time_now-stats["start_time"])|hms}}
+                      {% endif %}
+                  </td>
+                                          <td>
+                                                  {%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["files"]|default("")}}
+                                                  {%- elif step == "scanner" %}{{stats["total_files"]|default("")}}
+                                                  {%- elif step == "cmp3" -%}
+                                                          {%- if stats["dark"] is not none %}&nbsp;dark: {{stats["dark"]}}{% endif -%}
+                                                          {%- if stats["missing"] is not none %}&nbsp;missing: {{stats["missing"]}}{% endif -%}
+                      {%- elif step == "cmp2dark" and stats is not none -%}
+                          {%- if "join_list_files" in stats %} confirmed:&nbsp;{{ stats["join_list_files"]|default("") }}{% endif -%}
+                      {%- elif step == "cc_dark" and stats is not none -%}
+                          acted:&nbsp;{{ stats["confirmed_dark_files"]|default("") }}
+                      {%- elif step == "cc_miss" and stats is not none -%}
+                          acted:&nbsp;{{ stats["confirmed_miss_files"]|default("") }}
+                                                  {%- endif -%}
+                                          </td>
+                                          <td>
+                                                  {%- if step == "dbdump_before" or step == "dbdump_after" %}{{stats["directories"]|default("")}}
+                                                  {%- elif step == "scanner" %}{{stats["total_directories"]|default("")}}
+                                                  {%- endif -%}
+                                          </td>
+                                  </tr>
+                          {% endfor %}
+      </table>
     
-    {% set missing_stats = summary["missing_stats"] %}
-    {% set dark_stats = summary["dark_stats"] %}
-    {% set ed_stats = summary["empty_dirs_stats"] %}
+      {% set missing_stats = summary["missing_stats"] %}
+      {% set dark_stats = summary["dark_stats"] %}
+      {% set ed_stats = summary["empty_dirs_stats"] %}
 
-    <h3>Action summary</h3>
-    <table class="data">
-        <tr>
-            <td></td><th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action error conuts</th><th>Action status</th>
-        </tr>
-        {% if missing_stats %}
-                <tr>
-                    <td class="field_name">Missing files</td>
-                    <td>{{missing_stats["detected"]|none_as_blank}}</td>
-                    <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
-                    <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
-                    <td>{% if stats["missing_action"] %}
-                            {% set errors = stats["missing_action"].get("declaration_errors") %}
-                            {% if errors %}
-                                {% for error, count in errors.items() %}
-                                    {{count}}: {{error}}<br/>
-                                {% endfor %}
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td class="{{missing_stats['action_status'] or ''}}">{{summary["missing_stats"]["action_status"]|none_as_blank}}
-                    {%- if missing_stats['action_status'] == "aborted" and 
-                            missing_stats['aborted_reason'] -%}
-                            : {{ missing_stats['aborted_reason'] }}
-                    {%- endif %}
-                    </td>
-                </tr>
-        {% endif %}
-        {% if dark_stats %}
-                <tr>
-                    <td class="field_name">Dark files</td>
-                    <td>{{dark_stats["detected"]|none_as_blank}}</td>
-                    <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
-                    <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
-                    <td>{% if dark_stats["error_counts"] %}
-                            {% set errors = dark_stats["error_counts"] %}
-                            {% if errors %}
-                                {% for error, count in errors.items() %}
-                                    {{count}}: {{error}}<br/>
-                                {% endfor %}
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td class="{{dark_stats['action_status'] or ''}}">{{dark_stats["action_status"]|none_as_blank}}
-                    {%- if dark_stats['action_status'] == "aborted" and 
-                            dark_stats['aborted_reason'] -%}
-                            : {{ dark_stats['aborted_reason'] }}
-                    {%- endif %}
-                    </td>
-                </tr>
-        {% endif %}
-        {% if ed_stats %}
-                <tr>
-                    <td class="field_name">Empty directories</td>
-                    <td>{{ed_stats["detected"]|none_as_blank}}</td>
-                    <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
-                    <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
-                    <td>{% if ed_stats["error_counts"] %}
-                            {% set errors = ed_stats["error_counts"] %}
-                            {% if errors %}
-                                {% for error, count in errors.items() %}
-                                    {{count}}: {{error}}<br/>
-                                {% endfor %}
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td class="{{ed_stats['action_status']|none_as_blank}}">{{ed_stats["action_status"]|none_as_blank}}
-                    </td>
-                </tr>
-        {% endif %}
-    </table>
-{# {% endif %} #}
+      <h3>Action summary</h3>
+      <table class="data">
+          <tr>
+              <td></td><th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action error conuts</th><th>Action status</th>
+          </tr>
+          {% if missing_stats %}
+                  <tr>
+                      <td class="field_name">Missing files</td>
+                      <td>{{missing_stats["detected"]|none_as_blank}}</td>
+                      <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
+                      <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
+                      <td>{% if stats["missing_action"] %}
+                              {% set errors = stats["missing_action"].get("declaration_errors") %}
+                              {% if errors %}
+                                  {% for error, count in errors.items() %}
+                                      {{count}}: {{error}}<br/>
+                                  {% endfor %}
+                              {% endif %}
+                          {% endif %}
+                      </td>
+                      <td class="{{missing_stats['action_status'] or ''}}">{{summary["missing_stats"]["action_status"]|none_as_blank}}
+                      {%- if missing_stats['action_status'] == "aborted" and 
+                              missing_stats['aborted_reason'] -%}
+                              : {{ missing_stats['aborted_reason'] }}
+                      {%- endif %}
+                      </td>
+                  </tr>
+          {% endif %}
+          {% if dark_stats %}
+                  <tr>
+                      <td class="field_name">Dark files</td>
+                      <td>{{dark_stats["detected"]|none_as_blank}}</td>
+                      <td>{{dark_stats["confirmed"]|none_as_blank}}</td>
+                      <td>{{dark_stats["acted_on"]|none_as_blank}}</td>
+                      <td>{% if dark_stats["error_counts"] %}
+                              {% set errors = dark_stats["error_counts"] %}
+                              {% if errors %}
+                                  {% for error, count in errors.items() %}
+                                      {{count}}: {{error}}<br/>
+                                  {% endfor %}
+                              {% endif %}
+                          {% endif %}
+                      </td>
+                      <td class="{{dark_stats['action_status'] or ''}}">{{dark_stats["action_status"]|none_as_blank}}
+                      {%- if dark_stats['action_status'] == "aborted" and 
+                              dark_stats['aborted_reason'] -%}
+                              : {{ dark_stats['aborted_reason'] }}
+                      {%- endif %}
+                      </td>
+                  </tr>
+          {% endif %}
+          {% if ed_stats %}
+                  <tr>
+                      <td class="field_name">Empty directories</td>
+                      <td>{{ed_stats["detected"]|none_as_blank}}</td>
+                      <td>{{ed_stats["confirmed"]|none_as_blank}}</td>
+                      <td>{{ed_stats["acted_on"]|none_as_blank}}</td>
+                      <td>{% if ed_stats["error_counts"] %}
+                              {% set errors = ed_stats["error_counts"] %}
+                              {% if errors %}
+                                  {% for error, count in errors.items() %}
+                                      {{count}}: {{error}}<br/>
+                                  {% endfor %}
+                              {% endif %}
+                          {% endif %}
+                      </td>
+                      <td class="{{ed_stats['action_status']|none_as_blank}}">{{ed_stats["action_status"]|none_as_blank}}
+                      </td>
+                  </tr>
+          {% endif %}
+      </table>
+  {# {% endif %} #}
 
-            {% if scanner is not none %}
+              {% if scanner is not none %}
             
-        <h3>Site scan details</h3>
-        <table class="data">
-            <tr><td class=field_name>Server address</td><td>{{scanner["server"]}}</td></tr>
-            <tr><td class=field_name>Server root</td><td>{{scanner["server_root"]}}</td></tr>
-        </table>
+          <h3>Site scan details</h3>
+          <table class="data">
+              <tr><td class=field_name>Server address</td><td>{{scanner["server"]}}</td></tr>
+              <tr><td class=field_name>Server root</td><td>{{scanner["server_root"]}}</td></tr>
+          </table>
 
-        <p></p>
+          <p></p>
 
-        <table class="data">
-            <tr>
-                <th>Location</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Elapsed time</th>
-                    <th>Error</th><th colspan=2>Failed subdirectories</th>
-            </tr>
-            {% for d in scanner_roots %}
-                <tr>
-                    <td class=field_name>{{d["root"]}}</td>
-                    <td>{{d["files"]}}</td>
-                    <td>{{d["directories"]}}</td>
-                    <td>{{d["empty_directories"]}}</td>
-                    <td>{{d["elapsed_time"]|hms}}</td>
-                    <td style="text-align:left">{{d["error"] or ""}}</td>
-                    <td>
-                        {% if d["failed_subdirectories"]|length %}
-                            <table class="failed_dirs">
-                                {% for path, error in d["failed_subdirectories"].items()|sort %}
-                                    <tr><td class="failed_dir_path">{{path}}</td><td class="failed_dir_error">{{error}}</td></tr>
-                                {% endfor %}
-                            </table>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </table>
+          <table class="data">
+              <tr>
+                  <th>Location</th><th>Files</th><th>Directories</th><th>Empty directories</th><th>Elapsed time</th>
+                      <th>Error</th><th colspan=2>Failed subdirectories</th>
+              </tr>
+              {% for d in scanner_roots %}
+                  <tr>
+                      <td class=field_name>{{d["root"]}}</td>
+                      <td>{{d["files"]}}</td>
+                      <td>{{d["directories"]}}</td>
+                      <td>{{d["empty_directories"]}}</td>
+                      <td>{{d["elapsed_time"]|hms}}</td>
+                      <td style="text-align:left">{{d["error"] or ""}}</td>
+                      <td>
+                          {% if d["failed_subdirectories"]|length %}
+                              <table class="failed_dirs">
+                                  {% for path, error in d["failed_subdirectories"].items()|sort %}
+                                      <tr><td class="failed_dir_path">{{path}}</td><td class="failed_dir_error">{{error}}</td></tr>
+                                  {% endfor %}
+                              </table>
+                          {% endif %}
+                      </td>
+                  </tr>
+              {% endfor %}
+          </table>
 
-    {% endif %}
+      {% endif %}
     
-    {% if cmp3 is not none %}
+      {% if cmp3 is not none %}
 
-        <h3>Comparison results</h3>
+          <h3>Comparison results</h3>
 
-        <script type="text/javascript">
-            function show(lst)
-            {
-                var o = document.getElementById(lst+"_list");
-                if( o )
-                    o.classList.toggle("shown");
-                o = document.getElementById(lst+"_list_toggle");
-                if( o.innerHTML == "hide" )
-                    o.innerHTML = "show";
-                else
-                    o.innerHTML = "hide";
-            };
-        </script>
+          <script type="text/javascript">
+              function show(lst)
+              {
+                  var o = document.getElementById(lst+"_list");
+                  if( o )
+                      o.classList.toggle("shown");
+                  o = document.getElementById(lst+"_list_toggle");
+                  if( o.innerHTML == "hide" )
+                      o.innerHTML = "show";
+                  else
+                      o.innerHTML = "hide";
+              };
+          </script>
 
-        <table class="data">
-        <tr>
-            <td></td>
-            <th colspan=3>Latest run</th>
-            <th>Repeated from prvious run</th>
-        </tr>
-            <tr>
-                <td class="field_name">Missing files</td><td>{{nmissing}}</td>
-                <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
-                <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
-            <td>{{old_nmissing|none_as_blank}}</td>
-            </tr>
-            <tr>
-                <td class="field_name">Dark files</td><td>{{ndark}}</td>
-                <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
-                <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
-                <td>{{old_ndark|none_as_blank}}</td>
-            </tr>
-            <tr>
-                <td class="field_name">Confirmed dark files</td><td>{{ndark_confirmed}}</td>
-                <td>{% if dark_confirmed %}<a href="#dark_confirmed_list_ref" id="dark_confirmed_list_toggle" onclick="show('dark_confirmed')">show</a>{% endif %}</td>
-                <td>{% if dark_confirmed %}<a href="./dark_confirmed/dark_confirmed_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
-                <td></td>
-            </tr>
-        </table>
+          <table class="data">
+          <tr>
+              <td></td>
+              <th colspan=3>Latest run</th>
+              <th>Repeated from prvious run</th>
+          </tr>
+              <tr>
+                  <td class="field_name">Missing files</td><td>{{nmissing}}</td>
+                  <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
+                  <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+              <td>{{old_nmissing|none_as_blank}}</td>
+              </tr>
+              <tr>
+                  <td class="field_name">Dark files</td><td>{{ndark}}</td>
+                  <td>{% if dark %}<a href="#dark_list_ref" id="dark_list_toggle" onclick="show('dark')">show</a>{% endif %}</td>
+                  <td>{% if dark %}<a href="./dark/dark_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                  <td>{{old_ndark|none_as_blank}}</td>
+              </tr>
+              <tr>
+                  <td class="field_name">Confirmed dark files</td><td>{{ndark_confirmed}}</td>
+                  <td>{% if dark_confirmed %}<a href="#dark_confirmed_list_ref" id="dark_confirmed_list_toggle" onclick="show('dark_confirmed')">show</a>{% endif %}</td>
+                  <td>{% if dark_confirmed %}<a href="./dark_confirmed/dark_confirmed_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+                  <td></td>
+              </tr>
+          </table>
 
-        {% if missing %}
+          {% if missing %}
 
-        <div id="missing_list" class="hidden">
-            <a id="missing_list_ref"></a>
-            <h4>Missing files {% if missing_truncated %} (truncated){% endif %}</h4>
-            {% for f in missing %}
-                <span class="lfn {{f|path_type}}">{{f}}</span><br/>
-            {%- endfor %}
-        </div>
+          <div id="missing_list" class="hidden">
+              <a id="missing_list_ref"></a>
+              <h4>Missing files {% if missing_truncated %} (truncated){% endif %}</h4>
+              {% for f in missing %}
+                  <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+              {%- endfor %}
+          </div>
 
-        {% endif %}
+          {% endif %}
 
-        {% if dark %}
+          {% if dark %}
 
-        <div id="dark_list" class="hidden">
-            <a id="dark_list_ref"></a>
-            <h4>Dark files{% if dark_truncated %} (truncated){% endif %}</h4>
-            {% for f in dark %}
-                <span class="lfn {{f|path_type}}">{{f}}</span><br/>
-            {%- endfor %}
-        </div>
+          <div id="dark_list" class="hidden">
+              <a id="dark_list_ref"></a>
+              <h4>Dark files{% if dark_truncated %} (truncated){% endif %}</h4>
+              {% for f in dark %}
+                  <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+              {%- endfor %}
+          </div>
 
-        {% endif %}
+          {% endif %}
         
-        {% if dark_confirmed %}
+          {% if dark_confirmed %}
 
-        <div id="dark_confirmed_list" class="hidden">
-            <a id="dark_confirmed_list_ref"></a>
-            <h4>Confirmed dark files{% if dark_confirmed_truncated %}(truncated){% endif %}</h4>
-            {% for f in dark_confirmed %}
-                <span class="lfn {{f|path_type}}">{{f}}</span><br/>
-            {%- endfor %}
-        </div>
+          <div id="dark_confirmed_list" class="hidden">
+              <a id="dark_confirmed_list_ref"></a>
+              <h4>Confirmed dark files{% if dark_confirmed_truncated %}(truncated){% endif %}</h4>
+              {% for f in dark_confirmed %}
+                  <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+              {%- endfor %}
+          </div>
 
-        {% endif %}
+          {% endif %}
 
-    {% endif %}     {# if cmp3 is not none #}
+      {% endif %}     {# if cmp3 is not none #}
+
+    {% endif %}      {# run disabled #}
 
     <h3>Raw JSON statistics</h3>
 
@@ -312,6 +320,6 @@
     <pre class="code">{{stats|as_json}}</pre>
 
     
-
+      
 
 {% endblock %}

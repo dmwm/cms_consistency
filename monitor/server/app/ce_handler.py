@@ -330,6 +330,7 @@ class CEHandler(WPHandler):
         
         return self.render_to_response("ce_run.html", 
             rse=rse, run=run,
+            disabled=stats.get("disabled", False),
             errors = errors,
             dark_truncated = dark_truncated, 
             dark_confirmed_truncated = dark_confirmed_truncated, 
