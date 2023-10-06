@@ -67,7 +67,7 @@ def write_config(rse, config):
         if name not in config:
             client.delete_rse_attribute(rse, name)
     for name, value in config.items():
-        client.add_rse_attribute(rse, name)
+        client.add_rse_attribute(rse, name, value)
     return config
 
 #
