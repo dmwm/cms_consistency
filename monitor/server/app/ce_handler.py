@@ -146,34 +146,41 @@ class CEHandler(WPHandler):
             detection_status = summary["detection_status"]
             if detection_status == "failed":
                 detection_status = summary["failed"] + " failed"
+            if summary.get("disabled"):
+                detection_status = "disabled"
             running = summary.get("running")
+
+            dark_summary = summary.get("dark_stats", {})
+            missing_summary = summary.get("mising_stats", {})
+            empty_dirs_summary = summary.get("empty_dirs_stats", {})
+
             cc_infos.append((
                 run, 
                 {
-                    "summary":  summary,
+                    "summary":          summary,
                     "start_time":       start_time, 
-                    "ndark":ndark, 
-                    "nmissing":nmissing, 
+                    "ndark":            ndark, 
+                    "nmissing":         nmissing, 
                     "detection_status": detection_status, 
-                    "running":running,
+                    "running":          running,
 
-                    "confirmed_dark":   summary["dark_stats"]["confirmed"], 
-                    "acted_dark":       summary["dark_stats"]["acted_on"], 
-                    "dark_status":      summary["dark_stats"]["action_status"],
-                    "dark_status_reason": summary["dark_stats"].get("aborted_reason", ""),
+                    "confirmed_dark":           dark_summary.get("confirmed"), 
+                    "acted_dark":               dark_summary.get("acted_on"), 
+                    "dark_status":              dark_summary.get("action_status"),
+                    "dark_status_reason":       dark_summary.get("aborted_reason", ""),
 
-                    "acted_missing":summary["missing_stats"]["acted_on"], 
-                    "missing_status":summary["missing_stats"]["action_status"],
-                    "missing_status_reason":    summary["missing_stats"].get("aborted_reason", ""),
+                    "acted_missing":            missing_summary.get("acted_on"), 
+                    "missing_status":           missing_summary.get("action_status"),
+                    "missing_status_reason":    missing_summary.get("aborted_reason", ""),
 
-                    "detected_empty":summary.get("empty_dirs_stats", {}).get("detected"),
-                    "confirmed_empty":summary.get("empty_dirs_stats", {}).get("confirmed"),
-                    "acted_empty":summary.get("empty_dirs_stats", {}).get("acted_on"),
+                    "detected_empty":           empty_dirs_summary.get("detected"),
+                    "confirmed_empty":          empty_dirs_summary.get("confirmed"),
+                    "acted_empty":              empty_dirs_summary.get("acted_on"),
 
-                    "start_time_milliseconds":int(start_time*1000),
-                    "prev_run":         prev_run,
-                    "old_missing":      missing_old,
-                    "old_dark":         dark_old
+                    "start_time_milliseconds":  int(start_time*1000),
+                    "prev_run":                 prev_run,
+                    "old_missing":              missing_old,
+                    "old_dark":                 dark_old
                 }
             ))
         return self.render_to_response("ce_rse.html", rse=rse, cc_runs=cc_infos)
