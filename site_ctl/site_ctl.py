@@ -64,7 +64,7 @@ def read_config(rse):
     return internal_to_external(config)
 
 def write_config(rse, config):
-    config = external_to_external(config)
+    config = external_to_internal(config)
     client = RSEClient()
     existing_config = client.list_rse_attributes(rse)
     for name in existing_config:
@@ -102,7 +102,7 @@ def do_get(rse, name):
     print(name, config.get(name, ""))
 
 def main():
-    cmd, args = sys.argv[0], sys.argv[1:]
+    cmd, args = sys.argv[1], sys.argv[2:]
     {
         "dump": do_dump,
         "show": do_show,
