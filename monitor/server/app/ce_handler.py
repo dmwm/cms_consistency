@@ -146,8 +146,6 @@ class CEHandler(WPHandler):
             detection_status = summary["detection_status"]
             if detection_status == "failed":
                 detection_status = summary["failed"] + " failed"
-            if summary.get("disabled"):
-                detection_status = "disabled"
             running = summary.get("running")
 
             dark_summary = summary.get("dark_stats", {})

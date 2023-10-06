@@ -36,13 +36,17 @@
                             <td><a href="./show_run?rse={{rse}}&run={{t}}" class="run">{{t}}</a></td>
                             <td>{{info["start_time"]|as_dt}}</td>
                             <td>{{info["summary"]["scan_time"]|hms}}</td>
-                            <td class="{{summary['detection_status'] or ''}}">
-                            {%- if summary["detection_status"] == "started" and "running" in summary -%}
-                                {{summary["running"] or ""}} started
-                            {%- else -%}
-                                {{summary["detection_status"] or ""}}
-                            {%- endif -%}
-                        </td>
+                            {% if summary["disabled"] %}
+                              <td class="disabled">disabled</td>
+                            {% else %}
+                              <td class="{{summary['detection_status'] or ''}}">
+                              {%- if summary["detection_status"] == "started" and "running" in summary -%}
+                                  {{summary["running"] or ""}} started
+                              {%- else -%}
+                                  {{summary["detection_status"] or ""}}
+                              {%- endif -%}
+                              </td>
+                            {% endif %}
                         
                         <!-- dark -->
 			            <td>{% if not dark_stats["detected"] is none %}
