@@ -61,7 +61,6 @@ def do_show(rse):
     pprint.pprint(config)
 
 def do_load(rse):
-    rse = argv[0]
     config = json.load(sys.stdin)
     write_config(rse, config)
 
