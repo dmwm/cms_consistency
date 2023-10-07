@@ -12,38 +12,51 @@ $ site_ctl help
 
 Prefix = "CE_cfg"
 
-Params = [Prefix + "." + n for n in 
-    [
-        "ce_disabled",
-        "sever",
-        "server_root",
-        "timeout",
-        "roots",
-        "ignore_list",
-        "nworkers",
-        "max_dark_fraction",
-        "max_missing_fraction"
-    ]
+Params = [
+    "ce_disabled",
+    "sever",
+    "server_root",
+    "timeout",
+    "roots",
+    "ignore_list",
+    "nworkers",
+    "max_dark_fraction",
+    "max_missing_fraction"
 ]
+
+def remove_prefix(name):
+    assert name.startswith(Prefix + ".")
+    return name[len(Prefix) + 1:]
+    
+def add_prefix(name):
+    return Prefix + "." + name
 
 def read_config(rse):
     client = RSEClient()
     params = client.list_rse_attributes(rse)
-    config = {name: value for name, value in params.items() if name in Params}
-    assert config.get(Prefix + "." + "ce_disabled", False) in ("true", "false", True, False)
+    config = {
+        name: value 
+            for name in Params
+            if add_prefix(name) in config
+    }
+    assert config.get("ce_disabled", False) in ("true", "false", True, False)
     return config
 
 def write_config(rse, config):
-    disabled_name = Prefix + "." + "ce_disabled"
-    assert config.get(disabled_name, "false") in ("true", "false", True, False)
+    assert config.get("ce_disabled", False) in ("true", "false", True, False)
     #if disabled_name in config:
     #    assert config.get(disabled_name, "false") in ("true", "false")
     #    config = config.copy()
     #    config[disabled_name] = "true" if config.get(disabled_name, "") else "false"
     client = RSEClient()
-    existing_config = client.list_rse_attributes(rse)
+    existing_config = {
+        name: value
+        for name, value in client.list_rse_attributes(rse).items()
+        if name.startswith(Prefix + ".") and remove_prefix(name) in Params
+    }
+    config = {add_prefix(name): value for config.items()}
     for name in existing_config:
-        if name in Params and name not in config:
+        if name not in config:
             client.delete_rse_attribute(rse, name)
     for name, value in config.items():
         client.add_rse_attribute(rse, name, str(value))
