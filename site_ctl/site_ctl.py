@@ -35,10 +35,11 @@ def read_config(rse):
 
 def write_config(rse, config):
     disabled_name = Prefix + "." + "ce_disabled"
-    if disabled_name in config:
-        assert config.get(disabled_name, False) in (True, False)
-        config = config.copy()
-        config[disabled_name] = "true" if config.get(disabled_name, False) else "false"
+    assert config.get(disabled_name, "false") in ("true", "false")
+    #if disabled_name in config:
+    #    assert config.get(disabled_name, "false") in ("true", "false")
+    #    config = config.copy()
+    #    config[disabled_name] = "true" if config.get(disabled_name, "") else "false"
     client = RSEClient()
     existing_config = client.list_rse_attributes(rse)
     for name in existing_config:
