@@ -36,6 +36,8 @@ def read_config(rse):
 def write_config(rse, config):
     disabled_name = Prefix + "." + "ce_disabled"
     assert config.get(disabled_name, "false") in ("true", "false")
+    if disabled_name in config:
+        config[disabled_name] = config[disabled_name] and config[disabled_name] != "false"
     #if disabled_name in config:
     #    assert config.get(disabled_name, "false") in ("true", "false")
     #    config = config.copy()
