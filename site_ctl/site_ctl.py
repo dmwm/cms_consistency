@@ -38,6 +38,7 @@ def write_config(rse, config):
     assert config.get(disabled_name, "false") in ("true", "false")
     if disabled_name in config:
         config[disabled_name] = config[disabled_name] and config[disabled_name] != "false"
+        print("disabled set to:", config[disabled_name], type(config[disabled_name]))
     #if disabled_name in config:
     #    assert config.get(disabled_name, "false") in ("true", "false")
     #    config = config.copy()
