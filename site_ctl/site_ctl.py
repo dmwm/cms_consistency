@@ -72,12 +72,17 @@ def do_get(rse, name):
 
 def main():
     cmd, args = sys.argv[1], sys.argv[2:]
-    {
+    commands = {
         "dump": do_dump,
         "show": do_show,
         "load": do_load,
         "set": do_set,
         "get": do_get
-    }[cmd](*args)
+    }
+    if cmd not in commands:
+        print(Usage)
+        sys.exit(2)
+    
+    commands[cmd](*args)
 
 main()
