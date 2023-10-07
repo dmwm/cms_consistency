@@ -38,7 +38,7 @@ def write_config(rse, config):
     if disabled_name in config:
         assert config.get(disabled_name, False) in (True, False)
         config = config.copy()
-        config[disabled_name] = "true" if config.get(disabled_name, False)
+        config[disabled_name] = "true" if config.get(disabled_name, False) else "false"
     client = RSEClient()
     existing_config = client.list_rse_attributes(rse)
     for name in existing_config:
