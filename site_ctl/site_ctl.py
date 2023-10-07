@@ -71,6 +71,9 @@ def do_get(rse, name):
     print(name, config.get(name, "-"))
 
 def main():
+    if len(sys.argv) < 2:
+        print(Usage)
+        sys.exit(2)
     cmd, args = sys.argv[1], sys.argv[2:]
     commands = {
         "dump": do_dump,
