@@ -1,0 +1,4 @@
+#!/bin/bash
+
+here=`basename $0`
+exec python3 $here/site_ctl.py $@

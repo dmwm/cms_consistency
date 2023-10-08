@@ -54,7 +54,7 @@ def write_config(rse, config):
         for name, value in client.list_rse_attributes(rse).items()
         if name.startswith(Prefix + ".") and remove_prefix(name) in Params
     }
-    config = {add_prefix(name): value for config.items()}
+    config = {add_prefix(name): value for name, value in config.items()}
     for name in existing_config:
         if name not in config:
             client.delete_rse_attribute(rse, name)
