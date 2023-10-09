@@ -6,11 +6,11 @@ def read(fname):
 
 def get_version():
     g = {}
-    exec(open("version.py", "r").read(), g)
+    exec(open("cms_consistency/version.py", "r").read(), g)
     return g["Version"]
 
 setup(
-    name = "cms_consistency",
+    name = "cms-consistency",
     version = get_version(),
     author = "Igor Mandrichenko",
     author_email = "ivm@fnal.gov",
