@@ -3,7 +3,7 @@ from rucio.client.rseclient import RSEClient
 
 Usage = """
 $ site_ctl set <rse> <parameter> <value>
-$ site_ctl reset <rse> <parameter>
+$ site_ctl reset <rse> (<parameter>|-a)
 $ site_ctl get <rse> <parameter>
 $ site_ctl show <rse> (<parameter>|all)
 $ site_ctl dump <rse> > <JSON file>
@@ -100,10 +100,13 @@ def do_get(rse, name):
     print(name, config.get(name, "-"))
     
 def do_reset(rse, name):
-    config = read_config(rse)
-    if name in config:
-        del config[name]
-        write_config(rse, config)
+    if name == "-a":
+        config = {}
+    else:
+        config = read_config(rse)
+        if name in config:
+            del config[name]
+    write_config(rse, config)
         
 def do_list():
     for name in Params:
