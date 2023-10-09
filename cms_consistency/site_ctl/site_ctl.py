@@ -4,6 +4,7 @@ from rucio.client.rseclient import RSEClient
 Usage = """
 $ site_ctl set <rse> <parameter> <value>
 $ site_ctl reset <rse> <parameter>
+$ site_ctl get <rse> <parameter>
 $ site_ctl show <rse> (<parameter>|all)
 $ site_ctl dump <rse> > <JSON file>
 $ site_ctl load <rse> < <JSON file>
@@ -117,12 +118,13 @@ def main():
         rse, cmd, args = None, args[0], []
     else:
         rse, cmd, args = args[0], args[1], args[2:]
-    if cmd == "do_dump":            print(do_dump(rse))
-    elif cmd == "do_show":          print(do_show(rse))
-    elif cmd == "do_load":          print(do_load(rse))
-    elif cmd == "do_set":           print(do_set(rse, args[0], args[1]))
-    elif cmd == "do_lit":           print(do_reset())
-    elif cmd == "do_get":           print(do_get(rse, args[0]))
+    if cmd == "dump":            do_dump(rse)
+    elif cmd == "show":          do_show(rse)
+    elif cmd == "load":          do_load(rse)
+    elif cmd == "set":           do_set(rse, args[0], args[1])
+    elif cmd == "reset":         do_reset(rse, args[0])
+    elif cmd == "list":          do_list()
+    elif cmd == "get":           do_get(rse, args[0])
     else:
         print(Usage)
         sys.exit(2)
