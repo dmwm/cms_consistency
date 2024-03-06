@@ -76,7 +76,7 @@ The following site attributes are recognized:
 Things an RSE admin may want to change:
 
 * CE_config.ce_disabled - can be used to disable CE runs for the RSE. To disable, use "true" as the value, to enable either delete the parameter or set it to "false"
-* CE_config.sever - hostname:port for the RSE xrootd server, e.g. "ingrid-se08.cism.ucl.ac.be:1094"
+* CE_config.server - hostname:port for the RSE xrootd server, e.g. "ingrid-se08.cism.ucl.ac.be:1094"
 * CE_config.server_root - the top path of the CMS area to scan in the xrood namespace
 * CE_config.roots - comma-separated list of top level directories in LFN space to scan, e.g.: "/store/mc,/store/data"
 * CE_config.ignore_list - comma-separated list of LFN path prefixes to ignore, e.g. "/store/mc/X,/store/mc/YY"
