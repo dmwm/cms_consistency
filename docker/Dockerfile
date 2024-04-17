@@ -56,16 +56,14 @@ RUN pip3 install rucio-clients rucio-consistency
 RUN mkdir -p /consistency
 RUN mkdir /root/RAL
 COPY vomses /etc
-COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh  RAL_Tape_pre.sh RAL_Tape_post.sh /consistency/
+COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh  RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg /consistency/
 
 ADD rucio.cfg.j2 /tmp
-
-ADD rucio-client.cfg /consistency/rucio-client.cfg
 
 WORKDIR /consistency
 RUN chmod +x *.sh
 
-RUN git clone https://github.com/ivmfnal/cms_consistency.git
+RUN git clone https://github.com/dmwm/cms_consistency.git
 
 CMD /bin/bash
 
