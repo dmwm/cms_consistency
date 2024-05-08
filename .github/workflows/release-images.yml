@@ -1,0 +1,32 @@
+name: CMS Consistency Check Docker Image CI
+
+on:
+  push:
+    tags:
+      - 'release-*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get tag name
+        id: tagname
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+        
+      - name: Login to CERN Harbour
+        uses: docker/login-action@v3
+        with:
+          registry: registry.cern.ch
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_TOKEN }}
+
+      - name: Build the Docker Image
+        run: |
+          cd docker && docker build . \
+          --tag registry.cern.ch/${{ vars.HARBOR_REPOSITORY }}/rucio-consistency:${{ env.tag }}
+      
+      - name: Push Image to CERN Harbour
+        run: docker push registry.cern.ch/${{ vars.HARBOR_REPOSITORY }}/rucio-consistency:${{ env.tag }}
