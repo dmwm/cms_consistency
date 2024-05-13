@@ -104,7 +104,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
                         try:
                             from rucio.client.replicaclient import ReplicaClient
                             client = ReplicaClient(account=account)
-                            replicas = [{"path":path} for path in confirmed]
+                            replicas = [{"path": path, "scope": "cms"} for path in confirmed]
                             for chunk in chunked(replicas):
                                 client.quarantine_replicas(chunk, rse=rse)
                             my_stats["declared_dark_files"] = len(replicas)
