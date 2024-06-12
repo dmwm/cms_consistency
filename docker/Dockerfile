@@ -6,61 +6,40 @@ RUN dnf install -y epel-release.noarch\
     && rm -rf /var/cache/dnf
 
 # PKI stuff
-RUN dnf install -y https://repo.opensciencegrid.org/osg/3.6/osg-3.6-el9-release-latest.rpm\
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-RUN dnf install -y osg-pki-tools\
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-RUN dnf install -y voms\
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-RUN  dnf install -y voms-clients-cpp\
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-RUN mkdir -p /etc/grid-security \
-    && rm -rf /etc/grid-security/certificates \
-    && ln -s /cvmfs/grid.cern.ch/etc/grid-security/certificates /etc/grid-security/
-
+# xrootd client
+# Python and libs
+RUN dnf install -y https://repo.opensciencegrid.org/osg/3.6/osg-3.6-el9-release-latest.rpm && \
+    dnf install -y osg-pki-tools && \
+    dnf install -y voms voms-clients-cpp && \
+    dnf install -y xrootd-libs xrootd-client && \
+    dnf install -y python3 python3-pip git && \
+    dnf install -y which diff && \ 
+    dnf install -y libaio && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
 
 # Oracle client
-RUN dnf install -y libaio\
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
+# depends on libaio
 RUN rpm -i https://yum.oracle.com/repo/OracleLinux/OL8/oracle/instantclient21/x86_64/getPackage/oracle-instantclient-basic-21.14.0.0.0-1.el8.x86_64.rpm
-
-
-# xrootd client
-RUN dnf install -y xrootd-libs xrootd-client\
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
 
 # jobber
 RUN rpm -i https://github.com/dshearer/jobber/releases/download/v1.4.4/jobber-1.4.4-1.el8.x86_64.rpm
 
+RUN pip3 install --upgrade pip && \
+    pip3 install --upgrade setuptools && \
+    pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle j2cli && \
+    pip3 install rucio-clients rucio-consistency
 
-# Python and libs
-RUN dnf install -y python3 python3-pip git \
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-RUN pip3 install --upgrade pip
-RUN pip3 install --upgrade setuptools
-RUN pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle j2cli
-RUN pip3 install rucio-clients rucio-consistency
-
+# grid certs
+RUN mkdir -p /etc/grid-security && \
+    rm -rf /etc/grid-security/certificates && \
+    ln -s /cvmfs/grid.cern.ch/etc/grid-security/certificates /etc/grid-security/
 
 ### Local setup
 RUN mkdir -p /consistency
 RUN mkdir /root/RAL
 COPY vomses /etc
-COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh  RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg /consistency/
+COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg /consistency/
 
 ADD rucio.cfg.j2 /tmp
 
