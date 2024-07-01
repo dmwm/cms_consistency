@@ -108,6 +108,7 @@ cat > ${stats} <<_EOF_
     "driver_version":     "${version}",
     "python_version":     "${python_version}",
     "end_time":     ${timestamp}.0,
+    "elapsed_time":  ${timestamp}.0,
     "disabled":     $disabled
 }
 _EOF_
@@ -211,7 +212,7 @@ echo Dark files ...
 echo
 d_action_list=${out}/${RSE}_${now}_D_action.list
 dark_action_errors=${out}/${RSE}_${now}_dark_action.errors
-$python actions/declare_dark.py    -a root -o ${d_action_list} -c ${merged_config_file} -s $stats $out        $RSE 2>> ${dark_action_errors}
+$python actions/declare_dark.py -a root -o ${d_action_list} -c ${merged_config_file} -s $stats $out $RSE 2>> ${dark_action_errors}
 
 #
 # 6. Remove empty directories
@@ -224,7 +225,19 @@ ed_action_errors=${out}/${RSE}_${now}_ED_action.errors
 $python actions/remove_empty_dirs.py -s $stats -c ${merged_config_file} -L 10000 $out $RSE 2> $ed_action_errors
 
 end_time=`date -u +%s`
+elapsed_time=$((end_time - timestamp))
 
 rce_update_stats $stats << _EOF_
-{ "end_time":${end_time}.0 }
+{ 
+    "end_time": ${end_time}.0,
+    "elapsed_time": ${elapsed_time}.0
+}
 _EOF_
+
+#
+# 7. Push2Prometheus
+#
+echo
+echo Pushing stats...
+echo
+$python /consistency/push2prometheus.py $stats "site_cmp3"
