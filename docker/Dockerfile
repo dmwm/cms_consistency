@@ -9,12 +9,11 @@ RUN dnf install -y epel-release.noarch\
 # xrootd client
 # Python and libs
 RUN dnf install -y https://repo.opensciencegrid.org/osg/3.6/osg-3.6-el9-release-latest.rpm && \
-    dnf install -y osg-pki-tools && \
-    dnf install -y voms voms-clients-cpp && \
-    dnf install -y xrootd-libs xrootd-client && \
-    dnf install -y python3 python3-pip git && \
-    dnf install -y which diff && \ 
-    dnf install -y libaio && \
+    dnf install -y osg-pki-tools voms voms-clients-cpp \
+    xrootd-libs xrootd-client \
+    python3 python3-pip git \
+    which diffutils \ 
+    libaio && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
@@ -25,8 +24,10 @@ RUN rpm -i https://yum.oracle.com/repo/OracleLinux/OL8/oracle/instantclient21/x8
 # jobber
 RUN rpm -i https://github.com/dshearer/jobber/releases/download/v1.4.4/jobber-1.4.4-1.el8.x86_64.rpm
 
-RUN pip3 install --upgrade pip && \
-    pip3 install --upgrade setuptools && \
+# crypto policies
+RUN update-crypto-policies --set DEFAULT:SHA1
+
+RUN pip3 install --upgrade pip setuptools && \
     pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle j2cli && \
     pip3 install rucio-clients rucio-consistency
 
