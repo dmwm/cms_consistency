@@ -1,5 +1,5 @@
 #!/bin/bash +x
-# file: empty-test
+# file: site-scan-test.sh
 
 #.. check if sourcing or running from a subprocess
 shelltag=`echo $0 | grep bash`
@@ -7,7 +7,7 @@ if [ $shelltag"x" == "x" ]; then
   cmd=$0
   myexit=exit
 else
-  cmd=./empty-test
+  cmd=./site-scan-test.sh
   myexit=return
 fi
 
@@ -31,13 +31,15 @@ ls -t1 ${dump}/${RSE}*stats.json | sed 's#_stats.json##' | sed "s#${dump}/${RSE}
 last=`head -1 ${out}/${RSE}-dates.out`
 now=`date -u +%Y_%m_%d_%H_%M`
 
-ED_errors=${out}/${RSE}_${now}_ED.errors
-export PYTHONPATH=/consistency/cms_consistency/cmp3
+r_prefix=${out}/${RSE}_R
+root_file_counts=${dump}/${RSE}_${last}_root_file_counts.json
+scanner_errors=${out}/${RSE}_${now}_errors.out
+empty_dirs=${out}/${RSE}_${now}_ED.out
 
-/usr/bin/python3 actions/remove_empty_dirs_GL.py -v \
+rce_scan -z -t 10 \
   -c ${dump}/${RSE}_${last}_config.yaml \
   -s ${out}/${RSE}_${now}_stats.json \
-  -L 100 \
-  ${dump} \
-  ${RSE} \
-  > ${ED_errors}
+  -o ${r_prefix} \
+  -r ${root_file_counts} \
+  -E 2 -e ${empty_dirs} \
+  ${RSE} > ${scanner_errors}

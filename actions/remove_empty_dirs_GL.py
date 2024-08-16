@@ -358,11 +358,11 @@ if "-v" in opts:
     print("  limit:                       ", "no limit" if limit is None else limit)
     print()
     print("Scanner:")
-    print(f"{scanner_config}")
     print("  server:        ", scanner_config["server"])
     print("  serverRoot:    ", scanner_config["server_root"])
     print("  add prefix:    ", scanner_config["add_prefix"])
     print("  remove prefix: ", scanner_config["remove_prefix"])
+    print("  timeout:       ", scanner_config["timeout"])
     print()
 
 my_stats = {
