@@ -7,9 +7,6 @@ from config import ActionConfiguration
 from rucio_consistency import CEConfiguration, Stats
 from rucio_consistency.xrootd import XRootDClient
 
-from run import CCRun
-from config import ActionConfiguration
-
 
 Version = "1.0"
 
@@ -31,7 +28,7 @@ python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
 """
 
 class LFNConverter(object):
-    
+
     def __init__(self, site_root, remove_prefix, add_prefix):
         self.SiteRoot = site_root
         self.RemovePrefix = remove_prefix
@@ -59,16 +56,16 @@ class LFNConverter(object):
         if self.RemovePrefix:
             path = self.RemovePrefix + path
         return self.canonic(self.SiteRoot + "/" + path)
-        
+
     def lfn_or_path_to_path(self, lfn_or_path):
         if lfn_or_path.startswith(self.SiteRoot):
             return lfn_or_path         # already a path
         return self.lfn_to_path(lfn_or_path)
 
 class RemoveDirectoryTask(Task):
-    
+
     RETRIES = 3
-    
+
     def __init__(self, client, path):
         Task.__init__(self)
         self.Client = client
@@ -80,7 +77,7 @@ class RemoveDirectoryTask(Task):
 
 
 class Remover(Primitive):
-    
+
     def __init__(self, client, paths, dry_run, limit=None, max_workers=10, verbose=False):
         Primitive.__init__(self)
         self.Client = client
@@ -170,7 +167,7 @@ def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_r
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
-    
+
 def update_confirmed(confirmed, update):
     new_confirmed = confirmed & update
     unconfirmed = confirmed - update
@@ -181,21 +178,22 @@ def update_confirmed(confirmed, update):
     return new_confirmed
 
 def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
-    
+
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
         stats.update_section(stats_key, my_stats)
 
     runs = list(CCRun.runs_for_rse(storage_path, rse, complete_only=False))
     now = datetime.now()
+
     for r in runs:
-        print(r.Run, ":  in window:", r.Timestamp >= now - timedelta(days=window), 
-                "  ED info collected:", r.empty_directories_collected(), 
+        print(r.Run, ":  in window:", r.Timestamp >= now - timedelta(days=window),
+                "  ED info collected:", r.empty_directories_collected(),
                 "  count:", r.empty_directory_count(),
                 "  list present:", r.empty_dir_list_exists()
         )
     recent_runs = sorted(
-            [r for r in runs 
+            [r for r in runs
                 if True
                     #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
                     and (r.Timestamp >= now - timedelta(days=window))
@@ -203,7 +201,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
                     and r.empty_directory_count() is not None
                     and r.empty_dir_list_exists()
                     #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
-            ], 
+            ],
             key=lambda r: r.Timestamp
     )
 
@@ -219,7 +217,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
     removed_count = 0
     error_counts = {}
     error = None
-    
+
     if recent_runs:
         my_stats["runs_compared"] = [r.Run for r in recent_runs]
 
@@ -270,8 +268,8 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
                     for f in sorted(confirmed):
                         print(f, file=out)
                     if out is not sys.stdout:
-                        out.close()                 
-                try:    
+                        out.close()
+                try:
                     remover = Remover(client, confirmed, dry_run, verbose=verbose, limit=limit)
                     failed = remover.run()
                     failed_count = len(failed)
@@ -297,7 +295,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     if stats is not None:
         stats.update_section(stats_key, my_stats)
-    
+
     return my_stats
 
 if not sys.argv[1:] or sys.argv[1] == "help":
@@ -323,8 +321,8 @@ if out_path:
 
 storage_path, rse = args
 
-config = EmptyActionConfiguration(rse, opts["-c"])
-scanner_config = ScannerConfiguration(rse, opts["-c"])
+config  = ActionConfiguration(rse, opts["-c"], "dark")
+scanner_config = CEConfiguration(opts["-c"])[rse].get("scanner", {})
 
 window = int(opts.get("-w", config.get("confirmation_window", 35)))
 min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
@@ -336,6 +334,7 @@ dry_run = "-d" in opts
 verbose = "-v" in opts
 limit = opts.get("-L")
 if limit:   limit = int(limit)
+
 
 if dry_run:
     print("====== dry run mode ======")
@@ -357,6 +356,13 @@ if "-v" in opts:
     print("  max age for first run:       ", max_age_last)
     print("  min number of runs:          ", min_runs)
     print("  limit:                       ", "no limit" if limit is None else limit)
+    print()
+    print("Scanner:")
+    print(f"{scanner_config}")
+    print("  server:        ", scanner_config["server"])
+    print("  serverRoot:    ", scanner_config["server_root"])
+    print("  add prefix:    ", scanner_config["add_prefix"])
+    print("  remove prefix: ", scanner_config["remove_prefix"])
     print()
 
 my_stats = {
@@ -386,23 +392,20 @@ my_stats = {
 if stats is not None:
     stats.update_section(stats_key, my_stats)
 
-server = config.Server
-server_root = config.ServerRoot
-
-add_prefix = scanner_config.AddPrefix
-remove_prefix = scanner_config.RemovePrefix
+server        = scanner_config["server"]
+server_root   = scanner_config["server_root"]
+add_prefix    = scanner_config["add_prefix"]
+remove_prefix = scanner_config["remove_prefix"]
 
 lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
 
-timeout = config.ScannerTimeout
-is_redirector = config.ServerIsRedirector
+timeout = scanner_config["timeout"]
+is_redirector = False    # config.ServerIsRedirector
 client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
 if os.path.isfile(storage_path):
-    print("GL: Calling remove_from_file()...")
-    #remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
+    remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
     run_stats = my_stats
 else:
-    print("GL: Calling empty_action()...")
     run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
 status = run_stats["status"]
 error = run_stats.get("error")
@@ -422,4 +425,3 @@ elif status != "done":
 
 if status != "done":
     sys.exit(1)
-
