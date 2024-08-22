@@ -398,11 +398,9 @@ timeout = config.ScannerTimeout
 is_redirector = config.ServerIsRedirector
 client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
 if os.path.isfile(storage_path):
-    print("GL: Calling remove_from_file()...")
-    #remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
+    remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
     run_stats = my_stats
 else:
-    print("GL: Calling empty_action()...")
     run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
 status = run_stats["status"]
 error = run_stats.get("error")
