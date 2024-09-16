@@ -21,6 +21,9 @@ pool_recycle = {{ RUCIO_CFG_DATABASE_POOL_RECYCLE | default('600') }}
 carbon_server = {{ RUCIO_CFG_MONITOR_CARBON_SERVER | default('localhost') }}
 carbon_port = {{ RUCIO_CFG_MONITOR_CARBON_PORT | default('8125') }}
 user_scope = {{ RUCIO_CFG_MONITOR_USER_SCOPE | default('default_docker') }}
+prometheus_servers = {{ PROMETHEUS_SERVERS | default('') }}
+prometheus_prefix = {{ PROMETHEUS_PREFIX | default('') }}
+prometheus_labels = {{ PROMETHEUS_LABELS | default('') }}
 
 [trace]
 tracedir = {{ RUCIO_CFG_TRACE_TRACEDIR | default('/var/log/rucio/trace') }}
@@ -52,3 +55,10 @@ usercert = {{ RUCIO_CFG_WEBUI_USERCERT | default('/opt/rucio/etc/usercert_with_k
 [oidc]
 idpsecrets = {{ RUCIO_CFG_OIDC_IDPSECRETS | default('/opt/rucio/etc/idpsecrets.json') }}
 {% if RUCIO_CFG_OIDC_ADMIN_ISSUER is defined %}admin_issuer = {{ RUCIO_CFG_OIDC_ADMIN_ISSUER }}{% endif %}
+
+[client]
+rucio_host = {{ RUCIO_HOST | default('') }}
+auth_host = {{ AUTH_HOST | default('') }}
+auth_type = {{ AUTH_TYPE | default('') }}
+ca_cert = {{ CA_CERT | default('') }}
+request_retries = {{ REQUEST_RETRIES | default('3') }}
