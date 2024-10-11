@@ -247,6 +247,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
             confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
             confirmed = update_confirmed(confirmed, set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
             for run in recent_runs[1:-1]:
+                print(f"run: {run} - #confirmed: {len(confirmed)}")
                 if not confirmed:
                     break
                 run_set = set(lfn_converter.lfn_or_path_to_path(path) for path in run.empty_directories())
@@ -358,7 +359,6 @@ if "-v" in opts:
     print("  limit:                       ", "no limit" if limit is None else limit)
     print()
     print("Scanner:")
-    print(f"{scanner_config}")
     print("  server:        ", scanner_config["server"])
     print("  serverRoot:    ", scanner_config["server_root"])
     print("  add prefix:    ", scanner_config["add_prefix"])
@@ -404,8 +404,7 @@ timeout = scanner_config["timeout"]
 is_redirector = False    # config.ServerIsRedirector
 client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
 if os.path.isfile(storage_path):
-    remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
-    run_stats = my_stats
+    run_stats = remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
 else:
     run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
 status = run_stats["status"]
