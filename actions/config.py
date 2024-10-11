@@ -3,7 +3,7 @@ from rucio_consistency import CEConfiguration
 
 class ActionConfiguration(object):
     
-    def __init__(self, rse, source, action, **source_agrs):
+    def __init__(self, rse, source, action, **source_args):
         self.Action = action
         self.Config = CEConfiguration(source)[rse].get(action + "_action", {})
 

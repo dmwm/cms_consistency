@@ -11,7 +11,7 @@ class CCRun(object):
         self.RSE = rse
         self.Timestamp = CCRun.parse_run(run)
         self.Stats = CCRun.get_stats(dir_path, rse, run)
-        
+
     def is_complete(self):
         return self.Stats.get("cmp3", {}).get("status") == "done"
         

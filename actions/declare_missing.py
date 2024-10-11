@@ -117,7 +117,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     # chunk the list to avoid "request too large" errors
                     for chunk in chunked(missing_list):
                         result = client.declare_bad_file_replicas(chunk, "detected missing by CE", force=True)
-                        not_declared += result.pop(rse, [])      # there shuld be no other RSE in there
+                        not_declared += result.pop(rse, [])      # there should be no other RSE in there
                         assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
                 except Exception as e:
                     status = "failed"
