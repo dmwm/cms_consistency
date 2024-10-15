@@ -4,7 +4,7 @@ from typing import Tuple, Dict, List, Optional
 from rucio.common.config import config_get
 from rucio.core.monitor import MetricManager
 
-PROBES_PREFIX = 'rucio.consistency'
+PROBES_PREFIX = config_get('monitor', 'prometheus_prefix', raise_exception=False, default='')
 probe_metrics = MetricManager(prefix=PROBES_PREFIX)
 
 def get_prometheus_config() -> Tuple[List, str, Dict]:
