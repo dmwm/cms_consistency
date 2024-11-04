@@ -53,6 +53,7 @@ RUN dnf install -y python3 python3-pip git \
 RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade setuptools
 RUN pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle j2cli
+RUN pip3 install --no-cache-dir --pre rucio[oracle,mysql,postgresql]
 RUN pip3 install rucio-clients rucio-consistency
 
 
@@ -60,7 +61,7 @@ RUN pip3 install rucio-clients rucio-consistency
 RUN mkdir -p /consistency
 RUN mkdir /root/RAL
 COPY vomses /etc
-COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh  RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg /consistency/
+COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg push2prometheus.py /consistency/
 
 ADD rucio.cfg.j2 /tmp
 
