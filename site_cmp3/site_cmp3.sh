@@ -155,13 +155,13 @@ echo
 r_prefix=${scratch}/${RSE}_R
 rm -f ${r_prefix}.*
 
-empty_dirs_out=${out}/${RSE}_${now}_ED.list
+empty_dirs_out=${out}/${RSE}_${now}_ED.list.gz
 
 echo "Site scan..." > ${scanner_errors}
 rce_scan -z -c ${merged_config_file} -s ${stats} \
     -o ${r_prefix} \
     -r $root_file_counts \
-    -E 2 -e $empty_dirs_out \
+    -E 1 -e $empty_dirs_out \
     ${RSE} 2>> ${scanner_errors}
 scanner_status=$?
 if [ "$scanner_status" != "0" ]; then

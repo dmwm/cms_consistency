@@ -32,7 +32,7 @@ def chunked(lst, chunk_size=1000):
         yield lst[i:i+chunk_size]
 
 def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_stats):
-    
+
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
         stats.update_section(stats_key, my_stats)
@@ -40,7 +40,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
     runs = CCRun.runs_for_rse(storage_path, rse)
     now = datetime.now()
     recent_runs = sorted(
-            [r for r in runs if r.Timestamp >= now - timedelta(days=window)], 
+            [r for r in runs if r.Timestamp >= now - timedelta(days=window)],
             key=lambda r: r.Timestamp
     )
 
@@ -50,7 +50,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
     confirmed_dark_count = None
     detected_dark_count = None
     error = None
-    
+
     if recent_runs:
         my_stats["runs_compared"] = [r.Run for r in recent_runs]
 
@@ -90,7 +90,7 @@ def dark_action(storage_dir, rse, out, stats, stats_key, account, dry_run, my_st
             if confirmed_dark_count > 0 and num_scanned > 0:
                 ratio = confirmed_dark_count/num_scanned
                 print("Ratio: %.2f%%" % (ratio*100.0,), file=sys.stderr)
-        
+
                 if confirmed:
                     if out is not None:
                         for f in sorted(confirmed):
