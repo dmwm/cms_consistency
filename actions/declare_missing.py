@@ -6,7 +6,7 @@ from rucio_consistency import Stats
 from run import CCRun
 from config import ActionConfiguration
 
-Version = "1.4"
+Version = "1.5"
 
 Usage = """
 python declare_missing.py [options] <storage_path> <scope> <rse>
@@ -87,12 +87,14 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
             aborted_reason = "no files found by the scanner"
             print("No files found by the scanner -- aborting action")
             abort = True
-        elif not num_expected:
+        elif num_expected is None:
             aborted_reason = "can not estimate the number of expected files"
             print("No estimate for the number of expected files -- aborting action")
             abort = True
         else:
-            ratio = missing_count/num_expected
+            ratio = 0
+            if num_expected > 0:
+                ratio = missing_count/num_expected
             print("Missing replicas:", missing_count, "  expected:", num_expected, "  ratio:", "%.2f%%" % (ratio*100.0,))
             if ratio > fraction:
                 abort = True
