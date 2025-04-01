@@ -27,9 +27,16 @@ RUN rpm -i https://github.com/dshearer/jobber/releases/download/v1.4.4/jobber-1.
 # crypto policies
 RUN update-crypto-policies --set DEFAULT:SHA1
 
-RUN pip3 install --upgrade pip setuptools && \
-    pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle j2cli && \
-    pip3 install rucio-clients rucio-consistency
+# Python and libs
+RUN dnf install -y python3 python3-pip git \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade setuptools
+RUN pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle j2cli
+RUN pip3 install --no-cache-dir --pre rucio[oracle,mysql,postgresql]
+RUN pip3 install rucio-clients rucio-consistency
 
 # grid certs
 RUN mkdir -p /etc/grid-security && \
@@ -40,7 +47,8 @@ RUN mkdir -p /etc/grid-security && \
 RUN mkdir -p /consistency
 RUN mkdir /root/RAL
 COPY vomses /etc
-COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg /consistency/
+
+COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg push2prometheus.py /consistency/
 
 ADD rucio.cfg.j2 /tmp
 
