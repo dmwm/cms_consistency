@@ -72,8 +72,8 @@ merged_config_file=${out}/${RSE}_${run}_config.yaml
 
 echo "merged_confg_file:         $merged_config_file"
 
-$python merge_config.py merge $RSE $config_file > $merged_config_file
-disabled=`$python merge_config.py get -d false $merged_config_file rses.$RSE.ce_disabled`
+$python cmp3/merge_config.py merge $RSE $config_file > $merged_config_file
+disabled=`$python cmp3/merge_config.py get -d false $merged_config_file rses.$RSE.ce_disabled`
 
 case $disabled in
   True|true)

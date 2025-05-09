@@ -45,7 +45,7 @@ merged_config_file=/tmp/${RSE}_merged_config
 
 echo config_file=$config_file
 
-python3 merge_config.py merge $RSE $config_file > $merged_config_file
+python3 cmp3/merge_config.py merge $RSE $config_file > $merged_config_file
 
 
 rce_scan -k -o ${file_list_prefix} -n 1 -R 1 -z -c ${merged_config_file} -s ${stats} ${RSE}
