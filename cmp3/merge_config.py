@@ -60,7 +60,8 @@ class MergedCEConfiguration(object):
         return out
 
     def merged_config(self):
-        rse_config = self.merge(self.ConfigFromFile["rses"].get("*", {}), self.ConfigFromFile["rses"].get(rse, {}))
+        overrides = self.ConfigFromFile["rses"].get(rse, {}) or {}
+        rse_config = self.merge(self.ConfigFromFile["rses"].get("*", {}), overrides)
         #print("merged rse config from file:")
         #pprint.pprint(rse_config)
         out = self.merge(rse_config, self.ConfigFromRSE)
