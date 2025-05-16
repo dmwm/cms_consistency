@@ -247,7 +247,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
             confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
             confirmed = update_confirmed(confirmed, set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
             for run in recent_runs[1:-1]:
-                print(f"run: {run} - #confirmed: {len(confirmed)}")
+                print(f"run: {run.Run} - #confirmed: {len(confirmed)}")
                 if not confirmed:
                     break
                 run_set = set(lfn_converter.lfn_or_path_to_path(path) for path in run.empty_directories())
