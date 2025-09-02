@@ -28,6 +28,13 @@ def chunked(lst, chunk_size=1000):
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i+chunk_size]
 
+def isReplicaLost(states, rse):
+    """
+    Checks is the replica is AVAILABLE at any other rse apart from the one where it's missing. 
+    """
+    available_at_other_rses = {key:value for key,value in states.items() if value=='AVAILABLE' and key != rse}
+    return len(available_at_other_rses)<1
+
 def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key, account, dry_run):
     
     t0 = time.time()
@@ -111,6 +118,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     out.close()                 
             if not dry_run:
                 missing_list = [{"scope":scope, "rse":rse, "name":f} for f in latest_run.missing_files()]
+                lost_files = []
 
                 try:
                     from rucio.client.replicaclient import ReplicaClient
@@ -118,6 +126,11 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     not_declared = []
                     # chunk the list to avoid "request too large" errors
                     for chunk in chunked(missing_list):
+                        # generates list of replicas across all rses for each chunk
+                        replicas = list(client.list_replicas(dids=[{'scope':element['scope'],'name':element['name']} for element in chunk]))
+                        # filters the lost replicas
+                        lost_replicas = [replica['name'] for replica in replicas if isReplicaLost(replica['states'],rse=rse)]
+                        lost_files.extend(lost_replicas)
                         result = client.declare_bad_file_replicas(chunk, "detected missing by CE", force=True)
                         not_declared += result.pop(rse, [])      # there should be no other RSE in there
                         assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
@@ -135,6 +148,15 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                             declaration_errors[error] = declaration_errors.get(words[1], 0) + 1
                     my_stats["declaration_errors"] = declaration_errors
                     my_stats["declared_missing_files"] = len(missing_list) - not_declared_count
+
+                try:
+                    with open(f"{out}/{rse}_{now}_L.list",'w') as file:
+                        lost_files_to_write = '\n'.join(str(item) for item in lost_files)
+                        file.write(lost_files_to_write)
+                except Exception as e:
+                    status = "failed"
+                    error = f"Rucio lost file exporting error: {e}"
+
 
     t1 = time.time()
     my_stats.update(
