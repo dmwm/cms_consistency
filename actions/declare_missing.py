@@ -13,6 +13,7 @@ python declare_missing.py [options] <storage_path> <scope> <rse>
     -d                          - dry run - do not declare to Rucio
     -a <account>                - Rucio account to use
     -o (-|<out file>)           - write missing file list to stdout (-) or to a file
+    -L (-|<out file>)           - write lost files list to stdout (-) or to this file
     -s <stats file>             - file to write stats to
     -S <stats key>              - key to store stats under, default: "missing_action"
     -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
@@ -36,7 +37,6 @@ def isReplicaLost(states, rse):
     return len(available_at_other_rses)<1
 
 def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key, account, dry_run):
-    
     t0 = time.time()
     my_stats = {
         "version": Version,
@@ -49,6 +49,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
         "detected_missing_files": None,
         "confirmed_missing_files": None,
         "declared_missing_files": None,
+        "permanently_lost_files": None,
         "aborted_reason": None,
         "error": None,
         "declaration_errors": {},
@@ -150,9 +151,12 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     my_stats["declared_missing_files"] = len(missing_list) - not_declared_count
 
                 try:
-                    with open(f"{out}/{rse}_{now}_L.list",'w') as file:
+                    my_stats["permanently_lost_files"] = len(lost_files)
+                    if outLost is not None:
                         lost_files_to_write = '\n'.join(str(item) for item in lost_files)
-                        file.write(lost_files_to_write)
+                       	outLost.write(lost_files_to_write)
+                        if outLost is not sys.stdout:
+                            outLost.close()
                 except Exception as e:
                     status = "failed"
                     error = f"Rucio lost file exporting error: {e}"
@@ -176,7 +180,7 @@ if not sys.argv[1:] or sys.argv[1] == "help":
     print(Usage)
     sys.exit(2)
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:m:f:s:S:c:vda:")
+opts, args = getopt.getopt(sys.argv[1:], "h?o:L:m:f:s:S:c:vda:")
 opts = dict(opts)
 
 if not args or "-h" in opts or "-?" in opts:
@@ -189,6 +193,13 @@ if "-o" in opts:
         out = sys.stdout
     else:
         out = open(opts["-o"], "w")
+
+outLost = None
+if "-L" in opts:
+    if opts["-L"] == "-":
+        outLost = sys.stdout
+    else:
+        outLost = open(opts["-L"], "w")
 
 storage_path, scope, rse = args
 
