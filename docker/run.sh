@@ -6,6 +6,8 @@
 #     or needs to be generated from template /tmp/rucio.cfg.j2
 #   scanned config.yaml in /config/config.yaml
 #   jobber config in /etc/jobber-config/dot-jobber.yaml
+#     or
+#   crontab is in /etc/cron.rucio/consistency-crontab
 #
 
 if [ ! -f /config/config.yaml ]; then
@@ -38,24 +40,30 @@ if [ ! -d /var/cache/consistency-temp ]; then
     exit 1
 fi
 
-if [ ! -f /etc/jobber-config/dot-jobber.yaml ]; then
-    echo /etc/jobber-config/dot-jobber.yaml not found
-    exit 1
-fi
-
-cp /etc/jobber-config/dot-jobber.yaml /root/.jobber
 cp /config/config.yaml /consistency/config.yaml
 
 cd /consistency/cms_consistency
 git pull				# make sure to pick up the latest version
 
-# start jobber here
-echo "Starting Jobber"
-/usr/local/libexec/jobbermaster &
+if [ ! -z "$RUCIO_USING_CRON" ]; then
+  echo "Setting up and starting cron"
+  cp /etc/cron.rucio/consistency-crontab /etc/cron.d/
+  crond -n -s
+else
+  if [ ! -f /etc/jobber-config/dot-jobber.yaml ]; then
+    echo /etc/jobber-config/dot-jobber.yaml not found
+    exit 1
+  fi
 
-sleep 5
+  cp /etc/jobber-config/dot-jobber.yaml /root/.jobber
 
-echo
-echo "============= Jobber log file ============="
+  echo "Not using cron. Starting Jobber"
+  /usr/local/libexec/jobbermaster &
 
-tail -f /var/log/jobber-runs
+  sleep 5
+
+  echo
+  echo "============= Jobber log file ============="
+
+  tail -f /var/log/jobber-runs
+fi
