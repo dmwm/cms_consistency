@@ -1,19 +1,19 @@
 FROM almalinux:9
 USER root
 
-RUN dnf install -y epel-release.noarch\
+RUN dnf -y update \
+    && dnf install -y epel-release.noarch \
     && dnf clean all \
     && rm -rf /var/cache/dnf
 
 # PKI stuff
 # xrootd client
 # Python and libs
-RUN dnf install -y https://repo.opensciencegrid.org/osg/3.6/osg-3.6-el9-release-latest.rpm && \
+RUN dnf install -y https://repo.opensciencegrid.org/osg/24-main/osg-24-main-el9-release-latest.rpm && \
     dnf install -y osg-pki-tools voms voms-clients-cpp \
-    xrootd-libs xrootd-client \
-    python3 python3-pip git \
-    which diffutils \ 
-    libaio && \
+      xrootd-libs xrootd-client \
+      python3 python3-pip \
+      git which diffutils cronie crontabs libaio && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
@@ -31,6 +31,7 @@ RUN update-crypto-policies --set DEFAULT:SHA1
 RUN dnf install -y python3 python3-pip git \
     && dnf clean all \
     && rm -rf /var/cache/dnf
+
 
 RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade setuptools
@@ -58,3 +59,4 @@ RUN chmod +x *.sh
 RUN git clone https://github.com/dmwm/cms_consistency.git
 
 CMD /bin/bash
+
