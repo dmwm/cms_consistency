@@ -12,7 +12,8 @@ RUN dnf install -y https://repo.opensciencegrid.org/osg/3.6/osg-3.6-el9-release-
     dnf install -y osg-pki-tools voms voms-clients-cpp \
     xrootd-libs xrootd-client \
     python3 python3-pip git \
-    which diffutils \ 
+    which diffutils \
+    cronie-noanacron \
     libaio && \
     dnf clean all && \
     rm -rf /var/cache/dnf
@@ -51,6 +52,7 @@ COPY vomses /etc
 COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg push2prometheus.py /consistency/
 
 ADD rucio.cfg.j2 /tmp
+ADD DeterministicDelay /
 
 WORKDIR /consistency
 RUN chmod +x *.sh
