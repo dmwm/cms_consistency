@@ -205,7 +205,14 @@ echo Missing files ...
 echo
 missing_action_errors=${out}/${RSE}_${now}_missing_action.errors
 m_action_list=${out}/${RSE}_${now}_M_action.list
-$python actions/declare_missing.py -a root -o ${m_action_list} -c ${merged_config_file} -s $stats $out $scope $RSE 2>> ${missing_action_errors}
+perm_lost_list=${out}/${RSE}_${now}_permLost.list
+$python actions/declare_missing.py \
+  -a root \
+  -o ${m_action_list} \
+  -c ${merged_config_file} \
+  -s $stats \
+  -L ${perm_lost_list} \
+  $out $scope $RSE 2>> ${missing_action_errors}
 
 echo
 echo Dark files ...
