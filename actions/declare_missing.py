@@ -154,7 +154,7 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                     my_stats["permanently_lost_files"] = len(lost_files)
                     if outLost is not None:
                         lost_files_to_write = '\n'.join(str(item) for item in lost_files)
-                       	outLost.write(lost_files_to_write)
+                        outLost.write(lost_files_to_write)
                         if outLost is not sys.stdout:
                             outLost.close()
                 except Exception as e:
