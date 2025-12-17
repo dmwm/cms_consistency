@@ -9,7 +9,7 @@ RUN dnf -y update \
 # PKI stuff
 # xrootd client
 # Python and libs
-RUN dnf install -y https://repo.opensciencegrid.org/osg/24-main/osg-24-main-el9-release-latest.rpm && \
+RUN dnf install -y https://repo.opensciencegrid.org/osg/25-main/osg-25-main-el9-release-latest.rpm && \
     dnf install -y osg-pki-tools voms voms-clients-cpp \
       xrootd-libs xrootd-client \
       python3 python3-pip \
