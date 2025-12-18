@@ -17,22 +17,17 @@ RUN dnf install -y https://repo.opensciencegrid.org/osg/25-main/osg-25-main-el9-
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Oracle client
+#.. Oracle client
 # depends on libaio
 RUN rpm -i https://yum.oracle.com/repo/OracleLinux/OL8/oracle/instantclient21/x86_64/getPackage/oracle-instantclient-basic-21.20.0.0.0-1.el8.x86_64.rpm
 
-# jobber
+#.. jobber -- obsolete, soon to be removed
 RUN rpm -i https://github.com/dshearer/jobber/releases/download/v1.4.4/jobber-1.4.4-1.el8.x86_64.rpm
 
-# crypto policies
+#.. crypto policies
 RUN update-crypto-policies --set DEFAULT:SHA1
 
-# Python and libs
-RUN dnf install -y python3 python3-pip \
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-
+#.. pip3-installed stuff
 RUN pip3 install --upgrade pip
 RUN pip3 --no-cache-dir install SQLAlchemy pyyaml pythreader cx_Oracle j2cli
 RUN pip3 install --no-cache-dir --pre rucio[oracle,mysql,postgresql]
