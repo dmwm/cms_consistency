@@ -13,7 +13,7 @@ RUN dnf install -y https://repo.opensciencegrid.org/osg/25-main/osg-25-main-el9-
     dnf install -y osg-pki-tools voms voms-clients-cpp \
       xrootd-libs xrootd-client \
       python3 python3-pip \
-      git which diffutils cronie crontabs libaio && \
+      git which diffutils cronie-noanacron libaio && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
