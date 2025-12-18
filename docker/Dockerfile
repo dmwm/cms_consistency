@@ -51,6 +51,7 @@ COPY vomses /etc
 COPY cleanup.sh run.sh site.sh unmerged_site.sh RAL_Disk_pre.sh RAL_Disk_post.sh RAL_Tape_pre.sh RAL_Tape_post.sh rucio-client.cfg push2prometheus.py /consistency/
 
 ADD rucio.cfg.j2 /tmp
+ADD DeterministicDelay /
 
 WORKDIR /consistency
 RUN chmod +x *.sh
