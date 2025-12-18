@@ -60,15 +60,15 @@ delay = checksum % max_delay
 
 if frequency and delay:
     epoch = time.time()
-    if epoch % max_delay > frequency:
+    if epoch % delay > frequency:
         print(f'Exiting. time: {epoch % max_delay} max: {max_delay} f: {frequency}')
         exit()
     else:
-        # print(f'Running. time: {epoch % max_delay} max: {max_delay} f: {frequency}')
+        print(f'Running. time: {epoch % max_delay} max: {max_delay} f: {frequency}')
         delay = checksum % frequency
-else:
-    print(f"Sleeping {delay}s")
-    time.sleep(delay)
+
+print(f"Sleeping {delay}s")
+time.sleep(delay)
 
 executed = subprocess.run(args.commands, capture_output=True)
 
