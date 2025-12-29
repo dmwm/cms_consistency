@@ -56,16 +56,16 @@ else:
     else:
         max_delay = int(args.delay)
 
-delay = checksum % max_delay
-
-if frequency and delay:
-    epoch = time.time()
-    if epoch % delay > frequency:
-        print(f'Exiting. time: {epoch % max_delay} max: {max_delay} f: {frequency}')
+if frequency and max_delay:
+    sleep_from_now = int(time.time() + checksum % max_delay ) % max_delay
+    if sleep_from_now > frequency:
+        print(f'Exiting. time: {sleep_from_now} max: {max_delay} f: {frequency}')
         exit()
     else:
-        print(f'Running. time: {epoch % max_delay} max: {max_delay} f: {frequency}')
-        delay = checksum % frequency
+        print(f'Running. time: {sleep_from_now} max: {max_delay} f: {frequency}')
+        delay = sleep_from_now
+else:
+    delay = checksum % frequency
 
 print(f"Sleeping {delay}s")
 time.sleep(delay)
