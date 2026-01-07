@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export CONSISTENCY_VERSION=4.8.6a
+export CONSISTENCY_VERSION=4.8.7
 
 export HARBOR=registry.cern.ch/cmsrucio
 
