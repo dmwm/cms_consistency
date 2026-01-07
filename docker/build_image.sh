@@ -2,7 +2,7 @@
 
 set -e
 
-export CONSISTENCY_VERSION=4.5.1
+export CONSISTENCY_VERSION=4.8.7
 
 export HARBOR=registry.cern.ch/cmsrucio
 
