@@ -6,6 +6,8 @@ from rucio_consistency import Stats
 from run import CCRun
 from config import ActionConfiguration
 
+from rucio.client.replicaclient import ReplicaClient
+
 Version = "1.5"
 
 Usage = """
@@ -109,6 +111,15 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                 aborted_reason = "too many missing files: %d (%.2f%% > %.2f%%)" % (missing_count, ratio*100.0, fraction*100.0)
                 print("Missing ratio is too high (above %.2f%%) -- aborting action" % (fraction*100.0,))
 
+            missing_list = [{"scope":scope, "rse":rse, "name":f} for f in latest_run.missing_files()]
+            lost_files = []
+
+            client = ReplicaClient(account=account)
+            for chunk in chunked(missing_list):
+                replicas = list(client.list_replicas(dids=[{'scope':element['scope'],'name':element['name']} for element in chunk]))
+                lost_replicas = [replica['name'] for replica in replicas if isReplicaLost(replica['states'],rse=rse)]
+                lost_files.extend(lost_replicas)
+
         if abort:
             status = "aborted"
         elif missing_count > 0:
@@ -122,16 +133,12 @@ def missing_action(storage_dir, rse, scope, max_age_last, out, stats, stats_key,
                 lost_files = []
 
                 try:
-                    from rucio.client.replicaclient import ReplicaClient
                     client = ReplicaClient(account=account)
                     not_declared = []
                     # chunk the list to avoid "request too large" errors
                     for chunk in chunked(missing_list):
                         # generates list of replicas across all rses for each chunk
                         replicas = list(client.list_replicas(dids=[{'scope':element['scope'],'name':element['name']} for element in chunk]))
-                        # filters the lost replicas
-                        lost_replicas = [replica['name'] for replica in replicas if isReplicaLost(replica['states'],rse=rse)]
-                        lost_files.extend(lost_replicas)
                         result = client.declare_bad_file_replicas(chunk, "detected missing by CE", force=True)
                         not_declared += result.pop(rse, [])      # there should be no other RSE in there
                         assert not result, "Other RSEs in the not_declared dictionary: "  + ",".join(result.keys())
