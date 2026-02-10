@@ -4,6 +4,7 @@ echo start.sh: version 2
 
 CC_DATA=/reports
 WM_DATA=/reports/unmerged
+PATH=/app/.venv/bin:$PATH
 
 echo "--- starting ---"
 cd /app
