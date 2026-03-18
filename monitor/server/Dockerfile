@@ -42,6 +42,9 @@ ADD start.sh /root/start.sh
 RUN mkdir -p /var/cache/consistency-dump /var/cache/consistency-temp /reports/unmerged
 ADD app ./app
 
+###.. test data from /var/cache/consistency-dump - usually not needed
+#ADD app/reports /reports
+
 RUN chmod +x *.sh
 
 
