@@ -420,7 +420,7 @@ class CCDataSource(DataSource):
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
-            nlost = stats["missing_action"].get("lost")
+            nlost = stats.get("missing_action", {}).get("lost")
             if nlost is None: nlost = 0
         confirmed_dark = stats.get(self.DarkSection,{}).get("confirmed_dark_files")
         for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", self.DarkSection, self.MissingSection, "cmp2dark"]:
