@@ -41,13 +41,13 @@ COPY --from=builder app /app/
 ADD start.sh /root/start.sh
 RUN mkdir -p /var/cache/consistency-dump /var/cache/consistency-temp /reports/unmerged
 ADD app ./app
-ADD reports /reports
-
 
 RUN chmod +x *.sh
 
+
 # 3. Ensure the virtual environment is used
 ENV PATH="/app/.venv/bin:$PATH"
+
 
 # 4. Define how the container starts
 EXPOSE 8400
