@@ -95,7 +95,7 @@ class DataSource(object):
             if os.stat(path).st_size > 0:
                 r, timestamp, typ, ext = self.parse_filename(fn)
                 if r == rse:
-                    # if the RSE was X, then rses like X_Y will appear in this list too, 
+                    # if the RSE was X, then rses like X_Y will appear in this list too,
                     # so double check that we get the right RSE
                     runs.append(timestamp)
         return sorted(runs)[-nlast:]
@@ -160,7 +160,7 @@ class DataSource(object):
         out = []
         files = sorted(glob.glob(f"{self.Path}/{rse}_*_stats.json"))
         for path in files:
-            r, run = self.parse_stats_path(path) 
+            r, run = self.parse_stats_path(path)
             if r == rse:
                 data = self.read_stats(rse, run, path=path)
                 if data:
@@ -416,10 +416,12 @@ class CCDataSource(DataSource):
                 
     def get_stats(self, rse, run):
         stats = self.get_data(rse, run, "stats")
-        ndark = nmissing = confirmed_dark = None
+        ndark = nmissing = nlost = confirmed_dark = None
         if "cmp3" in stats:
             ndark = stats["cmp3"].get("dark")
             nmissing = stats["cmp3"].get("missing")
+            nlost = stats.get("missing_action", {}).get("lost")
+            if nlost is None: nlost = 0
         confirmed_dark = stats.get(self.DarkSection,{}).get("confirmed_dark_files")
         for k in ["dbdump_before", "scanner", "dbdump_after", "cmp3", self.DarkSection, self.MissingSection, "cmp2dark"]:
             d = stats.get(k)
@@ -427,8 +429,8 @@ class CCDataSource(DataSource):
                 d["elapsed"] = None
                 if d.get("end_time") is not None and d.get("start_time") is not None:
                     d["elapsed"] = d["end_time"] - d["start_time"]
-        return stats, ndark, nmissing, confirmed_dark
-        
+        return stats, ndark, nmissing, confirmed_dark, nlost
+
     def get_dark_or_missing(self, rse, run, typ, limit):
         path = f"{self.Path}/{rse}_{run}_{typ}.list"
         path_gz = path + ".gz"
@@ -438,7 +440,7 @@ class CCDataSource(DataSource):
             try:    f = open(path, "r")
             except:
                 return None
-                
+
         def limited_line_reader(f, n):
             while n is None or n > 0:
                 l = f.readline()
@@ -448,11 +450,11 @@ class CCDataSource(DataSource):
                 if l:
                     yield l
                     if n is not None:
-                        n -= 1        
+                        n -= 1
             f.close()
-            
+
         return limited_line_reader(f, limit)
-        
+
     def file_lists_diffs_counts(self, rse, run):
         # compare dark or missing list from the run to the previous run
         # returns (prev_run, missing old count, dark_old count)
@@ -474,6 +476,7 @@ class CCDataSource(DataSource):
 
         this_dark = self.get_dark(rse, run)
         this_missing = self.get_missing(rse, run)
+        this_lost = self.get_lost(rse, run)
         if this_dark is None or this_missing is None:
             return (None, None, None)         # one of the lists missing
 
@@ -481,7 +484,7 @@ class CCDataSource(DataSource):
         prev_i = this_i - 1
         if prev_i >= 0:
             prev_run = runs[prev_i]
-            prev_stats, _, _, _ = self.get_stats(rse, prev_run)
+            prev_stats, _, _, _, _ = self.get_stats(rse, prev_run)
             if prev_stats is not None and prev_stats.get("cmp3", {}).get("status") == "done":
                 prev_dark = self.get_dark(rse, prev_run)
                 prev_missing = self.get_missing(rse, prev_run)
@@ -507,7 +510,10 @@ class CCDataSource(DataSource):
 
     def get_missing(self, rse, run, limit=None):
         return self.get_dark_or_missing(rse, run, "M", limit)
-        
+
+    def get_lost(self, rse, run, limit=None):
+        return self.get_dark_or_missing(rse, run, "permLost", limit)
+
     def empty_dirs_count(self, rse, run):
         stats = self.get_stats(rse, run)[0]
         count = None
@@ -662,7 +668,7 @@ class CCDataSource(DataSource):
         if "cmp3" in stats and stats["cmp3"]["status"] == "done":
             summary["missing_stats"]["detected"] = summary["missing_stats"]["confirmed"] = stats["cmp3"]["missing"]
             summary["dark_stats"]["detected"] = stats["cmp3"]["dark"]
-            
+
             if "cmp2dark" in stats:
                 summary["dark_stats"]["confirmed"] = stats["cmp2dark"].get("join_list_files")
 
@@ -686,6 +692,7 @@ class CCDataSource(DataSource):
                     missing_summary["aborted_reason"] = missing_stats.get("aborted_reason", "")
                 missing_summary["elapsed"] = missing_stats.get("elapsed")
                 missing_summary["error_counts"] = missing_stats.get("declaration_errors")
+                missing_summary["lost"] = missing_stats.get("lost")
 
         if self.EmptyDirSection in stats:
             ed_summary = summary["empty_dirs_stats"]

@@ -131,6 +131,7 @@
                 [	    
                     new Date({{info["start_time_milliseconds"]}}), 
                     {{info["nmissing"] if info["nmissing"] is not none else "null"}},
+                    {{info["perm_lost"] if info["perm_lost"] is not none else "null"}},
                     {{info["acted_missing"] if info["acted_missing"] is not none else "null"}}
                 ]
 			{% endfor %}
@@ -143,7 +144,8 @@
                             new Date({{info["start_time_milliseconds"]}}), 
                             {{info["detected_empty"] if info["detected_empty"] is not none else "null"}},
                             {{info["confirmed_empty"] if info["confirmed_empty"] is not none else "null"}},
-                            {{info["acted_empty"] if info["acted_empty"] is not none else "null"}}
+                            {{info["acted_empty"] if info["acted_empty"] is not none else "null"}},
+                            {{info["perm_lost"] if info["perm_lost"] is not none else "null"}}
                         ]
                 {% endfor %}
                 ];

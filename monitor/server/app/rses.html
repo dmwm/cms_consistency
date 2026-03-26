@@ -32,6 +32,7 @@
                 "start_time":"{{summary['start_time']|as_dt if summary['start_time'] else ''}}",
                 "ndark":"{{summary['dark_stats']['detected']|none_as_blank}}",
                 "nmissing":"{{summary['missing_stats']['detected']|none_as_blank}}",
+                "nlost":"{{summary['missing_stats']['lost']|none_as_blank}}",
                 "confirmed_dark":"{{summary['dark_stats']['confirmed']|none_as_blank}}",
                 "confirmed_missing":"{{summary['missing_stats']['confirmed']|none_as_blank}}",
                 "acted_dark":"{{summary['dark_stats']['acted_on']|none_as_blank}}",

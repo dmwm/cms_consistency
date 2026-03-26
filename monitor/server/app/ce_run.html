@@ -121,7 +121,7 @@
       <h3>Action summary</h3>
       <table class="data">
           <tr>
-              <td></td><th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action error conuts</th><th>Action status</th>
+              <td></td><th>Detected</th><th>Confirmed</th><th>Acted on</th><th>Action error counts</th><th>Action status</th>
           </tr>
           {% if missing_stats %}
                   <tr>
@@ -251,13 +251,19 @@
           <tr>
               <td></td>
               <th colspan=3>Latest run</th>
-              <th>Repeated from prvious run</th>
+              <th>Repeated from previous run</th>
           </tr>
               <tr>
                   <td class="field_name">Missing files</td><td>{{nmissing}}</td>
                   <td>{% if missing %}<a href="#missing_list_ref" id="missing_list_toggle" onclick="show('missing')">show</a>{% endif %}</td>
                   <td>{% if missing %}<a href="./missing/missing_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
               <td>{{old_nmissing|none_as_blank}}</td>
+              </tr>
+              <tr>
+                  <td class="field_name">Lost files</td><td>{{nlost}}</td>
+                  <td>{% if lost %}<a href="#lost_list_ref" id="lost_list_toggle" onclick="show('lost')">show</a>{% endif %}</td>
+                  <td>{% if lost %}<a href="./lost/lost_list_{{rse}}_{{run}}.txt?rse={{rse}}&run={{run}}">download</a>{% endif %}</td>
+              <td>{{old_nlost|none_as_blank}}</td>
               </tr>
               <tr>
                   <td class="field_name">Dark files</td><td>{{ndark}}</td>
@@ -278,6 +284,18 @@
           <div id="missing_list" class="hidden">
               <a id="missing_list_ref"></a>
               <h4>Missing files {% if missing_truncated %} (truncated){% endif %}</h4>
+              {% for f in missing %}
+                  <span class="lfn {{f|path_type}}">{{f}}</span><br/>
+              {%- endfor %}
+          </div>
+
+          {% endif %}
+
+          {% if lost %}
+
+          <div id="lost_list" class="hidden">
+              <a id="lost_list_ref"></a>
+              <h4>Lost files {% if missing_truncated %} (truncated){% endif %}</h4>
               {% for f in missing %}
                   <span class="lfn {{f|path_type}}">{{f}}</span><br/>
               {%- endfor %}

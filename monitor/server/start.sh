@@ -1,24 +1,13 @@
 #!/bin/bash
 
-echo start.sh: version 2
+echo start.sh: version 2.0.2
 
 CC_DATA=/reports
 WM_DATA=/reports/unmerged
-
-cd ~
-echo "--- starting ---"
-ls -l
-ls -l app
-
-echo "--- $CC_DATA: ---"
-ls -ld $CC_DATA
-#ls -l $CC_DATA
-
-echo "--- $WM_DATA: ---"
-ls -ld $WM_DATA
-#ls -l $WM_DATA
+PATH=/app/.venv/bin:$PATH
 
 python -V
+cd /app
 
-echo "--- starting server with: " python app/server.py "$@" 8400 $CC_DATA $WM_DATA
-python app/server.py --um-ignore /store/unmerged/logs/ "$@" 8400 $CC_DATA $WM_DATA
+echo "--- starting server with: " python app/server.py --um-ignore /store/unmerged/logs/ -p 8400 "$@" $CC_DATA $WM_DATA
+python app/server.py --um-ignore /store/unmerged/logs/ -p 8400 "$@" $CC_DATA $WM_DATA

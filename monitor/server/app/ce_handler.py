@@ -54,8 +54,8 @@ class CEHandler(WPHandler):
 
         view = view or sort     # for backward compatibility
 
-        stats = data_source.latest_stats_per_rse()
-        summaries = {rse: data_source.run_summary(stats) for rse, stats in stats.items()}
+        all_stats = data_source.latest_stats_per_rse()
+        summaries = {rse: data_source.run_summary(stats) for rse, stats in all_stats.items()}
         for rse, summary in summaries.items():
             summary["rse"] = rse
         now = time.time()
@@ -139,7 +139,7 @@ class CEHandler(WPHandler):
         
         cc_infos = []
         for run in runs:
-            stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
+            stats, ndark, nmissing, confirmed_dark, nlost = data_source.get_stats(rse, run)
             prev_run, missing_old, dark_old = data_source.file_lists_diffs_counts(rse, run)
             summary = data_source.run_summary(stats)
             start_time = summary["start_time"] or 0
@@ -157,8 +157,9 @@ class CEHandler(WPHandler):
                 {
                     "summary":          summary,
                     "start_time":       start_time, 
-                    "ndark":            ndark, 
-                    "nmissing":         nmissing, 
+                    "ndark":            ndark,
+                    "nmissing":         nmissing,
+                    "nlost":            nlost,
                     "detection_status": detection_status, 
                     "running":          running,
 
@@ -200,7 +201,7 @@ class CEHandler(WPHandler):
             out.append(space*len(head)+"/"+tail)
             prev = parts
         return out
-        
+
     def display_file_list(self, lst):
         Indent = "    "
         last_items = []
@@ -260,7 +261,14 @@ class CEHandler(WPHandler):
             "Content-Type":"text/plain",
             "Content-Disposition":"attachment"
         }
-    
+
+    def lost(self, request, relpath, rse=None, run=None, **args):
+        lst = self.CCDataSource.get_lost(rse, run)
+        return (path+"\n" for path in lst), {
+            "Content-Type":"text/plain",
+            "Content-Disposition":"attachment"
+        }
+
     LIMIT = 1000
     
     def show_run(self, request, relpath, rse=None, run=None, **args):
@@ -269,7 +277,7 @@ class CEHandler(WPHandler):
         if run is None:
             self.redirect(f"./show_rse?rse={rse}")
         data_source = self.CCDataSource
-        stats, ndark, nmissing, confirmed_dark = data_source.get_stats(rse, run)
+        stats, ndark, nmissing, confirmed_dark, nlost = data_source.get_stats(rse, run)
         summary = data_source.run_summary(stats)
         errors = []
         if summary["status"] == "failed":
@@ -302,10 +310,11 @@ class CEHandler(WPHandler):
         dark_truncated = (ndark or 0)  > self.LIMIT
         dark_confirmed_truncated = (confirmed_dark or 0)  > self.LIMIT
         missing_truncated = (nmissing or 0) > self.LIMIT
-        
+
         dark = self.CCDataSource.get_dark(rse, run, self.LIMIT)
         dark_confirmed = self.CCDataSource.get_dark_action(rse, run, self.LIMIT)
         missing = self.CCDataSource.get_missing(rse, run, self.LIMIT)
+        lost = self.CCDataSource.get_lost(rse, run, self.LIMIT)
         
         #
         # retrofit failed directories
@@ -342,10 +351,12 @@ class CEHandler(WPHandler):
             cmp3=stats.get("cmp3"),
             stats=stats, summary=summary,
             ndark = ndark, nmissing=nmissing, ndark_confirmed=confirmed_dark,
+            nlost = nlost,
             old_ndark = old_ndark, old_nmissing = old_nmissing,
             dark = self.display_file_list(dark),
             dark_confirmed = self.display_file_list(dark_confirmed),
             missing = self.display_file_list(missing),
+            lost = self.display_file_list(lost),
             stats_parts=stats_parts,
             time_now = time.time()
         )
@@ -367,7 +378,8 @@ class CEHandler(WPHandler):
     def stats(self, request, relpath, rse=None, run=None, **args):
         if not rse or not run:
             return 400, "Missing RSE or run"
-        stats, ndark, nmissing, confirmed_dark = self.CCDataSource.get_stats(rse, run)
+        #stats, ndark, nmissing, confirmed_dark, nlost = self.CCDataSource.get_stats(rse, run)
+        stats = self.CCDataSource.get_stats(rse, run)[0]
         return json.dumps(stats, indent=4, sort_keys=True), "text/json"
 
     def lists_diffs(self, request, relpath, rses=None, **args):
