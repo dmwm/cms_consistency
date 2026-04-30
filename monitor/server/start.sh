@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo start.sh: version 2.1.1
+echo start.sh: version 2.1.2
 
 CC_DATA=/reports
 WM_DATA=/reports/unmerged
