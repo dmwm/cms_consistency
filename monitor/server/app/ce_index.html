@@ -144,6 +144,7 @@
     <th>Detected (old)</th>
     <th>Confirmed</th>
     <th>Declared</th>
+    <th>Lost</th>
     <th>Action status</th>
 </tr>
 
@@ -191,6 +192,7 @@
             <td id="nmissing_{{rse}}_td">{% if not missing_stats["detected"] is none %}{{missing_stats["detected"]}}(...){% endif %}</td>
             <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
             <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
+            <td>{{missing_stats["perm_lost"]|none_as_blank}}</td>
             <td class="{{missing_stats['action_status']|none_as_blank}}">
                 {{missing_stats['action_status']|none_as_blank}}
             </td>
