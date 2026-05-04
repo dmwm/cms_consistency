@@ -12,16 +12,12 @@ RUN uv venv .venv && \
     . .venv/bin/activate && \
     uv pip install --no-cache-dir --python .venv/bin/python webpie pythreader jinja2 legacy-cgi
 
-# 4. Prepare app environment as needed
-ADD start.sh /app/start.sh
-RUN mkdir app samples
-
 
 # === STAGE 2: RUNNER (The minimal, clean production image) ===
 FROM python:3.14-slim as runner
 
 # 1. Setup environment
-WORKDIR /app
+WORKDIR /
 ENV PATH="/app/.venv/bin:$PATH"
 
 #### 2. Interactive mode only (to be removed for the production image): ######
@@ -38,16 +34,21 @@ ENV PATH="/app/.venv/bin:$PATH"
 # 3. Copy the *clean virtual environment* and application files from the builder stage
 #    This drastically reduces the size of the final image by excluding build tools and cache
 COPY --from=builder app /app/
-ADD app ./app
+ADD app /app
+ADD start.sh /app/start.sh
+
+#.. start.sh was moved from /root to /app some commits ago. This restores backward compatibility
+RUN ln -sf /app/start.sh /root/start.sh
 
 # 4. Final setup
 EXPOSE 8400
+
 RUN mkdir -p /var/cache/consistency-dump /var/cache/consistency-temp /reports/unmerged \
-    && chmod +x *.sh
+    && chmod +x /app/start.sh
 
 # 5. Define how the container starts - enable EITHER (a) OR (b)
 # a) For production mode: start app right away
-ENTRYPOINT ["/app/start.sh"]
+ENTRYPOINT ["/root/start.sh"]
 
 # b) For interactive / testing mode: comment out the ENTRYPOINT line above
 #CMD [ "/bin/bash", "--login" ]
