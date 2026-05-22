@@ -21,7 +21,7 @@ python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
 
     The following will override values read from the configuration:
     -L <number>                 - stop after removing so many directories
-    -w <days>                   - max age for oldest run to use for confirmation, default = 35 days
+    -w <days>                   - max age for oldest run to use for confirmation, default = 36 days
     -m <days>                   - max age for the most recent run, default = 1 day
     -M <days>                   - min age for oldest run, default = 25
     -n <number>                 - min number of runs to use to produce the confirmed empty directory list, default = 3
@@ -325,7 +325,7 @@ storage_path, rse = args
 config  = ActionConfiguration(rse, opts["-c"], "dark")
 scanner_config = CEConfiguration(opts["-c"])[rse].get("scanner", {})
 
-window = int(opts.get("-w", config.get("confirmation_window", 35)))
+window = int(opts.get("-w", config.get("confirmation_window", 36)))
 min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
 max_age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
 fraction = float(opts.get("-f", config.get("max_fraction", 0.01)))
