@@ -1,4 +1,5 @@
 #!/bin/bash
+#.. 260326 GL: This is an old file, most likely not used at all (still uses docker!)
 
 prefix=rucio-con
 app=mon

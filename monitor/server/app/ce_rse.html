@@ -24,7 +24,7 @@
                     </tr>
                     <tr>
                         <th>Detected (old)</th><th>Confirmed</th><th>Quarantined</th><th>Action status</th>
-                        <th>Detected (old)</th><th>Confirmed</th><th>Declared</th><th>Action status</th>
+                        <th>Detected (old)</th><th>Confirmed</th><th>Declared</th><th>Perm'ly Lost</th><th>Action status</th>
                         <th>Detected</th><th>Confirmed</th><th>Removed</th><th>Action status</th>
                     </tr>
                     {% for t, info in cc_runs %}
@@ -67,6 +67,7 @@
                         </td>
 			            <td>{{missing_stats["confirmed"]|none_as_blank}}</td>
 			            <td>{{missing_stats["acted_on"]|none_as_blank}}</td>
+			            <td>{{missing_stats["perm_lost"]|none_as_blank}}</td>
                         <td class="{{missing_stats['action_status']|none_as_blank}}">
                             {{missing_stats['action_status']|none_as_blank}}
                             {%- if missing_stats['aborted_reason'] %}: {{missing_stats["aborted_reason"]}}
@@ -140,12 +141,11 @@
                 var empty_data = [
                 {% for t, info in cc_runs|reverse %}
                     {{',' if not loop.first }}
-                        [	    
-                            new Date({{info["start_time_milliseconds"]}}), 
+                        [
+                            new Date({{info["start_time_milliseconds"]}}),
                             {{info["detected_empty"] if info["detected_empty"] is not none else "null"}},
                             {{info["confirmed_empty"] if info["confirmed_empty"] is not none else "null"}},
-                            {{info["acted_empty"] if info["acted_empty"] is not none else "null"}},
-                            {{info["perm_lost"] if info["perm_lost"] is not none else "null"}}
+                            {{info["acted_empty"] if info["acted_empty"] is not none else "null"}}
                         ]
                 {% endfor %}
                 ];
@@ -218,6 +218,7 @@
         missingTable.addColumn('date', 'Date');
         missingTable.addColumn('number', 'Detected missing');
         missingTable.addColumn('number', 'Acted missing');
+        missingTable.addColumn('number', 'Permanently lost');
         missingTable.addRows(missing_data);
         
         var dark_chart = new google.visualization.LineChart(document.getElementById('dark_chart'));
