@@ -4,7 +4,36 @@ local script test-mac.sh can be used to conveniently launch the podman
 image on a MacBook (laptop), for testing purposes.
 
 However, in order to run podman images on a MacBook, a *Podman
-Machine* is required to be running.
+Machine* is required to be running. Here is the cheat-sheet:
+
+```console
+#.. on your fermicloud node:
+cd <path>/cms_consistency
+cd monitor/server
+
+#.. podman setup
+podman login registry.cern.ch
+  <username + pwd>
+
+#.. if test data is needed prepare it before building the image - see later
+<prepare test data>
+
+#.. then update image tags on build.sh, start.sh as needed
+source ./build.sh
+```
+
+For testing the image locally (verified to work on macOS)
+```
+#.. on your mac laptop
+cd <path>/cms_consistency/monitor/server
+
+#.. update image tag on mac-test.sh
+podman machine start <vm_name>
+source ./mac-test.sh
+
+#.. then on a browser, navigate to http://localhost:8080/ce/index
+open http://localhost:8080/ce/index
+```
 
 # What is a Podman Machine?
 
@@ -119,6 +148,47 @@ When a container exposes a port (e.g., -p 8080:80), Podman
 automatically forwards that port from the Linux VM to your Mac's
 localhost. You can open https://localhost:8080 in Safari or Chrome
 just like normal.
+
+# Prepare test data for local testing of the con-mon web server image
+
+This test data is required for showing something on the local testing.
+Here is a sequence of commands to execute on the consistency pod
+to prepare a tarball, and the sequence of transfers to get it on the
+right place to get it into the web server image:
+
+On the consistency pod:
+
+```console
+    cd /var/cache/
+    tar czf /var/cache/test/somedata.tgz \
+      consistency-dump/T2_BR_UERJ* \
+      consistency-dump/T2_TW_NCHC* \
+      consistency-dump/T3_US_Colorado*
+
+    scp /var/cache/test/somedata.tgz <cuser>@lxplus.cern.ch:Downloads/
+```
+
+Then on the laptop:
+```console
+    scp <cuser>@lxplus.cern.ch:x/somedata.tgz <fuser>@fnalu.fnal.gov:.
+```
+
+Then from fermicloud:
+'''console
+    cd <path>/cms_consistency/monitor/server
+    scp <fuser>@fnalu.fnal.gov:somedata.tgz .
+
+    cd reports
+
+    tar xzf ../somedata.tgz
+    mv consistency-dump/* .
+    mv consistency-dump unmerged  #.. empty
+```
+
+At this point, the test data is ready to be built into the con-mon
+image, once the right lines are uncommented out in the Dockerfile.
+Follow comments on that file.  Of course, don't forget to clean up
+before a new image is prepared for release.
 
 
 # Pushing images into (pre-)production
