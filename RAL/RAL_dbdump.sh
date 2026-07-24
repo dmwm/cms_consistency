@@ -11,13 +11,13 @@ RSE=$3
 scratch=$4
 out=$5
 
-if [ ! -f /consistency/config.yaml ]; then
-    cp $config /consistency/config.yaml    # to make it editable
-    echo Config file $config copied to /consistency/config.yaml
-fi
-config=/consistency/config.yaml
+#if [ ! -f /consistency/config.yaml ]; then
+#    cp $config /consistency/config.yaml    # to make it editable
+#    echo Config file $config copied to /consistency/config.yaml
+#fi
+#config=/consistency/config.yaml
 
-python=${PYTHON:-python3}
+python=python3 # ${PYTHON:-python3}
 
 export PYTHONPATH=`pwd`/cmp3:`pwd`
 
