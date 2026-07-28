@@ -91,11 +91,12 @@ class MergedCEConfiguration(object):
     def merged_config(self):
         overrides = self.ConfigFromFile["rses"].get(rse, {}) or {}
         rse_config = self.merge(self.ConfigFromFile["rses"].get("*", {}), overrides)
-        #print("merged rse config from file:")
-        #pprint.pprint(rse_config)
+        # print("merged rse config from file:")
+        # pprint.pprint(rse_config)
         out = self.merge(rse_config, self.ConfigFromRSE)
-        #print("final merged:", out)
+        # print("final merged:", out)
         return out
+
 
 Usage = """
 python merge_config.py merge [-j] <rse> <config file> 
@@ -104,23 +105,23 @@ python merge_config.py get [-d <default>] <config file> <path, dot-separated>
 
 if __name__ == "__main__":
     import sys, getopt
-    
+
     if not sys.argv[1:]:
         print(Usage)
         sys.exit(2)
-    
+
     cmd, argv = sys.argv[1], sys.argv[2:]
-    
+
     if cmd == "merge":
         opts, args = getopt.getopt(argv, "j")
         opts = dict(opts)
         rse, config_file = args
         cfg = MergedCEConfiguration(rse, config_file)
-        merged = {     # keep format for backward compatibility
+        merged = {  # keep format for backward compatibility
             "rses":
-                {   "*":        {}, 
-                    rse:   cfg.merged_config()
-                }
+                {"*": {},
+                 rse: cfg.merged_config()
+                 }
         }
         if "-j" in opts:
             json.dump(merged, sys.stdout, sort_keys=True, indent=4)
@@ -155,7 +156,3 @@ if __name__ == "__main__":
             print("non-jsonable value:", value, file=sys.stderr)
             sys.exit(1)
         print(value)
-
-        
-    
-
