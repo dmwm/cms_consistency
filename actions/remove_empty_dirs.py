@@ -1,4 +1,4 @@
-import getopt
+import argparse
 import os.path
 import sys
 import time
@@ -12,23 +12,6 @@ from run import CCRun, FileNotFoundException
 from config import ActionConfiguration
 
 Version = "1.1"
-
-Usage = """
-python remove_empty_dirs.py [options] (<storage_path>|<file path>) <rse>
-    -d                          - dry run
-    -o (-|<out file>)           - write confirmed empty directory list to stdout (-) or to a file
-    -s <stats file>             - file to write stats to
-    -S <stats key>              - key to store stats under, default: "empty_action"
-    -c <config.yaml>|rucio      - load configuration from a YAML file or Rucio
-    -v                          - verbose output
-
-    The following will override values read from the configuration:
-    -L <number>                 - stop after removing so many directories
-    -w <days>                   - max age for oldest run to use for confirmation, default = 36 days
-    -m <days>                   - max age for the most recent run, default = 1 day
-    -M <days>                   - min age for oldest run, default = 25
-    -n <number>                 - min number of runs to use to produce the confirmed empty directory list, default = 3
-"""
 
 class LFNConverter(object):
 
@@ -300,19 +283,28 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     return my_stats
 
-if not sys.argv[1:] or sys.argv[1] == "help":
-    print(Usage)
-    sys.exit(2)
+parser = argparse.ArgumentParser(description="Remove empty directories from a storage element")
+parser.add_argument("storage_path", help="storage path or file path containing directories to remove")
+parser.add_argument("rse", help="RSE name")
+parser.add_argument("-d", "--dry-run", action="store_true", help="dry run")
+parser.add_argument("-o", "--out", metavar="FILE", help="write confirmed empty directory list to stdout (-) or to a file")
+parser.add_argument("-s", "--stats-file", metavar="FILE", help="file to write stats to")
+parser.add_argument("-S", "--stats-key", metavar="KEY", default="empty_action", help="key to store stats under (default: empty_action)")
+parser.add_argument("-c", "--config", metavar="CONFIG", required=True, help="load configuration from a YAML file or Rucio")
+parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
+parser.add_argument("-L", "--limit", type=int, metavar="N", help="stop after removing this many directories")
+parser.add_argument("-w", "--window", type=int, metavar="DAYS", help="max age for oldest run to use for confirmation (default: 36)")
+parser.add_argument("-m", "--max-age-last", type=int, metavar="DAYS", help="max age for the most recent run (default: 1)")
+parser.add_argument("-M", "--min-age-first", type=int, metavar="DAYS", help="min age for oldest run (default: 25)")
+parser.add_argument("-n", "--min-runs", type=int, metavar="N", help="min number of runs for confirmed empty directory list (default: 3)")
+parser.add_argument("-f", "--fraction", type=float, metavar="FRAC", help="max fraction (default: 0.01)")
+parser.add_argument("-a", "--account", metavar="ACCOUNT", help="account")
+parser.add_argument("--method", metavar="METHOD", help="Method to use for removing directories (default: xrootd)")
 
-opts, args = getopt.getopt(sys.argv[1:], "h?o:M:m:w:n:f:s:S:c:va:dL:")
-opts = dict(opts)
-
-if not args or "-h" in opts or "-?" in opts:
-    print(Usage)
-    sys.exit(2)
+args = parser.parse_args()
 
 out = None
-out_path = opts.get("-o")
+out_path = args.out
 out_filename = out_path.rsplit('/', 1)[-1] if out_path else None
 if out_path:
     if out_path == "-":
@@ -320,39 +312,39 @@ if out_path:
     else:
         out = open(out_path, "w")
 
+storage_path = args.storage_path
+rse = args.rse
 
-storage_path, rse = args
+config  = ActionConfiguration(rse, args.config, "dark")
+scanner_config = CEConfiguration(args.config)[rse].get("scanner", {})
 
-config  = ActionConfiguration(rse, opts["-c"], "dark")
-scanner_config = CEConfiguration(opts["-c"])[rse].get("scanner", {})
-
-window = int(opts.get("-w", config.get("confirmation_window", 36)))
-min_age_first = int(opts.get("-M", config.get("min_age_first_run", 25)))
-max_age_last = int(opts.get("-m", config.get("max_age_last_run", 1)))
-fraction = float(opts.get("-f", config.get("max_fraction", 0.01)))
-min_runs = int(opts.get("-n", config.get("min_runs", 3)))
-account = opts.get("-a")
-dry_run = "-d" in opts
-verbose = "-v" in opts
-limit = opts.get("-L")
-if limit:   limit = int(limit)
+window = args.window if args.window is not None else config.get("confirmation_window", 36)
+min_age_first = args.min_age_first if args.min_age_first is not None else config.get("min_age_first_run", 25)
+max_age_last = args.max_age_last if args.max_age_last is not None else config.get("max_age_last_run", 1)
+fraction = args.fraction if args.fraction is not None else config.get("max_fraction", 0.01)
+min_runs = args.min_runs if args.min_runs is not None else config.get("min_runs", 3)
+rmdir_method = args.method if args.method is not None else config.get("rmdir_method", "xrootd")
+account = args.account
+dry_run = args.dry_run
+verbose = args.verbose
+limit = args.limit
 
 
 if dry_run:
     print("====== dry run mode ======")
 
-stats_file = opts.get("-s")
+stats_file = args.stats_file
 stats = stats_key = None
 if stats_file is not None:
     stats = Stats(stats_file)
-stats_key = opts.get("-S", "empty_action")
+stats_key = args.stats_key
 
-if "-v" in opts:
+if verbose:
     print("\nParameters:")
     print("  dry run:                     ", dry_run)
     print("  stats file:                  ", stats_file)
     print("  stats key:                   ", stats_key)
-    print("  config:                      ", opts.get("-c"))
+    print("  config:                      ", args.config)
     print("  confirmation window:         ", window)
     print("  min age for last run:        ", min_age_first)
     print("  max age for first run:       ", max_age_last)
