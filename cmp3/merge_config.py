@@ -75,6 +75,8 @@ class MergedCEConfiguration(object):
 
         if self.CONFIG_PREFIX + "max_dark_fraction" in rse_config:
             cfg["dark_action"] = {"max_fraction": float(rse_config[self.CONFIG_PREFIX + "max_dark_fraction"])}
+        if self.CONFIG_PREFIX + "rmdir_method" in rse_config:
+            cfg["dark_action"] = {"rmdir_method": rse_config[self.CONFIG_PREFIX + "rmdir_method"]}
         if self.CONFIG_PREFIX + "max_missing_fraction" in rse_config:
             cfg["missing_action"] = {"max_fraction": float(rse_config[self.CONFIG_PREFIX + "max_missing_fraction"])}
         return cfg

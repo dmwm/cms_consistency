@@ -1,5 +1,6 @@
 import argparse
 import os.path
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
@@ -12,6 +13,7 @@ from run import CCRun, FileNotFoundException
 from config import ActionConfiguration
 
 Version = "1.1"
+
 
 class LFNConverter(object):
 
@@ -45,37 +47,72 @@ class LFNConverter(object):
 
     def lfn_or_path_to_path(self, lfn_or_path):
         if lfn_or_path.startswith(self.SiteRoot):
-            return lfn_or_path         # already a path
+            return lfn_or_path  # already a path
         return self.lfn_to_path(lfn_or_path)
 
-class RemoveDirectoryTask(Task):
 
+class XRootDBackend(object):
+
+    def __init__(self, client):
+        self.Client = client
+
+    def rmdir(self, path):
+        return self.Client.rmdir(path)
+
+
+class DavsBackend(object):
+
+    def __init__(self, server):
+        self.Server = server
+        self.Token = self._get_token()
+
+    def _get_token(self):
+        cmd = ["gfal-token", "-w", f"davs://{self.Server}/"]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
+    def rmdir(self, path):
+        cmd = ["davix-rm", "-H", f"Authorization: Bearer {self.Token}",
+               "--capath", "/cvmfs/grid.cern.ch/etc/grid-security/certificates/",
+               f"davs://{self.Server}/{path}"]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            status = "OK"
+        else:
+            status = "failed"
+            print(f"rmdir {path} -> {status} message: {result.stderr}", file=sys.stderr)
+        return status, result.stderr
+
+
+class RemoveDirectoryTask(Task):
     RETRIES = 3
 
-    def __init__(self, client, path):
+    def __init__(self, backend, path):
         Task.__init__(self)
-        self.Client = client
+        self.Backend = backend
         self.Path = path
         self.Retries = self.RETRIES
 
     def run(self):
-        return self.Client.rmdir(self.Path)
+        return self.Backend.rmdir(self.Path)
 
 
 class Remover(Primitive):
 
-    def __init__(self, client, paths, dry_run, limit=None, max_workers=10, verbose=False):
+    def __init__(self, client, paths, dry_run, method=None, server=None, limit=None, max_workers=10, verbose=False):
         Primitive.__init__(self)
-        self.Client = client
         self.Paths = paths
         self.Queue = TaskQueue(max_workers, capacity=max_workers, stagger=0.1, delegate=self)
-        self.Failed = []            # [(path, error), ...]
+        self.Failed = []  # [(path, error), ...]
         self.ErrorCounts = {}
         self.RemovedCount = 0
         self.SubmittedCount = 0
         self.Verbose = verbose
         self.DryRun = dry_run
-        self.Limit = limit          # max number of dirs to delete
+        self.Limit = limit  # max number of dirs to delete
+        self.Backend = DavsBackend(server) if method == 'davs' else XRootDBackend(client)
 
     def shave(self, paths):
         # split the list of paths (assumed to be reversely ordered) into leaves and inner nodes
@@ -95,14 +132,14 @@ class Remover(Primitive):
         while paths and (self.Limit is None or self.SubmittedCount < self.Limit):
             leaves, inner = self.shave(paths)
             for leaf in leaves:
-                depth = len([p for p in leaf.split('/') if p])      # do not remove root directories like "/store/mc"
+                depth = len([p for p in leaf.split('/') if p])  # do not remove root directories like "/store/mc"
                 if depth <= 2:
                     print(f"skipping root:", leaf)
                     continue
                 if self.Verbose:
                     print(f"submitting (dry_run={self.DryRun}):", leaf)
                 if not self.DryRun:
-                    self.Queue.append(RemoveDirectoryTask(self.Client, leaf))
+                    self.Queue.append(RemoveDirectoryTask(self.Backend, leaf))
                 self.SubmittedCount += 1
                 if self.Limit is not None and self.SubmittedCount >= self.Limit:
                     print(f"Limit of {self.Limit} reached")
@@ -145,24 +182,30 @@ def parents(path):
         path = path.rsplit('/', 1)[0]
         yield path
 
-def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
+
+def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit,
+                     rmdir_method, server):
     paths = [l.strip() for l in open(file_path, "r")]
-    failed = Remover(client, paths, dry_run, verbose=verbose, limit=limit).run()
+    failed = Remover(client, paths, dry_run, method=rmdir_method, server=server, verbose=verbose, limit=limit).run()
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
+
 
 def update_confirmed(confirmed, update):
     new_confirmed = confirmed & update
     unconfirmed = confirmed - update
     for path in unconfirmed:
         for parent in parents(path):
-            try:    new_confirmed.remove(parent)
-            except KeyError:    pass
+            try:
+                new_confirmed.remove(parent)
+            except KeyError:
+                pass
     return new_confirmed
 
-def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
 
+def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit,
+                 window, min_runs, max_age_last, min_age_first, rmdir_method, server):
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
         stats.update_section(stats_key, my_stats)
@@ -172,21 +215,21 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     for r in runs:
         print(r.Run, ":  in window:", r.Timestamp >= now - timedelta(days=window),
-                "  ED info collected:", r.empty_directories_collected(),
-                "  count:", r.empty_directory_count(),
-                "  list present:", r.empty_dir_list_exists()
-        )
+              "  ED info collected:", r.empty_directories_collected(),
+              "  count:", r.empty_directory_count(),
+              "  list present:", r.empty_dir_list_exists()
+              )
     recent_runs = sorted(
-            [r for r in runs
-                if True
-                    #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
-                    and (r.Timestamp >= now - timedelta(days=window))
-                    and r.empty_directories_collected()
-                    and r.empty_directory_count() is not None
-                    and r.empty_dir_list_exists()
-                    #and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
-            ],
-            key=lambda r: r.Timestamp
+        [r for r in runs
+         if True
+         # and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
+         and (r.Timestamp >= now - timedelta(days=window))
+         and r.empty_directories_collected()
+         and r.empty_directory_count() is not None
+         and r.empty_dir_list_exists()
+         # and (print(r.Run, r.Timestamp >= now - timedelta(days=window), r.empty_directories_collected(), r.empty_directory_count()) or True)
+         ],
+        key=lambda r: r.Timestamp
     )
 
     print("Usable runs:")
@@ -207,7 +250,8 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     if not recent_runs or len(recent_runs) < min_runs:
         status = "aborted"
-        aborted_reason = "not enough runs to produce confirmed empty directories list: %d, required: %d" % (len(recent_runs), min_runs)
+        aborted_reason = "not enough runs to produce confirmed empty directories list: %d, required: %d" % (
+            len(recent_runs), min_runs)
     else:
         first_run = recent_runs[0]
         latest_run = recent_runs[-1]
@@ -224,12 +268,14 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
         elif first_run.Timestamp > now - timedelta(days=min_age_first):
             status = "aborted"
-            aborted_reason = "oldest run is not old enough: %s, required: > %d days old" % (first_run.Timestamp, min_age_first)
+            aborted_reason = "oldest run is not old enough: %s, required: > %d days old" % (first_run.Timestamp,
+                                                                                            min_age_first)
 
         else:
             # compute confirmed list and make sure the list would contain only removable directories
             confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
-            confirmed = update_confirmed(confirmed, set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
+            confirmed = update_confirmed(confirmed, set(
+                lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
             for run in recent_runs[1:-1]:
                 print(f"run: {run.Run} - #confirmed: {len(confirmed)}")
                 if not confirmed:
@@ -241,8 +287,8 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
             print("Confirmed empty directories:", confirmed_empty_count, file=sys.stderr)
 
             my_stats.update(
-                detected_empty_directories = detected_empty_count,
-                confirmed_empty_directories = confirmed_empty_count
+                detected_empty_directories=detected_empty_count,
+                confirmed_empty_directories=confirmed_empty_count
             )
             if stats is not None:
                 stats.update_section(stats_key, my_stats)
@@ -255,7 +301,8 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
                     if out is not sys.stdout:
                         out.close()
                 try:
-                    remover = Remover(client, confirmed, dry_run, verbose=verbose, limit=limit)
+                    remover = Remover(client, confirmed, dry_run, method=rmdir_method, server=server, verbose=verbose,
+                                      limit=limit)
                     failed = remover.run()
                     failed_count = len(failed)
                     removed_count = remover.RemovedCount
@@ -266,16 +313,16 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     t1 = time.time()
     my_stats.update(
-        elapsed = t1-t0,
-        end_time = t1,
-        status = status,
-        error = error,
-        detected_empty_directories = detected_empty_count,
-        confirmed_empty_directories = confirmed_empty_count,
-        failed_count = failed_count,
-        removed_count = removed_count,
-        aborted_reason = aborted_reason,
-        error_counts = error_counts
+        elapsed=t1 - t0,
+        end_time=t1,
+        status=status,
+        error=error,
+        detected_empty_directories=detected_empty_count,
+        confirmed_empty_directories=confirmed_empty_count,
+        failed_count=failed_count,
+        removed_count=removed_count,
+        aborted_reason=aborted_reason,
+        error_counts=error_counts
     )
 
     if stats is not None:
@@ -283,20 +330,27 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
     return my_stats
 
+
 parser = argparse.ArgumentParser(description="Remove empty directories from a storage element")
 parser.add_argument("storage_path", help="storage path or file path containing directories to remove")
 parser.add_argument("rse", help="RSE name")
 parser.add_argument("-d", "--dry-run", action="store_true", help="dry run")
-parser.add_argument("-o", "--out", metavar="FILE", help="write confirmed empty directory list to stdout (-) or to a file")
+parser.add_argument("-o", "--out", metavar="FILE",
+                    help="write confirmed empty directory list to stdout (-) or to a file")
 parser.add_argument("-s", "--stats-file", metavar="FILE", help="file to write stats to")
-parser.add_argument("-S", "--stats-key", metavar="KEY", default="empty_action", help="key to store stats under (default: empty_action)")
-parser.add_argument("-c", "--config", metavar="CONFIG", required=True, help="load configuration from a YAML file or Rucio")
+parser.add_argument("-S", "--stats-key", metavar="KEY", default="empty_action",
+                    help="key to store stats under (default: empty_action)")
+parser.add_argument("-c", "--config", metavar="CONFIG", required=True,
+                    help="load configuration from a YAML file or Rucio")
 parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
 parser.add_argument("-L", "--limit", type=int, metavar="N", help="stop after removing this many directories")
-parser.add_argument("-w", "--window", type=int, metavar="DAYS", help="max age for oldest run to use for confirmation (default: 36)")
-parser.add_argument("-m", "--max-age-last", type=int, metavar="DAYS", help="max age for the most recent run (default: 1)")
+parser.add_argument("-w", "--window", type=int, metavar="DAYS",
+                    help="max age for oldest run to use for confirmation (default: 36)")
+parser.add_argument("-m", "--max-age-last", type=int, metavar="DAYS",
+                    help="max age for the most recent run (default: 1)")
 parser.add_argument("-M", "--min-age-first", type=int, metavar="DAYS", help="min age for oldest run (default: 25)")
-parser.add_argument("-n", "--min-runs", type=int, metavar="N", help="min number of runs for confirmed empty directory list (default: 3)")
+parser.add_argument("-n", "--min-runs", type=int, metavar="N",
+                    help="min number of runs for confirmed empty directory list (default: 3)")
 parser.add_argument("-f", "--fraction", type=float, metavar="FRAC", help="max fraction (default: 0.01)")
 parser.add_argument("-a", "--account", metavar="ACCOUNT", help="account")
 parser.add_argument("--method", metavar="METHOD", help="Method to use for removing directories (default: xrootd)")
@@ -315,8 +369,9 @@ if out_path:
 storage_path = args.storage_path
 rse = args.rse
 
-config  = ActionConfiguration(rse, args.config, "dark")
+config = ActionConfiguration(rse, args.config, "dark")
 scanner_config = CEConfiguration(args.config)[rse].get("scanner", {})
+davs_scanner_config = CEConfiguration(args.config)[rse].get("davs_scanner", {})
 
 window = args.window if args.window is not None else config.get("confirmation_window", 36)
 min_age_first = args.min_age_first if args.min_age_first is not None else config.get("min_age_first_run", 25)
@@ -328,7 +383,6 @@ account = args.account
 dry_run = args.dry_run
 verbose = args.verbose
 limit = args.limit
-
 
 if dry_run:
     print("====== dry run mode ======")
@@ -386,20 +440,27 @@ my_stats = {
 if stats is not None:
     stats.update_section(stats_key, my_stats)
 
-server        = scanner_config["server"]
-server_root   = scanner_config["server_root"]
-add_prefix    = scanner_config["add_prefix"]
-remove_prefix = scanner_config["remove_prefix"]
+if rmdir_method == 'davs':
+    active_scanner_config = davs_scanner_config
+else:
+    active_scanner_config = scanner_config
+
+server = active_scanner_config["server"]
+server_root = active_scanner_config["server_root"]
+add_prefix = active_scanner_config["add_prefix"]
+remove_prefix = active_scanner_config["remove_prefix"]
+timeout = active_scanner_config["timeout"]
 
 lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
 
-timeout = scanner_config["timeout"]
-is_redirector = False    # config.ServerIsRedirector
+is_redirector = False  # config.ServerIsRedirector
 client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
 if os.path.isfile(storage_path):
-    run_stats = remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
+    run_stats = remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats,
+                                 verbose, limit, rmdir_method, server)
 else:
-    run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit)
+    run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats,
+                             verbose, limit, window, min_runs, max_age_last, min_age_first, rmdir_method, server)
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
