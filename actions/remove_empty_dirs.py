@@ -1,12 +1,15 @@
-import sys, os, getopt, time, os.path
+import getopt
+import os.path
+import sys
+import time
 from datetime import datetime, timedelta
-from pythreader import TaskQueue, Task, Primitive, synchronized
 
-from run import CCRun, FileNotFoundException
-from config import ActionConfiguration
+from pythreader import TaskQueue, Task, Primitive, synchronized
 from rucio_consistency import CEConfiguration, Stats
 from rucio_consistency.xrootd import XRootDClient
+from run import CCRun, FileNotFoundException
 
+from config import ActionConfiguration
 
 Version = "1.1"
 
@@ -140,9 +143,7 @@ class Remover(Primitive):
                     print("resubmitting after timeout:", task.Path)
                 self.Queue.append(task)
             else:
-                reduced_error = error
-                while task.Path in reduced_error:
-                    reduced_error = reduced_error.replace(task.Path, "[path]")
+                reduced_error = error.replace(task.Path, "[path]")
                 self.Failed.append((task.Path, error))
                 self.ErrorCounts[reduced_error] = self.ErrorCounts.get(reduced_error, 0) + 1
         else:
@@ -163,7 +164,7 @@ def parents(path):
 
 def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit):
     paths = [l.strip() for l in open(file_path, "r")]
-    failed = Remover(client, paths, verbose=verbose, limit=limit).run()
+    failed = Remover(client, paths, dry_run, verbose=verbose, limit=limit).run()
     for path, error in failed:
         print("Failed:", path, error)
     return my_stats
