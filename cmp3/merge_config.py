@@ -1,8 +1,11 @@
-import os, yaml, pprint, json
+import json
+
+import yaml
 from rucio.client.rseclient import RSEClient
+from rucio.rse import rsemanager as rse_mgr
+
 
 class MergedCEConfiguration(object):
-
     CONFIG_PREFIX = "CE_config."
     """
             Disable CE for the site
@@ -23,31 +26,57 @@ class MergedCEConfiguration(object):
     def config_from_rse(self):
         rse_config = self.RSEClient.list_rse_attributes(rse)
         cfg = {}
-        if self.CONFIG_PREFIX+"ce_disabled" in rse_config:     
-            value = rse_config[self.CONFIG_PREFIX+"ce_disabled"]
+        if self.CONFIG_PREFIX + "ce_disabled" in rse_config:
+            value = rse_config[self.CONFIG_PREFIX + "ce_disabled"]
             if isinstance(value, str):
                 value = value.lower() in ("yes", "true", "disabled")
             cfg["ce_disabled"] = value
-        if self.CONFIG_PREFIX+"ignore_list" in rse_config: 
-            cfg["ignore_list"] = rse_config[self.CONFIG_PREFIX+"ignore_list"].split(",")
+        if self.CONFIG_PREFIX + "ignore_list" in rse_config:
+            cfg["ignore_list"] = rse_config[self.CONFIG_PREFIX + "ignore_list"].split(",")
 
         scanner_cfg = {}
-        if self.CONFIG_PREFIX+"server" in rse_config:          
-            scanner_cfg["server"] = rse_config[self.CONFIG_PREFIX+"server"]
-        if self.CONFIG_PREFIX+"server_root" in rse_config:     
-            scanner_cfg["server_root"] = rse_config[self.CONFIG_PREFIX+"server_root"]
-        if self.CONFIG_PREFIX+"roots" in rse_config:           
-            scanner_cfg["roots"] = [{"path":path} for path in rse_config[self.CONFIG_PREFIX+"roots"].split(",")]
-        if self.CONFIG_PREFIX+"nworkers" in rse_config:        
-            scanner_cfg["nworkers"] = int(rse_config[self.CONFIG_PREFIX+"nworkers"])
-        if self.CONFIG_PREFIX+"timeout" in rse_config:         
-            scanner_cfg["timeout"] = int(rse_config[self.CONFIG_PREFIX+"timeout"])
+        davs_scanner_cfg = {}
+        if self.CONFIG_PREFIX + "server" in rse_config:
+            scanner_cfg["server"] = rse_config[self.CONFIG_PREFIX + "server"]
+        if self.CONFIG_PREFIX + "server_root" in rse_config:
+            scanner_cfg["server_root"] = rse_config[self.CONFIG_PREFIX + "server_root"]
+        if self.CONFIG_PREFIX + "roots" in rse_config:
+            scanner_cfg["roots"] = [{"path": path} for path in rse_config[self.CONFIG_PREFIX + "roots"].split(",")]
+        if self.CONFIG_PREFIX + "nworkers" in rse_config:
+            scanner_cfg["nworkers"] = int(rse_config[self.CONFIG_PREFIX + "nworkers"])
+        if self.CONFIG_PREFIX + "timeout" in rse_config:
+            scanner_cfg["timeout"] = int(rse_config[self.CONFIG_PREFIX + "timeout"])
+
         cfg["scanner"] = scanner_cfg
 
-        if self.CONFIG_PREFIX+"max_dark_fraction" in rse_config:       
-            cfg["dark_action"] = {"max_fraction":float(rse_config[self.CONFIG_PREFIX+"max_dark_fraction"])}
-        if self.CONFIG_PREFIX+"max_missing_fraction" in rse_config:    
-            cfg["missing_action"] = {"max_fraction":float(rse_config[self.CONFIG_PREFIX+"max_missing_fraction"])}
+        # Do the section for the DAVS scanner
+
+        # First get from the RSE protocols
+        rse_info = rse_mgr.get_rse_info(rse=rse)
+        proto = rse_mgr.select_protocol(rse_info, operation='read', scheme='davs')
+        if 'hostname' in proto and 'port' in proto and 'prefix' in proto:
+            davs_scanner_cfg["server"] = f'{proto["hostname"]}:{proto["port"]}'
+            davs_scanner_cfg["server_root"] = proto["prefix"]
+
+        # Override with anything which might exist in the config as CE_config.davs_
+        DAVS_PREFIX = self.CONFIG_PREFIX + 'davs_'
+        if DAVS_PREFIX + "server" in rse_config:
+            davs_scanner_cfg["server"] = rse_config[DAVS_PREFIX + "server"]
+        if DAVS_PREFIX + "server_root" in rse_config:
+            davs_scanner_cfg["server_root"] = rse_config[DAVS_PREFIX + "server_root"]
+        if DAVS_PREFIX + "roots" in rse_config:
+            davs_scanner_cfg["roots"] = [{"path": path} for path in rse_config[DAVS_PREFIX + "roots"].split(",")]
+        if DAVS_PREFIX + "nworkers" in rse_config:
+            davs_scanner_cfg["nworkers"] = int(rse_config[DAVS_PREFIX + "nworkers"])
+        if DAVS_PREFIX + "timeout" in rse_config:
+            davs_scanner_cfg["timeout"] = int(rse_config[DAVS_PREFIX + "timeout"])
+
+        cfg["davs_scanner"] = davs_scanner_cfg
+
+        if self.CONFIG_PREFIX + "max_dark_fraction" in rse_config:
+            cfg["dark_action"] = {"max_fraction": float(rse_config[self.CONFIG_PREFIX + "max_dark_fraction"])}
+        if self.CONFIG_PREFIX + "max_missing_fraction" in rse_config:
+            cfg["missing_action"] = {"max_fraction": float(rse_config[self.CONFIG_PREFIX + "max_missing_fraction"])}
         return cfg
 
     def merge(self, defaults, overrides):
@@ -62,11 +91,12 @@ class MergedCEConfiguration(object):
     def merged_config(self):
         overrides = self.ConfigFromFile["rses"].get(rse, {}) or {}
         rse_config = self.merge(self.ConfigFromFile["rses"].get("*", {}), overrides)
-        #print("merged rse config from file:")
-        #pprint.pprint(rse_config)
+        # print("merged rse config from file:")
+        # pprint.pprint(rse_config)
         out = self.merge(rse_config, self.ConfigFromRSE)
-        #print("final merged:", out)
+        # print("final merged:", out)
         return out
+
 
 Usage = """
 python merge_config.py merge [-j] <rse> <config file> 
@@ -75,23 +105,23 @@ python merge_config.py get [-d <default>] <config file> <path, dot-separated>
 
 if __name__ == "__main__":
     import sys, getopt
-    
+
     if not sys.argv[1:]:
         print(Usage)
         sys.exit(2)
-    
+
     cmd, argv = sys.argv[1], sys.argv[2:]
-    
+
     if cmd == "merge":
         opts, args = getopt.getopt(argv, "j")
         opts = dict(opts)
         rse, config_file = args
         cfg = MergedCEConfiguration(rse, config_file)
-        merged = {     # keep format for backward compatibility
+        merged = {  # keep format for backward compatibility
             "rses":
-                {   "*":        {}, 
-                    rse:   cfg.merged_config()
-                }
+                {"*": {},
+                 rse: cfg.merged_config()
+                 }
         }
         if "-j" in opts:
             json.dump(merged, sys.stdout, sort_keys=True, indent=4)
@@ -126,7 +156,3 @@ if __name__ == "__main__":
             print("non-jsonable value:", value, file=sys.stderr)
             sys.exit(1)
         print(value)
-
-        
-    
-

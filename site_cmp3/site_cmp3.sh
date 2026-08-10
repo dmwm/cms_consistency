@@ -157,13 +157,31 @@ rm -f ${r_prefix}.*
 
 empty_dirs_out=${out}/${RSE}_${now}_ED.list.gz
 
-echo "Site scan..." > ${scanner_errors}
-rce_scan -z -c ${merged_config_file} -s ${stats} \
-    -o ${r_prefix} \
-    -r $root_file_counts \
-    -E 1 -e $empty_dirs_out \
-    ${RSE} 2>> ${scanner_errors}
-scanner_status=$?
+echo "Checking which type of scanner to use...." > ${scanner_errors}
+export X509_USER_PROXY=/tmp/x509up
+export RUCIO_ACCOUNT=transfer_ops
+output=$(rucio rse show ${RSE})
+method=$(echo "$output" | grep -oP 'CE_config\.method:\s*\K\S+')  # Extract the value for CE_config.method
+echo " Scanner method ${method}" > ${scanner_errors}
+
+if [ "$method" == "davs" ]; then
+  echo "Site scan with davs..." > ${scanner_errors}
+  /consistency/cms_consistency/site_cmp3/davs_scanner.py -z -c ${merged_config_file} -s ${stats}  \
+      -o ${r_prefix} \
+      -r $root_file_counts \
+      -e $empty_dirs_out \
+      ${RSE} 2>> ${scanner_errors}
+   scanner_status=$?
+else
+  echo "Site scan with xrootd..." > ${scanner_errors}
+  rce_scan -z -c ${merged_config_file} -s ${stats} \
+      -o ${r_prefix} \
+      -r $root_file_counts \
+      -E 1 -e $empty_dirs_out \
+      ${RSE} 2>> ${scanner_errors}
+  scanner_status=$?
+fi
+
 if [ "$scanner_status" != "0" ]; then
     echo "Site scan failed. Status code: $scanner_status" >> ${scanner_errors}
 	rm -f ${r_prefix}*

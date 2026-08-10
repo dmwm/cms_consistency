@@ -6,14 +6,12 @@ RUN dnf -y update \
     && dnf clean all \
     && rm -rf /var/cache/dnf
 
-# PKI stuff
-# xrootd client
-# Python and libs
 RUN dnf install -y https://repo.opensciencegrid.org/osg/25-main/osg-25-main-el9-release-latest.rpm && \
     dnf install -y osg-pki-tools voms voms-clients-cpp \
       xrootd-libs xrootd-client \
+      davix python-gfal2 gfal2-plugin-file gfal2-plugin-xrootd gfal2-plugin-http gfal2-util-scripts \
       python3 python3-pip \
-      git which diffutils cronie-noanacron libaio && \
+      git which diffutils cronie-noanacron libaio procps-ng && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
@@ -52,6 +50,20 @@ WORKDIR /consistency
 RUN chmod +x *.sh
 
 RUN git clone https://github.com/dmwm/cms_consistency.git
+
+# FIXME: Remove references to merge_config, site_cmp3.sh.
+# Move location of davs_scanner to rucio_consistency when accepted.
+# Remove reference to config.py
+
+# Add several files that we need to change. Eventually to be upstreamed
+ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/rucio_consistency/config.py /usr/local/lib/python3.9/site-packages/rucio_consistency/config.py
+ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/rucio_consistency/site_cmp3/cmp3/merge_config.py /consistency/cms_consistency/cmp3/merge_config.py
+ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/cms_consistency/site_cmp3/site_cmp3.sh /consistency/cms_consistency/site_cmp3/site_cmp3.sh
+ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/davs_scanner.py /consistency/cms_consistency/site_cmp3/davs_scanner.py
+
+RUN chmod +x /consistency/cms_consistency/cmp3/merge_config.py
+RUN chmod +x /consistency/cms_consistency/site_cmp3/site_cmp3.sh
+RUN chmod +x /consistency/cms_consistency/site_cmp3/davs_scanner.py
 
 CMD /bin/bash
 
