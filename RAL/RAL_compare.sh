@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# FIXME: we can remove this
+set -x
+
 #
 # Usage:
 #   RAL_compare.sh <config.yaml> <dbconfig.cfg> <RSE> <scratch dir> <output dir> [options ...]
@@ -27,11 +30,11 @@ unmerged_config=""
 run=`date -u +%Y_%m_%d_00_00`
 timestamp=`date -u +%Y%m%d`
 
-if [ ! -f /consistency/config.yaml ]; then
-    cp $config /consistency/config.yaml    # to make it editable
-    echo Config file $config copied to /consistency/config.yaml
-fi
-config=/consistency/config.yaml
+#if [ ! -f /consistency/config.yaml ]; then
+#    cp $config /consistency/config.yaml    # to make it editable
+#    echo Config file $config copied to /consistency/config.yaml
+#fi
+#config=/consistency/config.yaml
 
 python=${PYTHON:-python3}
 
@@ -189,7 +192,7 @@ for attempt in $attempts; do
     rm -f ${site_dump_tmp}
     attempt_time=`date -u`
     stderr=${scratch}/${RSE}_xrdcp_${run}.stderr
-    xrdcp ${dump_url} ${site_dump_tmp} 2> $stderr
+    X509_USER_PROXY=/tmp/x509up xrdcp ${dump_url} ${site_dump_tmp} 2> $stderr
     xrdcp_status=$?
     if [ "$xrdcp_status" != "0" ] || [ ! -f ${site_dump_tmp} ]; then
 	    rm -f ${site_dump_tmp}

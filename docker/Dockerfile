@@ -51,19 +51,11 @@ RUN chmod +x *.sh
 
 RUN git clone https://github.com/dmwm/cms_consistency.git
 
-# FIXME: Remove references to merge_config, site_cmp3.sh.
-# Move location of davs_scanner to rucio_consistency when accepted.
-# Remove reference to config.py
-
-# Add several files that we need to change. Eventually to be upstreamed
+# FIXME: Move location of davs_scanner to rucio_consistency when accepted.  Remove reference to config.py
+# FIXME: Add several files that we need to change. Eventually to be upstreamed
 ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/rucio_consistency/config.py /usr/local/lib/python3.9/site-packages/rucio_consistency/config.py
-ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/rucio_consistency/site_cmp3/cmp3/merge_config.py /consistency/cms_consistency/cmp3/merge_config.py
-ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/cms_consistency/site_cmp3/site_cmp3.sh /consistency/cms_consistency/site_cmp3/site_cmp3.sh
 ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/davs_scanner.py /consistency/cms_consistency/site_cmp3/davs_scanner.py
 
-RUN chmod +x /consistency/cms_consistency/cmp3/merge_config.py
-RUN chmod +x /consistency/cms_consistency/site_cmp3/site_cmp3.sh
 RUN chmod +x /consistency/cms_consistency/site_cmp3/davs_scanner.py
 
 CMD /bin/bash
-

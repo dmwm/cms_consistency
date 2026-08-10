@@ -12,7 +12,7 @@ from run import CCRun, FileNotFoundException
 
 from config import ActionConfiguration
 
-Version = "1.1"
+Version = "2.0"
 
 
 class LFNConverter(object):
