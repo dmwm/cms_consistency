@@ -30,3 +30,48 @@ jobs:
       
       - name: Push Image to CERN Harbour
         run: docker push registry.cern.ch/${{ vars.HARBOR_REPOSITORY }}/rucio-consistency:${{ env.tag }}
+  propagate-tag:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        repository: dmwm/rucio-flux
+        token: ${{ secrets.CROSS_REPO_TOKEN }}
+        path: rucio-flux
+
+    - name: Create branch
+      run: |
+        cd rucio-flux
+        git checkout -b update-consistency-image-${{ env.tag }}
+
+    - name: Update image tag
+      run: |
+        cd rucio-flux
+        sed -i "s|^tag:.*|tag: ${{ env.tag }}|" apps/production/prod-consistency.yaml
+
+    - name: Commit changes
+      run: |
+        cd rucio-flux
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git commit -am "Update consistency image tag to ${{ env.tag }}"
+
+    - name: Push branch
+      run: |
+        cd rucio-flux
+        git push origin update-consistency-image-${{ env.tag }}
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.CROSS_REPO_TOKEN }}
+        path: rucio-flux
+        branch: update-consistency-image-${{ env.tag }}
+        title: "Update consistency image tag to ${{ env.tag }}"
+        body: |
+          Automated PR updating Docker consistency image tag to `${{ env.tag }}`.
+          See latest changes in https://github.com/dmwm/cms_consistency.
+        base: main
