@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version="4.0"
+version="5.0"
 
 echo site_cmp3 version: $version
 
