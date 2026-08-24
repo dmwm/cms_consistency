@@ -1,5 +1,26 @@
+FROM almalinux:9 as go-builder
+USER root
+
+RUN dnf install -y golang git && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf   
+
+RUN mkdir -p /tmp/go/webdav-rm
+
+RUN curl -fsSL -o /tmp/go/webdav-ls-r.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-ls-r.go
+RUN curl -fsSL -o /tmp/go/go.mod https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/go.mod
+RUN curl -fsSL -o /tmp/go/go.sum https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/go.sum
+RUN curl -fsSL -o /tmp/go/webdav-rm/webdav-rm.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-rm/webdav-rm.go
+
+RUN go mod download
+RUN cd /tmp/go && go build -o /usr/local/bin/webdav-ls-r webdav-ls-r.go
+RUN cd /tmp/go/webdav-rm && go build -o /usr/local/bin/webdav-rm webdav-rm.go
+
 FROM almalinux:9
 USER root
+
+COPY --from=builder /usr/local/bin/webdav-ls-r /usr/local/bin/webdav-ls-r
+COPY --from=builder /usr/local/bin/webdav-rm /usr/local/bin/webdav-rm
 
 RUN dnf -y update \
     && dnf install -y epel-release.noarch \
@@ -18,6 +39,9 @@ RUN dnf install -y https://repo.opensciencegrid.org/osg/25-main/osg-25-main-el9-
 #.. Oracle client
 # depends on libaio
 RUN rpm -i https://yum.oracle.com/repo/OracleLinux/OL8/oracle/instantclient21/x86_64/getPackage/oracle-instantclient-basic-21.20.0.0.0-1.el8.x86_64.rpm
+
+# rclone for HTTP directory listing
+RUN dnf install https://downloads.rclone.org/rclone-current-linux-amd64.rpm
 
 #.. jobber -- obsolete, soon to be removed
 RUN rpm -i https://github.com/dshearer/jobber/releases/download/v1.4.4/jobber-1.4.4-1.el8.x86_64.rpm
