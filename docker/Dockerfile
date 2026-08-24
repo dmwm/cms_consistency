@@ -40,9 +40,6 @@ RUN dnf install -y https://repo.opensciencegrid.org/osg/25-main/osg-25-main-el9-
 # depends on libaio
 RUN rpm -i https://yum.oracle.com/repo/OracleLinux/OL8/oracle/instantclient21/x86_64/getPackage/oracle-instantclient-basic-21.20.0.0.0-1.el8.x86_64.rpm
 
-# rclone for HTTP directory listing
-RUN dnf install https://downloads.rclone.org/rclone-current-linux-amd64.rpm
-
 #.. jobber -- obsolete, soon to be removed
 RUN rpm -i https://github.com/dshearer/jobber/releases/download/v1.4.4/jobber-1.4.4-1.el8.x86_64.rpm
 
