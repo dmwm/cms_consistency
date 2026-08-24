@@ -8,12 +8,12 @@ RUN dnf install -y golang git && \
 RUN mkdir -p /tmp/go/webdav-rm
 
 RUN curl -fsSL -o /tmp/go/webdav-ls-r.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-ls-r.go
-RUN curl -fsSL -o /tmp/go/go.mod https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/go.mod
-RUN curl -fsSL -o /tmp/go/go.sum https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/go.sum
 RUN curl -fsSL -o /tmp/go/webdav-rm/webdav-rm.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-rm/webdav-rm.go
 
-RUN go mod download
-RUN cd /tmp/go && go build -o /usr/local/bin/webdav-ls-r webdav-ls-r.go
+WORKDIR /tmp/go
+RUN go mod init cms-consistency && go mod tidy
+
+RUN go build -o /usr/local/bin/webdav-ls-r webdav-ls-r.go
 RUN cd /tmp/go/webdav-rm && go build -o /usr/local/bin/webdav-rm webdav-rm.go
 
 FROM almalinux:9
