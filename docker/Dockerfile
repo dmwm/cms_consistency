@@ -19,8 +19,8 @@ RUN cd /tmp/go/webdav-rm && go build -o /usr/local/bin/webdav-rm webdav-rm.go
 FROM almalinux:9
 USER root
 
-COPY --from=builder /usr/local/bin/webdav-ls-r /usr/local/bin/webdav-ls-r
-COPY --from=builder /usr/local/bin/webdav-rm /usr/local/bin/webdav-rm
+COPY --from=go-builder /usr/local/bin/webdav-ls-r /usr/local/bin/webdav-ls-r
+COPY --from=go-builder /usr/local/bin/webdav-rm /usr/local/bin/webdav-rm
 
 RUN dnf -y update \
     && dnf install -y epel-release.noarch \
