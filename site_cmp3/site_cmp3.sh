@@ -160,8 +160,13 @@ empty_dirs_out=${out}/${RSE}_${now}_ED.list.gz
 echo "Checking which type of scanner to use...." > ${scanner_errors}
 export X509_USER_PROXY=/tmp/x509up
 export RUCIO_ACCOUNT=transfer_ops
+export SSL_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates/   # For Go programs
+
+# FIXME: Merge this into the merged config and use the yq method to extract
 output=$(rucio rse show ${RSE})
 method=$(echo "$output" | grep -oP 'CE_config\.method:\s*\K\S+')  # Extract the value for CE_config.method
+rmdir_method=$(yq ".rses.${RSE}.dark_action.rmdir_method" ${merged_config_file})
+
 echo " Scanner method ${method}" > ${scanner_errors}
 
 if [ "$method" == "davs" ]; then

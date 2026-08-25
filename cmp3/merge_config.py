@@ -33,6 +33,10 @@ class MergedCEConfiguration(object):
             cfg["ce_disabled"] = value
         if self.CONFIG_PREFIX + "ignore_list" in rse_config:
             cfg["ignore_list"] = rse_config[self.CONFIG_PREFIX + "ignore_list"].split(",")
+        if self.CONFIG_PREFIX + "method" in rse_config:
+            cfg["scan_method"] = rse_config[self.CONFIG_PREFIX + "method"]
+        if self.CONFIG_PREFIX + "scan_method" in rse_config:
+            cfg["scan_method"] = rse_config[self.CONFIG_PREFIX + "scan_method"]
 
         scanner_cfg = {}
         davs_scanner_cfg = {}
