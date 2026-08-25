@@ -72,6 +72,9 @@ RUN chmod +x *.sh
 
 RUN git clone https://github.com/dmwm/cms_consistency.git
 
+# FIXME: Remove
+RUN cd cms_consistency; git checkout davix-go
+
 # FIXME: Move location of davs_scanner to rucio_consistency when accepted.  Remove reference to config.py
 # FIXME: Add several files that we need to change. Eventually to be upstreamed
 ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/main/rucio_consistency/config.py /usr/local/lib/python3.9/site-packages/rucio_consistency/config.py
