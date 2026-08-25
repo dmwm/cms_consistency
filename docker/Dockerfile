@@ -31,7 +31,7 @@ RUN dnf install -y https://repo.opensciencegrid.org/osg/25-main/osg-25-main-el9-
     dnf install -y osg-pki-tools voms voms-clients-cpp \
       xrootd-libs xrootd-client \
       davix python-gfal2 gfal2-plugin-file gfal2-plugin-xrootd gfal2-plugin-http gfal2-util-scripts \
-      python3 python3-pip \
+      python3 python3-pip yq \
       git which diffutils cronie-noanacron libaio procps-ng && \
     dnf clean all && \
     rm -rf /var/cache/dnf
