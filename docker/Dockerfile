@@ -6,8 +6,10 @@ RUN dnf install -y golang git && \
     rm -rf /var/cache/dnf   
 
 RUN mkdir -p /tmp/go/webdav-rm
+RUN mkdir -p /tmp/go/internal
 
 RUN curl -fsSL -o /tmp/go/webdav-ls-r.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-ls-r.go
+RUN curl -fsSL -o /tmp/go/internal/webdavsafe/guard.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/internal/webdavsafe/guard.go
 RUN curl -fsSL -o /tmp/go/webdav-rm/webdav-rm.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-rm/webdav-rm.go
 
 WORKDIR /tmp/go
