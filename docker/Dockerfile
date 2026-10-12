@@ -80,7 +80,9 @@ RUN cd cms_consistency; git checkout davix-go
 ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/rucio_consistency/config.py /usr/local/lib/python3.9/site-packages/rucio_consistency/config.py
 #ADD https://raw.githubusercontent.com/ericvaandering/consistency-enforcement/refs/heads/for_cms/rucio_consistency/davs/davs_scanner.py /consistency/cms_consistency/site_cmp3/davs_scanner.py
 ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/davs_scanner.py /consistency/cms_consistency/site_cmp3/davs_scanner.py
+ADD https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/get_oidc_token.py /consistency/cms_consistency/site_cmp3/get_oidc_token.py
 
 RUN chmod +x /consistency/cms_consistency/site_cmp3/davs_scanner.py
+RUN chmod +x /consistency/cms_consistency/site_cmp3/get_oidc_token.py
 
 CMD /bin/bash
