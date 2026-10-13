@@ -161,7 +161,7 @@ echo "Checking which type of scanner to use...." > ${scanner_errors}
 export X509_USER_PROXY=/tmp/x509up
 export RUCIO_ACCOUNT=transfer_ops
 export SSL_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates/   # For Go programs
-export RUCIO_IDPSECRETS=/opt/rucio/etc/idpsecrets.json
+export RUCIO_IDPSECRETS=/opt/rucio/etc/idpsecrets.json/..data/idpsecrets.json
 
 
 # FIXME: Merge this into the merged config and use the yq method to extract
