@@ -28,6 +28,7 @@ USER root
 
 COPY --from=go-builder /usr/local/bin/webdav-ls-r /usr/local/bin/webdav-ls-r
 COPY --from=go-builder /usr/local/bin/webdav-rm /usr/local/bin/webdav-rm
+COPY --from=go-builder /usr/local/bin/webdav-ls /usr/local/bin/webdav-ls
 
 RUN dnf -y update \
     && dnf install -y epel-release.noarch \
