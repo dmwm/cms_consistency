@@ -6,17 +6,22 @@ RUN dnf install -y golang git && \
     rm -rf /var/cache/dnf   
 
 RUN mkdir -p /tmp/go/webdav-rm
+RUN mkdir -p /tmp/go/webdav-ls
 RUN mkdir -p /tmp/go/internal/webdavsafe
+RUN mkdir -p /tmp/go/internal/webdavcli
 
 RUN curl -fsSL -o /tmp/go/webdav-ls-r.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-ls-r.go
 RUN curl -fsSL -o /tmp/go/internal/webdavsafe/guard.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/internal/webdavsafe/guard.go
+RUN curl -fsSL -o /tmp/go/internal/webdavcli/client.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/internal/webdavcli/client.go
 RUN curl -fsSL -o /tmp/go/webdav-rm/webdav-rm.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-rm/webdav-rm.go
+RUN curl -fsSL -o /tmp/go/webdav-ls/webdav-ls.go https://raw.githubusercontent.com/ericvaandering/davix-explore/refs/heads/recursive_davs/go/webdav-ls/webdav-ls.go
 
 WORKDIR /tmp/go
 RUN go mod init cms-consistency && go mod tidy
 
 RUN go build -o /usr/local/bin/webdav-ls-r webdav-ls-r.go
 RUN cd /tmp/go/webdav-rm && go build -o /usr/local/bin/webdav-rm webdav-rm.go
+RUN cd /tmp/go/webdav-ls && go build -o /usr/local/bin/webdav-ls webdav-ls.go
 
 FROM almalinux:9
 USER root
