@@ -61,6 +61,7 @@ class XRootDBackend(object):
         return self.Client.rmdir(path)
 
 
+# FIXME: Remove this and the conditional accessing it
 class DavsBackend(object):
 
     def __init__(self, server):
@@ -184,47 +185,66 @@ def parents(path):
         yield path
 
 
-def webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server):
-    import pdb  # FIXME remove
+def webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server, server_root):
     my_stats['rmdir_method'] = 'webdav-go'
+    my_stats["start_time"] = t0 = time.time()
     n_removed = 0
     n_skipped = 0
     n_failed = 0
+    error = None
 
     # Write the full list of files to a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         uncompressed_empty_list = os.path.join(temp_dir, "empty_dirs.lis")
         with open(uncompressed_empty_list, "w") as dir_list:
-            pdb.set_trace()
             command = ['zcat', storage_path]  # It's compressed so uncompress and write to new file
             subprocess.run(command, stdout=dir_list, check=True)
 
-        pdb.set_trace()
         # Get a token
         command = ["/consistency/cms_consistency/site_cmp3/get_oidc_token.py",
                    "--scope", "storage.modify:/ offline_access",
-                   "--issuer", "def", "--audience", server]
+                   "--issuer", "def", "--audience", f'{server}{server_root}']
         # https: // t2 - xrdcms.lnl.infn.it: 2880 / pnfs / lnl.infn.it / data / cms /"
 
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode != 0:
             return None
         token = result.stdout.strip()
-        pdb.set_trace()
+
         # Run deleter with token
-        rmdir_command = ["webdav-rm -f /tmp/test.list -s t2-xrdcms.lnl.infn.it:2880 -t $TOKEN"]
+        rmdir_command = ['webdav-rm', '-n', f'{limit}', '-f', uncompressed_empty_list, '-s', server, '-t', token]
+        if dry_run:
+            rmdir_command.append('-dry-run')
+
         with subprocess.Popen(rmdir_command, stdout=subprocess.PIPE, text=True, bufsize=1) as process:
             for line in process.stdout:  # Stream the output line-by-line as it arrives
                 # Lines like
                 # Removed: /pnfs/lnl.infn.it/data/cms/store/mc/Run3Summer22EEDRPremix/DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/AODSIM/124X_mcRun3_2022_realistic_postEE_v1-v5/2560002/
                 # removed: 9992, skipped (not empty): 0, failed: 10008
-                
-                fields = line.strip().split()
-                if len(fields) > 4:
-                    n_removed = int(fields[1])
-                    n_skipped = int(fields[5])
-                    n_failed = int(fields[7])
-        pdb.set_trace()
+
+                fields = line.replace(',', '').strip().split()
+                try:
+                    if len(fields) > 4:
+                        n_removed = int(fields[1])
+                        n_skipped = int(fields[5])
+                        n_failed = int(fields[7])
+                except ValueError:
+                    error = "Error parsing webdav-rm count outputs"
+
+        my_stats['removed_count'] = n_removed
+        my_stats['failed_count'] = n_failed
+
+        t1 = time.time()
+        my_stats.update(
+            elapsed=t1 - t0,
+            end_time=t1,
+            # status=status,
+            error=error,
+        )
+
+        if stats is not None:
+            stats.update_section(stats_key, my_stats)
+
         return my_stats
 
 
@@ -498,7 +518,8 @@ remove_prefix = active_scanner_config["remove_prefix"]
 timeout = active_scanner_config["timeout"]
 
 if rmdir_method == 'davs':
-    run_stats = webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server)
+    run_stats = webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server,
+                               server_root)
 else:
     lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
 
