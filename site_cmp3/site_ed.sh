@@ -2,6 +2,9 @@
 
 version="3.2_ed"
 
+export SSL_CERT_DIR=/cvmfs/grid.cern.ch/etc/grid-security/certificates/   # For Go programs
+export RUCIO_IDPSECRETS=/opt/rucio/etc/idpsecrets.json/..data/idpsecrets.json
+
 echo site_cmp3 version: $version
 
 if [ "$1" == "" ]; then

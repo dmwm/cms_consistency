@@ -2,6 +2,7 @@ import argparse
 import os.path
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timedelta
 
@@ -181,6 +182,50 @@ def parents(path):
     while path and path != '/' and '/' in path:
         path = path.rsplit('/', 1)[0]
         yield path
+
+
+def webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server):
+    import pdb  # FIXME remove
+    my_stats['rmdir_method'] = 'webdav-go'
+    n_removed = 0
+    n_skipped = 0
+    n_failed = 0
+
+    # Write the full list of files to a temporary directory
+    with tempfile.TemporaryDirectory() as temp_dir:
+        uncompressed_empty_list = os.path.join(temp_dir, "empty_dirs.lis")
+        with open(uncompressed_empty_list, "w") as dir_list:
+            pdb.set_trace()
+            command = ['zcat', storage_path]  # It's compressed so uncompress and write to new file
+            subprocess.run(command, stdout=dir_list, check=True)
+
+        pdb.set_trace()
+        # Get a token
+        command = ["/consistency/cms_consistency/site_cmp3/get_oidc_token.py",
+                   "--scope", "storage.modify:/ offline_access",
+                   "--issuer", "def", "--audience", server]
+        # https: // t2 - xrdcms.lnl.infn.it: 2880 / pnfs / lnl.infn.it / data / cms /"
+
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            return None
+        token = result.stdout.strip()
+        pdb.set_trace()
+        # Run deleter with token
+        rmdir_command = ["webdav-rm -f /tmp/test.list -s t2-xrdcms.lnl.infn.it:2880 -t $TOKEN"]
+        with subprocess.Popen(rmdir_command, stdout=subprocess.PIPE, text=True, bufsize=1) as process:
+            for line in process.stdout:  # Stream the output line-by-line as it arrives
+                # Lines like
+                # Removed: /pnfs/lnl.infn.it/data/cms/store/mc/Run3Summer22EEDRPremix/DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/AODSIM/124X_mcRun3_2022_realistic_postEE_v1-v5/2560002/
+                # removed: 9992, skipped (not empty): 0, failed: 10008
+                
+                fields = line.strip().split()
+                if len(fields) > 4:
+                    n_removed = int(fields[1])
+                    n_skipped = int(fields[5])
+                    n_failed = int(fields[7])
+        pdb.set_trace()
+        return my_stats
 
 
 def remove_from_file(file_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats, verbose, limit,
@@ -415,6 +460,7 @@ if verbose:
 
 my_stats = {
     "version": Version,
+    "rmdir_method": None,
     "dry_run": dry_run,
     "elapsed": None,
     "start_time": None,
@@ -451,16 +497,20 @@ add_prefix = active_scanner_config["add_prefix"]
 remove_prefix = active_scanner_config["remove_prefix"]
 timeout = active_scanner_config["timeout"]
 
-lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
-
-is_redirector = False  # config.ServerIsRedirector
-client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
-if os.path.isfile(storage_path):
-    run_stats = remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats,
-                                 verbose, limit, rmdir_method, server)
+if rmdir_method == 'davs':
+    run_stats = webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server)
 else:
-    run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats,
-                             verbose, limit, window, min_runs, max_age_last, min_age_first, rmdir_method, server)
+    lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
+
+    is_redirector = False  # config.ServerIsRedirector
+    client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
+    if os.path.isfile(storage_path):
+        run_stats = remove_from_file(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats,
+                                     verbose, limit, rmdir_method, server)
+    else:
+        run_stats = empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_run, client, my_stats,
+                                 verbose, limit, window, min_runs, max_age_last, min_age_first, rmdir_method, server)
+
 status = run_stats["status"]
 error = run_stats.get("error")
 aborted_reason = run_stats.get("aborted_reason")
