@@ -396,7 +396,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
     return my_stats
 
 
-def empty_list_action(storage_path, rse, list_path, lfn_converter, stats, stats_key, my_stats, verbose,
+def find_empty_directories(storage_path, rse, list_path, lfn_converter, stats, stats_key, my_stats, verbose,
                       window, min_runs, max_age_last, min_age_first):
     # Same confirmed empty directory list as empty_action, but written to list_path instead of being removed
     my_stats["start_time"] = t0 = time.time()
@@ -631,12 +631,20 @@ add_prefix = active_scanner_config["add_prefix"]
 remove_prefix = active_scanner_config["remove_prefix"]
 timeout = active_scanner_config["timeout"]
 
+lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
+
 if rmdir_method == 'davs':
+
+    list_path = '/tmp/test_list_ed.txt'
+    # with tempfile.TemporaryDirectory() as temp_dir:
+    #     uncompressed_empty_list = os.path.join(temp_dir, "empty_dirs.lis")
+
+    find_empty_directories(storage_path, rse, list_path, lfn_converter, stats, stats_key, my_stats, verbose,
+                           window, min_runs, max_age_last, min_age_first)
+
     run_stats = webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server,
                                server_root)
 else:
-    lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
-
     is_redirector = False  # config.ServerIsRedirector
     client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
     if os.path.isfile(storage_path):
