@@ -185,14 +185,14 @@ def parents(path):
         yield path
 
 
-def webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key, dry_run, my_stats, verbose, limit, server, server_root):
+def webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key, dry_run, my_stats, verbose, limit,
+                   server, server_root):
     my_stats['rmdir_method'] = 'webdav-go'
     my_stats["start_time"] = t0 = time.time()
     n_removed = 0
     n_skipped = 0
     n_failed = 0
     error = None
-
 
     # Get a token
     command = ["/consistency/cms_consistency/site_cmp3/get_oidc_token.py",
@@ -398,7 +398,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
 
 def find_empty_directories(storage_path, rse, list_path, lfn_converter, stats, stats_key, my_stats, verbose,
-                      window, min_runs, max_age_last, min_age_first, server_root):
+                           window, min_runs, max_age_last, min_age_first, server_root):
     # Same confirmed empty directory list as empty_action, but written to list_path instead of being removed
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
@@ -645,11 +645,11 @@ if rmdir_method == 'davs':
     with tempfile.TemporaryDirectory() as temp_dir:
         uncompressed_empty_list = os.path.join(temp_dir, "empty_dirs.lis")
 
-        find_empty_directories(storage_path, rse, uncompressed_empty_list, lfn_converter, stats, stats_key, my_stats, verbose,
-                                window, min_runs, max_age_last, min_age_first, server_root)
+        find_empty_directories(storage_path, rse, uncompressed_empty_list, lfn_converter, stats, stats_key, my_stats,
+                               verbose, window, min_runs, max_age_last, min_age_first, server_root)
 
-        run_stats = webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key, dry_run, my_stats, verbose, limit, server,
-                                    server_root)
+        run_stats = webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key, dry_run, my_stats,
+                                   verbose, limit, server, server_root)
 else:
     is_redirector = False  # config.ServerIsRedirector
     client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
