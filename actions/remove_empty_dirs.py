@@ -396,6 +396,120 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
     return my_stats
 
 
+def empty_list_action(storage_path, rse, list_path, lfn_converter, stats, stats_key, my_stats, verbose,
+                      window, min_runs, max_age_last, min_age_first):
+    # Same confirmed empty directory list as empty_action, but written to list_path instead of being removed
+    my_stats["start_time"] = t0 = time.time()
+    if stats is not None:
+        stats.update_section(stats_key, my_stats)
+
+    runs = list(CCRun.runs_for_rse(storage_path, rse, complete_only=False))
+    now = datetime.now()
+
+    for r in runs:
+        print(r.Run, ":  in window:", r.Timestamp >= now - timedelta(days=window),
+              "  ED info collected:", r.empty_directories_collected(),
+              "  count:", r.empty_directory_count(),
+              "  list present:", r.empty_dir_list_exists()
+              )
+    recent_runs = sorted(
+        [r for r in runs
+         if (r.Timestamp >= now - timedelta(days=window))
+         and r.empty_directories_collected()
+         and r.empty_directory_count() is not None
+         and r.empty_dir_list_exists()
+         ],
+        key=lambda r: r.Timestamp
+    )
+
+    print("Usable runs:")
+    for r in recent_runs:
+        print("  ", r.Run)
+
+    status = "started"
+    aborted_reason = None
+    confirmed_empty_count = None
+    detected_empty_count = None
+    error = None
+
+    if recent_runs:
+        my_stats["runs_compared"] = [r.Run for r in recent_runs]
+
+    if not recent_runs or len(recent_runs) < min_runs:
+        status = "aborted"
+        aborted_reason = "not enough runs to produce confirmed empty directories list: %d, required: %d" % (
+            len(recent_runs), min_runs)
+    else:
+        first_run = recent_runs[0]
+        latest_run = recent_runs[-1]
+        detected_empty_count = latest_run.empty_directory_count()
+        print("Runs in the confirmation history:", len(recent_runs))
+        print("First run:", first_run.Run, file=sys.stderr)
+        print("Last run:", latest_run.Run, file=sys.stderr)
+        print("Empty directories in last run:", latest_run.empty_directory_count(), file=sys.stderr)
+
+        if latest_run.Timestamp < now - timedelta(days=max_age_last):
+            status = "aborted"
+            aborted_reason = "latest run is too old: %s, required: < %d days old" % (latest_run.Timestamp, max_age_last)
+
+        elif first_run.Timestamp > now - timedelta(days=min_age_first):
+            status = "aborted"
+            aborted_reason = "oldest run is not old enough: %s, required: > %d days old" % (first_run.Timestamp,
+                                                                                            min_age_first)
+
+        else:
+            # compute confirmed list and make sure the list would contain only removable directories
+            confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
+            confirmed = update_confirmed(confirmed, set(
+                lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
+            for run in recent_runs[1:-1]:
+                print(f"run: {run.Run} - #confirmed: {len(confirmed)}")
+                if not confirmed:
+                    break
+                run_set = set(lfn_converter.lfn_or_path_to_path(path) for path in run.empty_directories())
+                confirmed = update_confirmed(confirmed, run_set)
+
+            confirmed_empty_count = len(confirmed)
+            print("Confirmed empty directories:", confirmed_empty_count, file=sys.stderr)
+
+            my_stats.update(
+                detected_empty_directories=detected_empty_count,
+                confirmed_empty_directories=confirmed_empty_count
+            )
+            if stats is not None:
+                stats.update_section(stats_key, my_stats)
+
+            status = "done"
+            try:
+                with open(list_path, "w") as list_file:
+                    for path in sorted(confirmed):
+                        print(path, file=list_file)
+                if verbose:
+                    print(f"wrote {confirmed_empty_count} directories to {list_path}")
+            except Exception as e:
+                error = f"error writing {list_path}: {e}"
+                status = "failed"
+
+    t1 = time.time()
+    my_stats.update(
+        elapsed=t1 - t0,
+        end_time=t1,
+        status=status,
+        error=error,
+        detected_empty_directories=detected_empty_count,
+        confirmed_empty_directories=confirmed_empty_count,
+        failed_count=0,
+        removed_count=0,
+        aborted_reason=aborted_reason,
+        error_counts={}
+    )
+
+    if stats is not None:
+        stats.update_section(stats_key, my_stats)
+
+    return my_stats
+
+
 parser = argparse.ArgumentParser(description="Remove empty directories from a storage element")
 parser.add_argument("storage_path", help="storage path or file path containing directories to remove")
 parser.add_argument("rse", help="RSE name")
