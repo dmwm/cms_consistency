@@ -185,7 +185,7 @@ def parents(path):
         yield path
 
 
-def webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server, server_root):
+def webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key, dry_run, my_stats, verbose, limit, server, server_root):
     my_stats['rmdir_method'] = 'webdav-go'
     my_stats["start_time"] = t0 = time.time()
     n_removed = 0
@@ -193,46 +193,47 @@ def webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, 
     n_failed = 0
     error = None
 
-    # Write the full list of files to a temporary directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        uncompressed_empty_list = os.path.join(temp_dir, "empty_dirs.lis")
-        with open(uncompressed_empty_list, "w") as dir_list:
-            command = ['zcat', storage_path]  # It's compressed so uncompress and write to new file
-            subprocess.run(command, stdout=dir_list, check=True)
 
-        # Get a token
-        command = ["/consistency/cms_consistency/site_cmp3/get_oidc_token.py",
-                   "--scope", "storage.modify:/ offline_access",
-                   "--issuer", "def", "--audience", f'{server}{server_root}']
-        # https: // t2 - xrdcms.lnl.infn.it: 2880 / pnfs / lnl.infn.it / data / cms /"
+    # Get a token
+    command = ["/consistency/cms_consistency/site_cmp3/get_oidc_token.py",
+               "--scope", "storage.modify:/ offline_access",
+               "--issuer", "def", "--audience", f'{server}{server_root}']
 
-        result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode != 0:
-            return None
-        token = result.stdout.strip()
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        my_stats.update(
+            elapsed=0,
+            end_time=t0,
+            # status=status,
+            error='Failed to get modify token',
+        )
+        return None
 
-        # Run deleter with token
-        rmdir_command = ['webdav-rm', '-n', f'{limit}', '-f', uncompressed_empty_list, '-s', server, '-t', token]
-        if dry_run:
-            rmdir_command.append('-dry-run')
+    token = result.stdout.strip()
 
-        with subprocess.Popen(rmdir_command, stdout=subprocess.PIPE, text=True, bufsize=1) as process:
-            for line in process.stdout:  # Stream the output line-by-line as it arrives
-                # Lines like
-                # Removed: /pnfs/lnl.infn.it/data/cms/store/mc/Run3Summer22EEDRPremix/DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/AODSIM/124X_mcRun3_2022_realistic_postEE_v1-v5/2560002/
-                # removed: 9992, skipped (not empty): 0, failed: 10008
+    # Run deleter with token
+    rmdir_command = ['webdav-rm', '-n', f'{limit}', '-f', uncompressed_empty_list, '-s', server, '-t', token]
+    if dry_run:
+        rmdir_command.append('-dry-run')
 
-                fields = line.replace(',', '').strip().split()
-                try:
-                    if len(fields) > 4:
-                        n_removed = int(fields[1])
-                        n_skipped = int(fields[5])
-                        n_failed = int(fields[7])
-                except ValueError:
-                    error = "Error parsing webdav-rm count outputs"
+    with subprocess.Popen(rmdir_command, stdout=subprocess.PIPE, text=True, bufsize=1) as process:
+        for line in process.stdout:  # Stream the output line-by-line as it arrives
+            # Lines like
+            # Removed: /pnfs/lnl.infn.it/data/cms/store/mc/Run3Summer22EEDRPremix/DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/AODSIM/124X_mcRun3_2022_realistic_postEE_v1-v5/2560002/
+            # removed: 9992, skipped (not empty): 0, failed: 10008
+
+            fields = line.replace(',', '').strip().split()
+            try:
+                if len(fields) > 4:
+                    n_removed = int(fields[1])
+                    n_skipped = int(fields[5])
+                    n_failed = int(fields[7])
+            except ValueError:
+                error = "Error parsing webdav-rm count outputs"
 
         my_stats['removed_count'] = n_removed
         my_stats['failed_count'] = n_failed
+        my_stats['skipped_count'] = n_skipped
 
         t1 = time.time()
         my_stats.update(
@@ -397,7 +398,7 @@ def empty_action(storage_path, rse, out, lfn_converter, stats, stats_key, dry_ru
 
 
 def find_empty_directories(storage_path, rse, list_path, lfn_converter, stats, stats_key, my_stats, verbose,
-                      window, min_runs, max_age_last, min_age_first):
+                      window, min_runs, max_age_last, min_age_first, server_root):
     # Same confirmed empty directory list as empty_action, but written to list_path instead of being removed
     my_stats["start_time"] = t0 = time.time()
     if stats is not None:
@@ -459,14 +460,21 @@ def find_empty_directories(storage_path, rse, list_path, lfn_converter, stats, s
 
         else:
             # compute confirmed list and make sure the list would contain only removable directories
-            confirmed = set(lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[0].empty_directories())
+            to_strip = server_root.rstrip('/')
+            print(f'Stripping {to_strip}')
+
+            confirmed = set(lfn_converter.lfn_or_path_to_path(path.rstrip('/').removeprefix(to_strip)) for path in
+                            recent_runs[0].empty_directories())
             confirmed = update_confirmed(confirmed, set(
-                lfn_converter.lfn_or_path_to_path(path) for path in recent_runs[-1].empty_directories()))
+                lfn_converter.lfn_or_path_to_path(path.rstrip('/').removeprefix(to_strip)) for path in
+                recent_runs[-1].empty_directories()))
+            print(f'First and last runs:   #confirmed: {len(confirmed)}')
             for run in recent_runs[1:-1]:
                 print(f"run: {run.Run} - #confirmed: {len(confirmed)}")
                 if not confirmed:
                     break
-                run_set = set(lfn_converter.lfn_or_path_to_path(path) for path in run.empty_directories())
+                run_set = set(lfn_converter.lfn_or_path_to_path(path.rstrip('/').removeprefix(to_strip)) for path in
+                              run.empty_directories())
                 confirmed = update_confirmed(confirmed, run_set)
 
             confirmed_empty_count = len(confirmed)
@@ -634,16 +642,14 @@ timeout = active_scanner_config["timeout"]
 lfn_converter = LFNConverter(server_root, remove_prefix, add_prefix)
 
 if rmdir_method == 'davs':
+    with tempfile.TemporaryDirectory() as temp_dir:
+        uncompressed_empty_list = os.path.join(temp_dir, "empty_dirs.lis")
 
-    list_path = '/tmp/test_list_ed.txt'
-    # with tempfile.TemporaryDirectory() as temp_dir:
-    #     uncompressed_empty_list = os.path.join(temp_dir, "empty_dirs.lis")
+        find_empty_directories(storage_path, rse, uncompressed_empty_list, lfn_converter, stats, stats_key, my_stats, verbose,
+                                window, min_runs, max_age_last, min_age_first, server_root)
 
-    find_empty_directories(storage_path, rse, list_path, lfn_converter, stats, stats_key, my_stats, verbose,
-                           window, min_runs, max_age_last, min_age_first)
-
-    run_stats = webdav_remover(storage_path, rse, out, stats, stats_key, dry_run, my_stats, verbose, limit, server,
-                               server_root)
+        run_stats = webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key, dry_run, my_stats, verbose, limit, server,
+                                    server_root)
 else:
     is_redirector = False  # config.ServerIsRedirector
     client = XRootDClient(server, is_redirector, server_root, timeout=timeout)
