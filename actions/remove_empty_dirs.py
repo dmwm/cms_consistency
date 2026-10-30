@@ -194,6 +194,9 @@ def webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key,
     n_failed = 0
     error = None
 
+    # FIXME: Make this a parameter
+    limit = 50000
+    
     # Get a token
     command = ["/consistency/cms_consistency/site_cmp3/get_oidc_token.py",
                "--scope", "storage.modify:/ offline_access",
@@ -207,7 +210,7 @@ def webdav_remover(storage_path, rse, uncompressed_empty_list, stats, stats_key,
             # status=status,
             error='Failed to get modify token',
         )
-        return None
+        return my_stats
 
     token = result.stdout.strip()
 
